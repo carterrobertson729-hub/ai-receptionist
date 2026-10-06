@@ -1,0 +1,310 @@
+{
+  "name": "Receptionist - Book Appointment",
+  "nodes": [
+    {
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Retell Tool Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "receptionist-book-appointment",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "receptionist/book-appointment",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE",
+          "name": "Retell tool secret"
+        }
+      }
+    },
+    {
+      "id": "b1000000-0000-4000-8000-000000000002",
+      "name": "Load Business Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Resolves which business this call is for, and reads the tool arguments.\nvar CONFIGS = {\"demo-plumbing\":{\"businessId\":\"demo-plumbing\",\"businessName\":\"Demo Plumbing Co\",\"trade\":\"plumbing\",\"timeZone\":\"America/New_York\",\"receptionistNumber\":\"REPLACE_WITH_RETELL_NUMBER_E164\",\"smsFromNumber\":\"REPLACE_WITH_TWILIO_NUMBER_E164\",\"ownerPhone\":\"REPLACE_WITH_OWNER_NUMBER_E164\",\"calendarId\":\"REPLACE_WITH_GOOGLE_CALENDAR_ID\",\"bookingRules\":{\"appointmentMinutes\":120,\"slotStepMinutes\":120,\"bufferMinutes\":0,\"minNoticeHours\":2,\"maxDaysAhead\":14,\"maxSlotsOffered\":3},\"hours\":{\"mon\":[\"08:00\",\"17:00\"],\"tue\":[\"08:00\",\"17:00\"],\"wed\":[\"08:00\",\"17:00\"],\"thu\":[\"08:00\",\"17:00\"],\"fri\":[\"08:00\",\"17:00\"],\"sat\":null,\"sun\":null},\"services\":[{\"name\":\"Leak repair\",\"emergency\":false},{\"name\":\"Drain cleaning\",\"emergency\":false},{\"name\":\"Water heater repair or replacement\",\"emergency\":false},{\"name\":\"Toilet, faucet or fixture repair\",\"emergency\":false},{\"name\":\"Burst pipe or active flooding\",\"emergency\":true},{\"name\":\"No water or sewage backup\",\"emergency\":true}],\"fixedPrices\":[],\"neverSay\":[\"Never quote a price, estimate, or range.\",\"Never promise an exact arrival time; offer only the booked window.\",\"Never diagnose the problem or tell the caller how to repair it.\"],\"languages\":[\"en\",\"es\"]}};\nvar item = $input.first().json;\nvar body = item.body || {};\nvar args = body.args || {};\nvar call = body.call || {};\nvar id = (item.query && item.query.business) || '';\nvar config = CONFIGS[id];\nif (!config) {\n  var toNumber = call.to_number || '';\n  config = Object.values(CONFIGS).find(function (c) { return c.receptionistNumber === toNumber; });\n}\nif (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');\nvar now = Date.now();\nvar windowEnd = now + (config.bookingRules.maxDaysAhead + 1) * 86400000;\nreturn [{ json: {\n  config: config, args: args, callId: call.call_id || '',\n  nowMs: now, timeMin: new Date(now).toISOString(), timeMax: new Date(windowEnd).toISOString()\n} }];"
+      }
+    },
+    {
+      "id": "b1000000-0000-4000-8000-000000000003",
+      "name": "Get Calendar Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        0
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "resource": "event",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.config.calendarId }}"
+        },
+        "returnAll": false,
+        "limit": 250,
+        "timeMin": "={{ $json.timeMin }}",
+        "timeMax": "={{ $json.timeMax }}",
+        "options": {
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "b1000000-0000-4000-8000-000000000004",
+      "name": "Verify Slot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Shared scheduling logic. Inlined into n8n Code nodes by tools/build-workflows.mjs\n// and unit-tested by tools/test-slots.mjs. No dependencies; time zones via Intl.\n\nvar DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];\n\n// Minutes the zone is ahead of UTC at the given instant.\nfunction zoneOffsetMinutes(utcMs, tz) {\n  var parts = new Intl.DateTimeFormat('en-US', {\n    timeZone: tz, hourCycle: 'h23',\n    year: 'numeric', month: '2-digit', day: '2-digit',\n    hour: '2-digit', minute: '2-digit', second: '2-digit'\n  }).formatToParts(new Date(utcMs));\n  var p = {};\n  parts.forEach(function (x) { p[x.type] = x.value; });\n  var asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);\n  return Math.round((asUtc - Math.floor(utcMs / 1000) * 1000) / 60000);\n}\n\n// Wall-clock time in the zone (\"2026-10-13\", \"08:00\") -> UTC ms.\nfunction localToUtcMs(dateStr, hhmm, tz) {\n  var d = dateStr.split('-').map(Number);\n  var t = hhmm.split(':').map(Number);\n  var guess = Date.UTC(d[0], d[1] - 1, d[2], t[0], t[1], 0);\n  var utc = guess - zoneOffsetMinutes(guess, tz) * 60000;\n  var off2 = zoneOffsetMinutes(utc, tz);\n  return guess - off2 * 60000;\n}\n\nfunction pad2(n) { return (n < 10 ? '0' : '') + n; }\n\n// UTC ms -> \"2026-10-13T08:00:00-04:00\" in the zone.\nfunction toLocalIso(utcMs, tz) {\n  var off = zoneOffsetMinutes(utcMs, tz);\n  var local = new Date(utcMs + off * 60000);\n  var sign = off < 0 ? '-' : '+';\n  var a = Math.abs(off);\n  return local.getUTCFullYear() + '-' + pad2(local.getUTCMonth() + 1) + '-' + pad2(local.getUTCDate()) +\n    'T' + pad2(local.getUTCHours()) + ':' + pad2(local.getUTCMinutes()) + ':' + pad2(local.getUTCSeconds()) +\n    sign + pad2(Math.floor(a / 60)) + ':' + pad2(a % 60);\n}\n\nfunction localDateStr(utcMs, tz) {\n  return toLocalIso(utcMs, tz).slice(0, 10);\n}\n\nfunction addDays(dateStr, n) {\n  var d = dateStr.split('-').map(Number);\n  var t = new Date(Date.UTC(d[0], d[1] - 1, d[2] + n));\n  return t.getUTCFullYear() + '-' + pad2(t.getUTCMonth() + 1) + '-' + pad2(t.getUTCDate());\n}\n\nfunction weekdayKey(dateStr) {\n  var d = dateStr.split('-').map(Number);\n  return DAY_KEYS[new Date(Date.UTC(d[0], d[1] - 1, d[2])).getUTCDay()];\n}\n\nfunction friendlyLabel(utcMs, tz) {\n  var day = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(utcMs));\n  var time = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(new Date(utcMs));\n  return day + ' at ' + time;\n}\n\n// Google Calendar events -> [{start, end}] in UTC ms. Skips cancelled and \"free\" events.\nfunction busyFromEvents(events, tz) {\n  var out = [];\n  (events || []).forEach(function (e) {\n    if (!e || e.status === 'cancelled' || e.transparency === 'transparent') return;\n    var s = e.start || {};\n    var en = e.end || {};\n    if (s.dateTime && en.dateTime) {\n      out.push({ start: Date.parse(s.dateTime), end: Date.parse(en.dateTime) });\n    } else if (s.date && en.date) {\n      out.push({ start: localToUtcMs(s.date, '00:00', tz), end: localToUtcMs(en.date, '00:00', tz) });\n    }\n  });\n  return out;\n}\n\n// All bookable slots in the window, earliest first. No cap; callers cap.\nfunction allSlots(config, busy, fromDate, nowMs) {\n  var rules = config.bookingRules;\n  var tz = config.timeZone;\n  var dur = rules.appointmentMinutes * 60000;\n  var step = rules.slotStepMinutes * 60000;\n  var buf = (rules.bufferMinutes || 0) * 60000;\n  var earliest = nowMs + rules.minNoticeHours * 3600000;\n  var today = localDateStr(nowMs, tz);\n  var startDate = fromDate && fromDate > today ? fromDate : today;\n  var slots = [];\n  for (var i = 0; i < rules.maxDaysAhead; i++) {\n    var date = addDays(startDate, i);\n    var hours = config.hours[weekdayKey(date)];\n    if (!hours) continue;\n    var open = localToUtcMs(date, hours[0], tz);\n    var close = localToUtcMs(date, hours[1], tz);\n    for (var s = open; s + dur <= close; s += step) {\n      if (s < earliest) continue;\n      var clash = busy.some(function (b) { return s < b.end + buf && s + dur > b.start - buf; });\n      if (clash) continue;\n      slots.push({ startMs: s, endMs: s + dur });\n    }\n  }\n  return slots;\n}\n\nfunction describeSlot(slot, tz) {\n  return {\n    start: toLocalIso(slot.startMs, tz),\n    end: toLocalIso(slot.endMs, tz),\n    label: friendlyLabel(slot.startMs, tz)\n  };\n}\n\nfunction offerSlots(config, events, args, nowMs) {\n  var tz = config.timeZone;\n  var slots = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs);\n  if (args.part_of_day === 'morning' || args.part_of_day === 'afternoon') {\n    var filtered = slots.filter(function (s) {\n      var hour = +toLocalIso(s.startMs, tz).slice(11, 13);\n      return args.part_of_day === 'morning' ? hour < 12 : hour >= 12;\n    });\n    if (filtered.length) slots = filtered;\n  }\n  return slots.slice(0, config.bookingRules.maxSlotsOffered).map(function (s) { return describeSlot(s, tz); });\n}\n\n// True only if startIso is exactly one of the business's open slots right now.\nfunction isSlotStillOpen(config, events, startIso, nowMs) {\n  var tz = config.timeZone;\n  var startMs = Date.parse(startIso);\n  if (isNaN(startMs)) return false;\n  var slots = allSlots(config, busyFromEvents(events, tz), localDateStr(startMs, tz), nowMs);\n  return slots.some(function (s) { return s.startMs === startMs; });\n}\n\n\nvar ctx = $('Load Business Config').first().json;\nvar a = ctx.args;\nvar events = $input.all().map(function (i) { return i.json; });\n\nfunction normalizePhone(raw) {\n  var d = String(raw || '').replace(/\\D/g, '');\n  if (d.length === 10) d = '1' + d;\n  return d.length === 11 && d.charAt(0) === '1' ? '+' + d : null;\n}\nvar phone = normalizePhone(a.phone);\nvar name = String(a.name || '').trim();\nvar address = String(a.address || '').trim();\nvar problem = String(a.problem || '').trim();\nvar out = { status: 'invalid', reason: '' };\nif (!name) out.reason = 'missing_name';\nelse if (!phone) out.reason = 'invalid_phone';\nelse if (!address) out.reason = 'missing_address';\nelse if (!problem) out.reason = 'missing_problem';\nelse if (isNaN(Date.parse(a.start))) out.reason = 'invalid_start';\nelse {\n  var startMs = Date.parse(a.start);\n  var tz = ctx.config.timeZone;\n  var dup = events.some(function (e) {\n    return e && e.start && e.start.dateTime && Date.parse(e.start.dateTime) === startMs &&\n      String(e.description || '').indexOf(phone) !== -1;\n  });\n  if (dup) out = { status: 'duplicate' };\n  else if (isSlotStillOpen(ctx.config, events, a.start, ctx.nowMs)) out = { status: 'open' };\n  else out = { status: 'taken', alternatives: offerSlots(ctx.config, events, { preferred_date: a.start.slice(0, 10) }, ctx.nowMs) };\n  var endMs = startMs + ctx.config.bookingRules.appointmentMinutes * 60000;\n  out.startIso = toLocalIso(startMs, tz);\n  out.endIso = toLocalIso(endMs, tz);\n  out.label = friendlyLabel(startMs, tz);\n}\nout.phone = phone;\nout.name = name;\nout.address = address;\nout.problem = problem;\nout.service = String(a.service || 'Service visit').trim();\nout.summary = out.service + ' - ' + name;\nout.description = 'Booked by AI receptionist\\nCaller: ' + name + '\\nPhone: ' + phone + '\\nAddress: ' + address +\n  '\\nProblem: ' + problem + '\\nSomeone on site: ' + (a.someone_on_site || 'not asked') +\n  '\\nLanguage: ' + (a.language || 'en') + '\\nCall: ' + ctx.callId;\nreturn [{ json: out }];"
+      }
+    },
+    {
+      "id": "b1000000-0000-4000-8000-000000000005",
+      "name": "Slot Open?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "open",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b1000000-0000-4000-8000-000000000006",
+      "name": "Create Calendar Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        -120
+      ],
+      "parameters": {
+        "resource": "event",
+        "operation": "create",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Load Business Config').first().json.config.calendarId }}"
+        },
+        "start": "={{ $json.startIso }}",
+        "end": "={{ $json.endIso }}",
+        "useDefaultReminders": true,
+        "additionalFields": {
+          "summary": "={{ $json.summary }}",
+          "description": "={{ $json.description }}",
+          "location": "={{ $json.address }}"
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "b1000000-0000-4000-8000-000000000007",
+      "name": "Text Confirmation",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        -120
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "={{ $('Load Business Config').first().json.config.smsFromNumber }}",
+        "to": "={{ $('Verify Slot').first().json.phone }}",
+        "message": "={{ $('Load Business Config').first().json.config.businessName + ': you are booked for ' + $('Verify Slot').first().json.label + ' at ' + $('Verify Slot').first().json.address + '. To change or cancel, call us back. This number is an automated assistant.' }}",
+        "options": {}
+      },
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "id": "b1000000-0000-4000-8000-000000000008",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ],
+      "parameters": {
+        "jsCode": "var v = $('Verify Slot').first().json;\nvar res;\nif (v.status === 'open' || v.status === 'duplicate') {\n  res = { booked: true, when: v.label, message: 'Booked for ' + v.label + '. Confirm this back to the caller. Say a confirmation text is on its way. Do not promise an exact arrival time.' };\n} else if (v.status === 'taken') {\n  res = { booked: false, reason: 'slot_taken', alternatives: v.alternatives, message: 'That time was just taken. Apologize briefly and offer these alternatives.' };\n} else {\n  res = { booked: false, reason: v.reason, message: 'Missing or invalid information (' + v.reason + '). Ask the caller for it again, then retry.' };\n}\nreturn [{ json: res }];"
+      }
+    },
+    {
+      "id": "b1000000-0000-4000-8000-000000000009",
+      "name": "Respond to Retell",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1920,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Retell Tool Call": {
+      "main": [
+        [
+          {
+            "node": "Load Business Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Business Config": {
+      "main": [
+        [
+          {
+            "node": "Get Calendar Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Calendar Events": {
+      "main": [
+        [
+          {
+            "node": "Verify Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Slot": {
+      "main": [
+        [
+          {
+            "node": "Slot Open?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slot Open?": {
+      "main": [
+        [
+          {
+            "node": "Create Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calendar Event": {
+      "main": [
+        [
+          {
+            "node": "Text Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Retell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

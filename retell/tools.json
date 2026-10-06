@@ -1,0 +1,52 @@
+{
+  "note": "Reference definitions for the two Retell custom functions. Create them in Retell (Functions > Add > Custom Function) using these values. Replace YOUR_N8N with your n8n Cloud domain. Keep 'Payload: args only' OFF so the body is { name, call, args }. Add the header X-Receptionist-Secret with the same value as the n8n 'Retell tool secret' credential.",
+  "tools": [
+    {
+      "name": "check_availability",
+      "description": "Get the next open appointment times for routine visits. Call this after you know what the caller needs and before offering times.",
+      "url": "https://YOUR_N8N.app.n8n.cloud/webhook/receptionist/check-availability?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "Let me check the schedule.",
+      "timeout_ms": 15000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "preferred_date": {
+            "type": "string",
+            "description": "Earliest date the caller wants, as YYYY-MM-DD (convert words like 'tomorrow' using the current date). Omit if they have no preference."
+          },
+          "part_of_day": {
+            "type": "string",
+            "enum": ["morning", "afternoon", "any"],
+            "description": "Morning or afternoon preference, if the caller gave one."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "book_appointment",
+      "description": "Book the visit the caller chose and send them a confirmation text. Only call after the caller picks one of the offered times and you have all details.",
+      "url": "https://YOUR_N8N.app.n8n.cloud/webhook/receptionist/book-appointment?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "One moment while I book that.",
+      "timeout_ms": 20000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "start": { "type": "string", "description": "The exact 'start' value from check_availability for the time the caller chose." },
+          "name": { "type": "string", "description": "Caller's full name." },
+          "phone": { "type": "string", "description": "Callback number with area code." },
+          "address": { "type": "string", "description": "Full service address including city." },
+          "problem": { "type": "string", "description": "Short description of the problem in the caller's words." },
+          "service": { "type": "string", "description": "Closest service type from the business's list." },
+          "someone_on_site": { "type": "string", "description": "Whether someone will be at the property, e.g. 'yes' or 'no, key under mat'." },
+          "language": { "type": "string", "description": "Language code the call was held in, e.g. 'en' or 'es'." }
+        },
+        "required": ["start", "name", "phone", "address", "problem"]
+      }
+    }
+  ]
+}
