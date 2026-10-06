@@ -2,11 +2,11 @@
   "businessId": "demo-plumbing",
   "businessName": "Demo Plumbing Co",
   "trade": "plumbing",
-  "timeZone": "America/New_York",
+  "timeZone": "America/Chicago",
   "receptionistNumber": "REPLACE_WITH_RETELL_NUMBER_E164",
   "smsFromNumber": "REPLACE_WITH_TWILIO_NUMBER_E164",
   "ownerPhone": "REPLACE_WITH_OWNER_NUMBER_E164",
-  "calendarId": "REPLACE_WITH_GOOGLE_CALENDAR_ID",
+  "calendarId": "d8f2a8fbc0b04e3460f2971b0c7d82d953936566b3e9f560190bc3317cf2367c@group.calendar.google.com",
   "bookingRules": {
     "appointmentMinutes": 120,
     "slotStepMinutes": 120,
