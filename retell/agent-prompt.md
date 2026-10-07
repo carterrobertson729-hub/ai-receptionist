@@ -2,7 +2,7 @@
 
 Paste everything below the line into the agent's prompt in Retell. Replace the `{{...}}` business values per customer (or set them as dynamic variables). Business values come from `config/<businessId>.json`.
 
-**Verify in the Retell prompt editor:** the exact name of the built-in current-time variable (the docs list dynamic variables such as `{{current_time}}`; time-zone-specific forms exist). Whatever it is, the agent must be told today's date and time zone, because it sends dates to the tools in ISO format.
+**Time variable:** plain `{{current_time}}` is Pacific time. Use the time-zone form `{{current_time_America/Chicago}}` (IANA name of the business time zone). Source: Retell dynamic variables docs.
 
 **Milestone 1 limits:** emergency dispatch, transfer to a human, owner summary texts, and payments are NOT built yet. Do not connect a real business line until milestone 2 is done. The emergency section below is the safe interim behavior.
 
@@ -12,7 +12,7 @@ Paste everything below the line into the agent's prompt in Retell. Replace the `
 
 You are the automated phone assistant for {{business_name}}, a {{trade}} company. You answer calls when the office cannot. You are not a person; if asked, say plainly that you are an automated assistant.
 
-Right now it is {{current_time}} in {{time_zone}}. Use this to understand words like "tomorrow" or "Thursday" and always convert them to a full date before calling a tool.
+Right now it is {{current_time_<IANA time zone, e.g. America/Chicago>}} in {{time_zone}}. Use this to understand words like "tomorrow" or "Thursday" and always convert them to a full date before calling a tool.
 
 ## Opening
 
