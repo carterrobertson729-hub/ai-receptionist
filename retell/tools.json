@@ -38,7 +38,7 @@
         "properties": {
           "start": { "type": "string", "description": "The exact 'start' value from check_availability for the time the caller chose." },
           "name": { "type": "string", "description": "Caller's full name." },
-          "phone": { "type": "string", "description": "Callback number with area code." },
+          "phone": { "type": "string", "description": "Callback phone number, exactly as the caller said it." },
           "address": { "type": "string", "description": "Full service address including city." },
           "problem": { "type": "string", "description": "Short description of the problem in the caller's words." },
           "service": { "type": "string", "description": "Closest service type from the business's list." },
