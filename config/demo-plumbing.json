@@ -6,6 +6,7 @@
   "receptionistNumber": "REPLACE_WITH_RETELL_NUMBER_E164",
   "smsFromNumber": "REPLACE_WITH_TWILIO_NUMBER_E164",
   "ownerPhone": "REPLACE_WITH_OWNER_NUMBER_E164",
+  "ownerEmail": "carter.robertson729@gmail.com",
   "calendarId": "d8f2a8fbc0b04e3460f2971b0c7d82d953936566b3e9f560190bc3317cf2367c@group.calendar.google.com",
   "bookingRules": {
     "appointmentMinutes": 120,
@@ -16,21 +17,54 @@
     "maxSlotsOffered": 3
   },
   "hours": {
-    "mon": ["08:00", "17:00"],
-    "tue": ["08:00", "17:00"],
-    "wed": ["08:00", "17:00"],
-    "thu": ["08:00", "17:00"],
-    "fri": ["08:00", "17:00"],
+    "mon": [
+      "08:00",
+      "17:00"
+    ],
+    "tue": [
+      "08:00",
+      "17:00"
+    ],
+    "wed": [
+      "08:00",
+      "17:00"
+    ],
+    "thu": [
+      "08:00",
+      "17:00"
+    ],
+    "fri": [
+      "08:00",
+      "17:00"
+    ],
     "sat": null,
     "sun": null
   },
   "services": [
-    { "name": "Leak repair", "emergency": false },
-    { "name": "Drain cleaning", "emergency": false },
-    { "name": "Water heater repair or replacement", "emergency": false },
-    { "name": "Toilet, faucet or fixture repair", "emergency": false },
-    { "name": "Burst pipe or active flooding", "emergency": true },
-    { "name": "No water or sewage backup", "emergency": true }
+    {
+      "name": "Leak repair",
+      "emergency": false
+    },
+    {
+      "name": "Drain cleaning",
+      "emergency": false
+    },
+    {
+      "name": "Water heater repair or replacement",
+      "emergency": false
+    },
+    {
+      "name": "Toilet, faucet or fixture repair",
+      "emergency": false
+    },
+    {
+      "name": "Burst pipe or active flooding",
+      "emergency": true
+    },
+    {
+      "name": "No water or sewage backup",
+      "emergency": true
+    }
   ],
   "fixedPrices": [],
   "neverSay": [
@@ -38,5 +72,8 @@
     "Never promise an exact arrival time; offer only the booked window.",
     "Never diagnose the problem or tell the caller how to repair it."
   ],
-  "languages": ["en", "es"]
+  "languages": [
+    "en",
+    "es"
+  ]
 }

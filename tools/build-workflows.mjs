@@ -4,7 +4,9 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), 'utf8');
-const slotsLib = read('n8n/code/slots.js').replace(/\nif \(typeof module[\s\S]*$/, '\n');
+const stripExports = (t) => t.replace(/\nif \(typeof module[\s\S]*$/, '\n');
+const slotsLib = stripExports(read('n8n/code/slots.js'));
+const summaryLib = stripExports(read('n8n/code/summary.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -211,6 +213,40 @@ const book = wf('Receptionist - Book Appointment', [
   ...link('Create Calendar Event', 'Text Confirmation', 'Build Response', 'Respond to Retell')
 });
 
+
+// ---------- 3. owner call summary ----------
+// No custom headers are possible on Retell's agent webhook, so the path itself is the secret.
+// Rotate it by editing the Webhook node path in n8n and the Webhook URL in Retell.
+const SUMMARY_PATH = 'receptionist/call-ended-4171b270b0f4e523a4d06eb7';
+const summaryCode = `${summaryLib}
+var item = $input.first().json;
+var body = item.body || {};
+if (body.event !== 'call_analyzed') return [];   // ignore call_started / call_ended
+var CONFIGS = ${JSON.stringify(configs)};
+var config = CONFIGS[(item.query && item.query.business) || ''];
+if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the Retell webhook URL.');
+var s = buildSummary(config, body);
+return [{ json: { to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent } }];`;
+
+const summary = wf('Receptionist - Owner Call Summary', [
+  {
+    id: 'c1000000-0000-4000-8000-000000000001', name: 'Retell Call Webhook', type: 'n8n-nodes-base.webhook',
+    typeVersion: 2, position: [0, 0], webhookId: 'receptionist-call-ended',
+    parameters: { httpMethod: 'POST', path: SUMMARY_PATH, options: {} }
+  },
+  code('c1000000-0000-4000-8000-000000000002', 'Build Summary', [240, 0], summaryCode),
+  {
+    id: 'c1000000-0000-4000-8000-000000000003', name: 'Email Owner', type: 'n8n-nodes-base.gmail',
+    typeVersion: 2.1, position: [480, 0],
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  }
+], link('Retell Call Webhook', 'Build Summary', 'Email Owner'));
+
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
 writeFileSync(new URL('n8n/book-appointment.json', root), JSON.stringify(book, null, 2) + '\n');
-console.log('Wrote n8n/check-availability.json and n8n/book-appointment.json');
+writeFileSync(new URL('n8n/owner-call-summary.json', root), JSON.stringify(summary, null, 2) + '\n');
+console.log('Wrote 3 workflows: check-availability, book-appointment, owner-call-summary');
