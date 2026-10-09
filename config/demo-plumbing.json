@@ -7,6 +7,22 @@
   "smsFromNumber": "REPLACE_WITH_TWILIO_NUMBER_E164",
   "ownerPhone": "REPLACE_WITH_OWNER_NUMBER_E164",
   "ownerEmail": "carter.robertson729@gmail.com",
+  "people": {
+    "carter": {
+      "name": "Carter",
+      "email": "carter.robertson729@gmail.com",
+      "phone": "REPLACE_WITH_ONCALL_NUMBER_E164"
+    }
+  },
+  "onCallSchedule": {
+    "mon": "carter",
+    "tue": "carter",
+    "wed": "carter",
+    "thu": "carter",
+    "fri": "carter",
+    "sat": "carter",
+    "sun": "carter"
+  },
   "calendarId": "d8f2a8fbc0b04e3460f2971b0c7d82d953936566b3e9f560190bc3317cf2367c@group.calendar.google.com",
   "bookingRules": {
     "appointmentMinutes": 120,

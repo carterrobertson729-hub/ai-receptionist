@@ -7,6 +7,7 @@ const read = (p) => readFileSync(new URL(p, root), 'utf8');
 const stripExports = (t) => t.replace(/\nif \(typeof module[\s\S]*$/, '\n');
 const slotsLib = stripExports(read('n8n/code/slots.js'));
 const summaryLib = stripExports(read('n8n/code/summary.js'));
+const oncallLib = stripExports(read('n8n/code/oncall.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -246,7 +247,45 @@ const summary = wf('Receptionist - Owner Call Summary', [
   }
 ], link('Retell Call Webhook', 'Build Summary', 'Email Owner'));
 
+
+// ---------- 4. urgent alert ----------
+const urgentCode = `${slotsLib}
+${oncallLib}
+var item = $input.first().json;
+var args = (item.body && item.body.args) || {};
+var CONFIGS = ${JSON.stringify(configs)};
+var config = CONFIGS[(item.query && item.query.business) || ''];
+if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');
+var a = buildUrgentAlert(config, args, Date.now());
+return a.recipients.map(function (r) {
+  return { json: { to: r.email, name: r.name, role: r.role, subject: a.subject, body: a.body } };
+});`;
+
+const urgentResponse = `var sent = $('Build Alerts').all().map(function (i) { return i.json.name + ' (' + i.json.role + ')'; });
+return [{ json: {
+  alerted: true,
+  notified: sent,
+  message: 'The on-call technician and the owner have been alerted by email right now. Tell the caller that. Do not promise an arrival time or a call-back time.'
+} }];`;
+
+const urgent = wf('Receptionist - Urgent Alert', [
+  webhookNode('receptionist/urgent-alert'),
+  code('d1000000-0000-4000-8000-000000000002', 'Build Alerts', [240, 0], urgentCode),
+  {
+    id: 'd1000000-0000-4000-8000-000000000003', name: 'Email Alert', type: 'n8n-nodes-base.gmail',
+    typeVersion: 2.1, position: [480, 0],
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  },
+  code('d1000000-0000-4000-8000-000000000004', 'Build Response', [720, 0], urgentResponse),
+  respond('d1000000-0000-4000-8000-000000000005', [960, 0], '={{ JSON.stringify($json) }}')
+], link('Retell Tool Call', 'Build Alerts', 'Email Alert', 'Build Response', 'Respond to Retell'));
+
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
 writeFileSync(new URL('n8n/book-appointment.json', root), JSON.stringify(book, null, 2) + '\n');
 writeFileSync(new URL('n8n/owner-call-summary.json', root), JSON.stringify(summary, null, 2) + '\n');
-console.log('Wrote 3 workflows: check-availability, book-appointment, owner-call-summary');
+writeFileSync(new URL('n8n/urgent-alert.json', root), JSON.stringify(urgent, null, 2) + '\n');
+console.log('Wrote 4 workflows: check-availability, book-appointment, owner-call-summary, urgent-alert');

@@ -18,7 +18,11 @@
           },
           "part_of_day": {
             "type": "string",
-            "enum": ["morning", "afternoon", "any"],
+            "enum": [
+              "morning",
+              "afternoon",
+              "any"
+            ],
             "description": "Morning or afternoon preference, if the caller gave one."
           }
         },
@@ -36,16 +40,90 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "start": { "type": "string", "description": "The exact 'start' value from check_availability for the time the caller chose." },
-          "name": { "type": "string", "description": "Caller's full name." },
-          "phone": { "type": "string", "description": "Callback phone number, exactly as the caller said it." },
-          "address": { "type": "string", "description": "Full service address including city." },
-          "problem": { "type": "string", "description": "Short description of the problem in the caller's words." },
-          "service": { "type": "string", "description": "Closest service type from the business's list." },
-          "someone_on_site": { "type": "string", "description": "Whether someone will be at the property, e.g. 'yes' or 'no, key under mat'." },
-          "language": { "type": "string", "description": "Language code the call was held in, e.g. 'en' or 'es'." }
+          "start": {
+            "type": "string",
+            "description": "The exact 'start' value from check_availability for the time the caller chose."
+          },
+          "name": {
+            "type": "string",
+            "description": "Caller's full name."
+          },
+          "phone": {
+            "type": "string",
+            "description": "Callback phone number, exactly as the caller said it."
+          },
+          "address": {
+            "type": "string",
+            "description": "Full service address including city."
+          },
+          "problem": {
+            "type": "string",
+            "description": "Short description of the problem in the caller's words."
+          },
+          "service": {
+            "type": "string",
+            "description": "Closest service type from the business's list."
+          },
+          "someone_on_site": {
+            "type": "string",
+            "description": "Whether someone will be at the property, e.g. 'yes' or 'no, key under mat'."
+          },
+          "language": {
+            "type": "string",
+            "description": "Language code the call was held in, e.g. 'en' or 'es'."
+          }
         },
-        "required": ["start", "name", "phone", "address", "problem"]
+        "required": [
+          "start",
+          "name",
+          "phone",
+          "address",
+          "problem"
+        ]
+      }
+    },
+    {
+      "name": "report_urgent_call",
+      "description": "Alert the on-call technician and the owner right now about an emergency (burst pipe, active flooding, no water, sewage backup, or any safety issue). Call this once you have the caller's details. Never use it for routine bookings.",
+      "url": "https://YOUR_N8N.app.n8n.cloud/webhook/receptionist/urgent-alert?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "I'm sending this to the on-call technician now.",
+      "timeout_ms": 20000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Caller's full name."
+          },
+          "phone": {
+            "type": "string",
+            "description": "Callback phone number, exactly as the caller said it."
+          },
+          "address": {
+            "type": "string",
+            "description": "Full address of the emergency, including city."
+          },
+          "problem": {
+            "type": "string",
+            "description": "What is happening, in the caller's words."
+          },
+          "someone_on_site": {
+            "type": "string",
+            "description": "Whether someone is at the property right now."
+          },
+          "safety_issue": {
+            "type": "boolean",
+            "description": "True if there is any gas smell, smoke, fire, sparks, flooding near electrics, or danger to people."
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "address",
+          "problem"
+        ]
       }
     }
   ]

@@ -1,0 +1,149 @@
+{
+  "name": "Receptionist - Urgent Alert",
+  "nodes": [
+    {
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Retell Tool Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "receptionist-urgent-alert",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "receptionist/urgent-alert",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE",
+          "name": "Retell tool secret"
+        }
+      }
+    },
+    {
+      "id": "d1000000-0000-4000-8000-000000000002",
+      "name": "Build Alerts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Shared scheduling logic. Inlined into n8n Code nodes by tools/build-workflows.mjs\n// and unit-tested by tools/test-slots.mjs. No dependencies; time zones via Intl.\n\nvar DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];\n\n// Minutes the zone is ahead of UTC at the given instant.\nfunction zoneOffsetMinutes(utcMs, tz) {\n  var parts = new Intl.DateTimeFormat('en-US', {\n    timeZone: tz, hourCycle: 'h23',\n    year: 'numeric', month: '2-digit', day: '2-digit',\n    hour: '2-digit', minute: '2-digit', second: '2-digit'\n  }).formatToParts(new Date(utcMs));\n  var p = {};\n  parts.forEach(function (x) { p[x.type] = x.value; });\n  var asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);\n  return Math.round((asUtc - Math.floor(utcMs / 1000) * 1000) / 60000);\n}\n\n// Wall-clock time in the zone (\"2026-10-13\", \"08:00\") -> UTC ms.\nfunction localToUtcMs(dateStr, hhmm, tz) {\n  var d = dateStr.split('-').map(Number);\n  var t = hhmm.split(':').map(Number);\n  var guess = Date.UTC(d[0], d[1] - 1, d[2], t[0], t[1], 0);\n  var utc = guess - zoneOffsetMinutes(guess, tz) * 60000;\n  var off2 = zoneOffsetMinutes(utc, tz);\n  return guess - off2 * 60000;\n}\n\nfunction pad2(n) { return (n < 10 ? '0' : '') + n; }\n\n// UTC ms -> \"2026-10-13T08:00:00-04:00\" in the zone.\nfunction toLocalIso(utcMs, tz) {\n  var off = zoneOffsetMinutes(utcMs, tz);\n  var local = new Date(utcMs + off * 60000);\n  var sign = off < 0 ? '-' : '+';\n  var a = Math.abs(off);\n  return local.getUTCFullYear() + '-' + pad2(local.getUTCMonth() + 1) + '-' + pad2(local.getUTCDate()) +\n    'T' + pad2(local.getUTCHours()) + ':' + pad2(local.getUTCMinutes()) + ':' + pad2(local.getUTCSeconds()) +\n    sign + pad2(Math.floor(a / 60)) + ':' + pad2(a % 60);\n}\n\nfunction localDateStr(utcMs, tz) {\n  return toLocalIso(utcMs, tz).slice(0, 10);\n}\n\nfunction addDays(dateStr, n) {\n  var d = dateStr.split('-').map(Number);\n  var t = new Date(Date.UTC(d[0], d[1] - 1, d[2] + n));\n  return t.getUTCFullYear() + '-' + pad2(t.getUTCMonth() + 1) + '-' + pad2(t.getUTCDate());\n}\n\nfunction weekdayKey(dateStr) {\n  var d = dateStr.split('-').map(Number);\n  return DAY_KEYS[new Date(Date.UTC(d[0], d[1] - 1, d[2])).getUTCDay()];\n}\n\nfunction friendlyLabel(utcMs, tz) {\n  var day = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(utcMs));\n  var time = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(new Date(utcMs));\n  return day + ' at ' + time;\n}\n\n// Google Calendar events -> [{start, end}] in UTC ms. Skips cancelled and \"free\" events.\nfunction busyFromEvents(events, tz) {\n  var out = [];\n  (events || []).forEach(function (e) {\n    if (!e || e.status === 'cancelled' || e.transparency === 'transparent') return;\n    var s = e.start || {};\n    var en = e.end || {};\n    if (s.dateTime && en.dateTime) {\n      out.push({ start: Date.parse(s.dateTime), end: Date.parse(en.dateTime) });\n    } else if (s.date && en.date) {\n      out.push({ start: localToUtcMs(s.date, '00:00', tz), end: localToUtcMs(en.date, '00:00', tz) });\n    }\n  });\n  return out;\n}\n\n// All bookable slots in the window, earliest first. No cap; callers cap.\nfunction allSlots(config, busy, fromDate, nowMs) {\n  var rules = config.bookingRules;\n  var tz = config.timeZone;\n  var dur = rules.appointmentMinutes * 60000;\n  var step = rules.slotStepMinutes * 60000;\n  var buf = (rules.bufferMinutes || 0) * 60000;\n  var earliest = nowMs + rules.minNoticeHours * 3600000;\n  var today = localDateStr(nowMs, tz);\n  var startDate = fromDate && fromDate > today ? fromDate : today;\n  var slots = [];\n  for (var i = 0; i < rules.maxDaysAhead; i++) {\n    var date = addDays(startDate, i);\n    var hours = config.hours[weekdayKey(date)];\n    if (!hours) continue;\n    var open = localToUtcMs(date, hours[0], tz);\n    var close = localToUtcMs(date, hours[1], tz);\n    for (var s = open; s + dur <= close; s += step) {\n      if (s < earliest) continue;\n      var clash = busy.some(function (b) { return s < b.end + buf && s + dur > b.start - buf; });\n      if (clash) continue;\n      slots.push({ startMs: s, endMs: s + dur });\n    }\n  }\n  return slots;\n}\n\nfunction describeSlot(slot, tz) {\n  return {\n    start: toLocalIso(slot.startMs, tz),\n    end: toLocalIso(slot.endMs, tz),\n    label: friendlyLabel(slot.startMs, tz)\n  };\n}\n\nfunction offerSlots(config, events, args, nowMs) {\n  var tz = config.timeZone;\n  var slots = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs);\n  if (args.part_of_day === 'morning' || args.part_of_day === 'afternoon') {\n    var filtered = slots.filter(function (s) {\n      var hour = +toLocalIso(s.startMs, tz).slice(11, 13);\n      return args.part_of_day === 'morning' ? hour < 12 : hour >= 12;\n    });\n    if (filtered.length) slots = filtered;\n  }\n  return slots.slice(0, config.bookingRules.maxSlotsOffered).map(function (s) { return describeSlot(s, tz); });\n}\n\n// True only if startIso is exactly one of the business's open slots right now.\nfunction isSlotStillOpen(config, events, startIso, nowMs) {\n  var tz = config.timeZone;\n  var startMs = Date.parse(startIso);\n  if (isNaN(startMs)) return false;\n  var slots = allSlots(config, busyFromEvents(events, tz), localDateStr(startMs, tz), nowMs);\n  return slots.some(function (s) { return s.startMs === startMs; });\n}\n\n\n// Who gets alerted for an urgent call, and what the alert says.\n// Needs slots.js helpers (weekdayKey, localDateStr) inlined before it. Unit-tested by tools/test-oncall.mjs.\n\nfunction resolveRecipients(config, nowMs) {\n  var day = weekdayKey(localDateStr(nowMs, config.timeZone));\n  var out = [];\n  var seen = {};\n  function add(p, role) {\n    if (!p || !p.email) return;\n    var k = String(p.email).toLowerCase();\n    if (seen[k]) return;\n    seen[k] = true;\n    out.push({ name: p.name || role, email: p.email, phone: p.phone || '', role: role });\n  }\n  var key = config.onCallSchedule && config.onCallSchedule[day];\n  add(config.people && config.people[key], 'on-call');\n  add({ name: 'Owner', email: config.ownerEmail, phone: config.ownerPhone }, 'owner');\n  return out;\n}\n\nfunction buildUrgentAlert(config, args, nowMs) {\n  function clean(v, fallback) {\n    var s = v === undefined || v === null ? '' : String(v).replace(/[\\r\\n]+/g, ' ').trim();\n    return s ? s.slice(0, 500) : fallback;\n  }\n  var name = clean(args.name, 'Unknown caller');\n  var phone = clean(args.phone, 'not given');\n  var address = clean(args.address, 'not given');\n  var problem = clean(args.problem, 'not given');\n  var onSite = clean(args.someone_on_site, 'not asked');\n  var safety = args.safety_issue === true || String(args.safety_issue).toLowerCase() === 'true';\n  var when = new Intl.DateTimeFormat('en-US', {\n    timeZone: config.timeZone, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'\n  }).format(new Date(nowMs));\n\n  var recipients = resolveRecipients(config, nowMs);\n  var subject = '[URGENT] ' + config.businessName + ': ' + problem.slice(0, 60) + ' at ' + address.slice(0, 60);\n  var body = [\n    '*** URGENT CALL - PLEASE CALL BACK NOW ***',\n    safety ? 'SAFETY ISSUE REPORTED (gas, smoke, sparks, flooding near electrics, or danger). The caller was told to get out and call 911 / the utility.' : '',\n    '',\n    'Caller: ' + name,\n    'Phone: ' + phone,\n    'Address: ' + address,\n    'Problem: ' + problem,\n    'Someone at the property: ' + onSite,\n    'Call time: ' + when + ' (' + config.timeZone + ')',\n    '',\n    'The caller was told this was sent to the on-call technician and that no arrival time can be promised.',\n    'Sent to: ' + recipients.map(function (r) { return r.name + ' (' + r.role + ')'; }).join(', ')\n  ].filter(function (l, i) { return l !== '' || i !== 1; }).join('\\n');\n\n  return { recipients: recipients, subject: subject, body: body };\n}\n\n\nvar item = $input.first().json;\nvar args = (item.body && item.body.args) || {};\nvar CONFIGS = {\"demo-plumbing\":{\"businessId\":\"demo-plumbing\",\"businessName\":\"Demo Plumbing Co\",\"trade\":\"plumbing\",\"timeZone\":\"America/Chicago\",\"receptionistNumber\":\"REPLACE_WITH_RETELL_NUMBER_E164\",\"smsFromNumber\":\"REPLACE_WITH_TWILIO_NUMBER_E164\",\"ownerPhone\":\"REPLACE_WITH_OWNER_NUMBER_E164\",\"ownerEmail\":\"carter.robertson729@gmail.com\",\"people\":{\"carter\":{\"name\":\"Carter\",\"email\":\"carter.robertson729@gmail.com\",\"phone\":\"REPLACE_WITH_ONCALL_NUMBER_E164\"}},\"onCallSchedule\":{\"mon\":\"carter\",\"tue\":\"carter\",\"wed\":\"carter\",\"thu\":\"carter\",\"fri\":\"carter\",\"sat\":\"carter\",\"sun\":\"carter\"},\"calendarId\":\"d8f2a8fbc0b04e3460f2971b0c7d82d953936566b3e9f560190bc3317cf2367c@group.calendar.google.com\",\"bookingRules\":{\"appointmentMinutes\":120,\"slotStepMinutes\":120,\"bufferMinutes\":0,\"minNoticeHours\":2,\"maxDaysAhead\":14,\"maxSlotsOffered\":3},\"hours\":{\"mon\":[\"08:00\",\"17:00\"],\"tue\":[\"08:00\",\"17:00\"],\"wed\":[\"08:00\",\"17:00\"],\"thu\":[\"08:00\",\"17:00\"],\"fri\":[\"08:00\",\"17:00\"],\"sat\":null,\"sun\":null},\"services\":[{\"name\":\"Leak repair\",\"emergency\":false},{\"name\":\"Drain cleaning\",\"emergency\":false},{\"name\":\"Water heater repair or replacement\",\"emergency\":false},{\"name\":\"Toilet, faucet or fixture repair\",\"emergency\":false},{\"name\":\"Burst pipe or active flooding\",\"emergency\":true},{\"name\":\"No water or sewage backup\",\"emergency\":true}],\"fixedPrices\":[],\"neverSay\":[\"Never quote a price, estimate, or range.\",\"Never promise an exact arrival time; offer only the booked window.\",\"Never diagnose the problem or tell the caller how to repair it.\"],\"languages\":[\"en\",\"es\"]}};\nvar config = CONFIGS[(item.query && item.query.business) || ''];\nif (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');\nvar a = buildUrgentAlert(config, args, Date.now());\nreturn a.recipients.map(function (r) {\n  return { json: { to: r.email, name: r.name, role: r.role, subject: a.subject, body: a.body } };\n});"
+      }
+    },
+    {
+      "id": "d1000000-0000-4000-8000-000000000003",
+      "name": "Email Alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "d1000000-0000-4000-8000-000000000004",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "var sent = $('Build Alerts').all().map(function (i) { return i.json.name + ' (' + i.json.role + ')'; });\nreturn [{ json: {\n  alerted: true,\n  notified: sent,\n  message: 'The on-call technician and the owner have been alerted by email right now. Tell the caller that. Do not promise an arrival time or a call-back time.'\n} }];"
+      }
+    },
+    {
+      "id": "d1000000-0000-4000-8000-000000000005",
+      "name": "Respond to Retell",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Retell Tool Call": {
+      "main": [
+        [
+          {
+            "node": "Build Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Alerts": {
+      "main": [
+        [
+          {
+            "node": "Email Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Alert": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Retell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}
