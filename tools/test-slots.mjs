@@ -6,6 +6,7 @@ const require = createRequire(import.meta.url);
 const S = require('../n8n/code/slots.js');
 const config = { ...JSON.parse(readFileSync(new URL('../config/demo-plumbing.json', import.meta.url))), timeZone: 'America/New_York' };
 config.hours = { ...config.hours, sat: null, sun: null };   // tests assume a weekdays-only business
+config.bookingRules = { appointmentMinutes: 120, slotStepMinutes: 120, bufferMinutes: 0, minNoticeHours: 2, maxDaysAhead: 14, maxSlotsOffered: 3 };   // pinned so demo tuning doesn't break tests
 const tz = 'America/New_York';  // fixtures are written in Eastern time
 let passed = 0;
 const test = (name, fn) => { fn(); passed++; console.log('ok  ' + name); };
@@ -74,6 +75,24 @@ test('isSlotStillOpen accepts a real slot, rejects off-grid, closed-day, and boo
 });
 test('same instant in a different offset still matches', () => {
   assert.equal(S.isSlotStillOpen(config, [], '2026-10-13T12:00:00Z', NOW), true);
+});
+
+const gapCfg = { ...config, bookingRules: { ...config.bookingRules, slotStepMinutes: 60, bufferMinutes: 30 } };
+const booked = [{ start: { dateTime: '2026-10-07T10:00:00-04:00' }, end: { dateTime: '2026-10-07T12:00:00-04:00' } }];
+const starts = (cfg, ev) => S.allSlots(cfg, S.busyFromEvents(ev, tz), '2026-10-07', NOW).filter((x) => S.toLocalIso(x.startMs, tz).startsWith('2026-10-07')).map((x) => S.toLocalIso(x.startMs, tz).slice(11, 16));
+test('30 min gap: next start after a 10-12 job is 1 PM, and nothing right before it', () => {
+  assert.deepEqual(starts(gapCfg, booked), ['13:00', '14:00', '15:00']);
+});
+test('30 min gap: job ending exactly at the gap edge is allowed (12:30 would be ok on a 30 min grid)', () => {
+  const g = { ...gapCfg, bookingRules: { ...gapCfg.bookingRules, slotStepMinutes: 30 } };
+  assert.ok(starts(g, booked).includes('12:30')); assert.ok(!starts(g, booked).includes('12:00'));
+});
+test('no gap setting still allows back-to-back', () => {
+  assert.ok(starts({ ...gapCfg, bookingRules: { ...gapCfg.bookingRules, bufferMinutes: 0 } }, booked).includes('12:00'));
+});
+test('isSlotStillOpen enforces the gap', () => {
+  assert.equal(S.isSlotStillOpen(gapCfg, booked, '2026-10-07T12:00:00-04:00', NOW), false);
+  assert.equal(S.isSlotStillOpen(gapCfg, booked, '2026-10-07T13:00:00-04:00', NOW), true);
 });
 
 console.log(`\n${passed} tests passed`);
