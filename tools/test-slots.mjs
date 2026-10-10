@@ -138,4 +138,39 @@ test('last start of the day respects the job length', () => {
   assert.equal(day[day.length - 1], '16:30');   // 4:30-5:00 closes at 5
 });
 
+const full = { ...config, hours: { ...config.hours, sat: ['08:00', '17:00'], sun: ['08:00', '17:00'] },
+  bookingRules: { ...config.bookingRules, slotStepMinutes: 30, bufferMinutes: 30, offerSpacingMinutes: 60, appointmentMinutes: 120 },
+  services: [{ name: 'Water heater replacement', durationMinutes: 60, jobMinutes: 180, pricing: { type: 'big_job' } }, { name: 'Clogged toilet', durationMinutes: 30, pricing: { type: 'flat' } }] };
+const SUN = '2026-10-11';
+test('asking for Sunday 11:00 on an empty day offers 11:00 first (it used to be cut off after the earliest three)', () => {
+  const out = S.offerSlots(full, [], { preferred_date: SUN, preferred_time: '11:00', service: 'Clogged toilet' }, NOW);
+  assert.equal(out[0].start.slice(11, 16), '11:00'); assert.ok(out.length >= 2);
+  const st = S.requestedTimeStatus(full, [], { preferred_date: SUN, preferred_time: '11:00', service: 'Clogged toilet' }, NOW);
+  assert.equal(st.available, true);
+});
+test('without a requested time the earliest openings are offered, as before', () => {
+  assert.equal(S.offerSlots(full, [], { preferred_date: SUN, service: 'Clogged toilet' }, NOW)[0].start.slice(11, 16), '08:00');
+});
+test('a requested time that is not open says why: booked/gap, closing time, too soon, closed day', () => {
+  const ev = [{ start: { dateTime: SUN + 'T11:00:00-04:00' }, end: { dateTime: SUN + 'T12:00:00-04:00' } }];
+  const st = (time, e, cfg, extra = {}, now = NOW) => S.requestedTimeStatus(cfg || full, e, { preferred_date: SUN, preferred_time: time, service: 'Clogged toilet', ...extra }, now);
+  assert.match(st('11:30', ev).reason, /overlaps another appointment or the travel time/);
+  assert.match(st('16:45', []).reason, /outside booking hours|past closing/);
+  assert.match(st('09:00', [], full, {}, Date.parse('2026-10-11T12:30:00Z')).reason, /too soon/);
+  assert.match(st('10:00', [], { ...full, hours: { ...full.hours, sun: null } }).reason, /no visits that day/);
+});
+test('big job: default and "estimate" book the short visit, "job" books the whole job', () => {
+  assert.equal(S.durationFor(full, 'Water heater replacement'), 60);
+  assert.equal(S.durationFor(full, 'Water heater replacement', 'estimate'), 60);
+  assert.equal(S.durationFor(full, 'Water heater replacement', 'job'), 180);
+  assert.equal(S.durationFor(full, 'Clogged toilet', 'job'), 30);   // visit_type is ignored for ordinary jobs
+  const wh = (vt) => S.offerSlots(full, [], { preferred_date: SUN, service: 'Water heater replacement', visit_type: vt }, NOW)[0];
+  assert.equal(wh('job').minutes, 180); assert.equal(wh('estimate').minutes, 60);
+});
+test('booking check honors the visit type (a 3 hour job does not fit a 1 hour gap)', () => {
+  const ev = [{ start: { dateTime: SUN + 'T11:00:00-04:00' }, end: { dateTime: SUN + 'T12:00:00-04:00' } }];
+  assert.equal(S.isSlotStillOpen(full, ev, SUN + 'T08:00:00-04:00', NOW, 'Water heater replacement', 'estimate'), true);   // ends 9:00
+  assert.equal(S.isSlotStillOpen(full, ev, SUN + 'T08:00:00-04:00', NOW, 'Water heater replacement', 'job'), false);       // would end 11:00
+});
+
 console.log(`\n${passed} tests passed`);

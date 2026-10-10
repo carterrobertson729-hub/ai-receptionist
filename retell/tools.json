@@ -28,6 +28,18 @@
           "service": {
             "type": "string",
             "description": "The job type that best matches the caller's problem, exactly as written in the business's list of routine job types. Use 'Other or not sure' if nothing fits."
+          },
+          "preferred_time": {
+            "type": "string",
+            "description": "If the caller named a specific time, that time in 24-hour HH:MM local time (for example 11:00 or 14:00). Omit otherwise. When you use this, also set preferred_date."
+          },
+          "visit_type": {
+            "type": "string",
+            "enum": [
+              "job",
+              "estimate"
+            ],
+            "description": "Only for big jobs (such as a water heater replacement): 'job' if the caller wants to book the whole job now, 'estimate' if they want the free on-site estimate visit first. Omit for ordinary jobs."
           }
         },
         "required": []
@@ -75,6 +87,14 @@
           "language": {
             "type": "string",
             "description": "Language code the call was held in, e.g. 'en' or 'es'."
+          },
+          "visit_type": {
+            "type": "string",
+            "enum": [
+              "job",
+              "estimate"
+            ],
+            "description": "The same visit_type you used in check_availability. Only for big jobs; omit for ordinary jobs."
           }
         },
         "required": [

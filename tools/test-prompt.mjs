@@ -34,10 +34,18 @@ test('big jobs: share only the estimate range, offer visit and callback, never f
   const p = priceList(config);
   assert.match(p, /Water heater replacement: BIG JOB\. Never give an exact price/);
   assert.match(p, /These typically run \$1,800 to \$3,200, and they start around \$1,200/);
-  assert.match(p, /none of them forced/); assert.match(p, /request_callback/);
+  assert.match(p, /Do NOT decide for the caller/); assert.match(p, /Never pick \(A\) or \(B\) for the caller/); assert.match(p, /request_callback/);
 });
 test('prompt tells the agent how to use request_callback safely', () => {
   const out = build(config);
   assert.match(out, /call `request_callback`/); assert.match(out, /Never promise a callback time yourself/);
+});
+test('big jobs offer book-now (A) vs free estimate (B) vs callback (C) with the right visit_type', () => {
+  const p = priceList(config);
+  assert.match(p, /\(A\) book the job now.*about 3 hours/); assert.match(p, /visit_type "job"/); assert.match(p, /\(B\) a free on-site estimate visit first/); assert.match(p, /visit_type "estimate"/);
+});
+test('prompt tells the agent to ask the tool about an exact time instead of guessing', () => {
+  const out = build(config);
+  assert.match(out, /preferred_time/); assert.match(out, /requestedTime/); assert.doesNotMatch(out, /set `part_of_day` to `any`/);
 });
 console.log(`\n${n} tests passed`);

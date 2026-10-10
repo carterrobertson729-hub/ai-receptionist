@@ -91,12 +91,14 @@ const checkCompute = `${slotsLib}
 var ctx = $('Load Business Config').first().json;
 var events = $input.all().map(function (i) { return i.json; });
 var slots = offerSlots(ctx.config, events, ctx.args, ctx.nowMs);
-return [{ json: {
-  slots: slots,
-  message: slots.length
-    ? 'Offer these times to the caller. Use the label to speak them. Each slot has an estimated visit length in minutes. Pass the start value of the one they pick to book_appointment.'
-    : 'No openings in the booking window. Offer to take a message so the office can call back.'
-} }];`;
+var req = requestedTimeStatus(ctx.config, events, ctx.args, ctx.nowMs);
+var message;
+if (req && req.available) message = 'The exact time the caller asked for (' + req.label + ') IS open. Offer it first, using its label. The other slots are nearby alternatives.';
+else if (req) message = 'The exact time the caller asked for (' + req.label + ') is NOT available because ' + req.reason + '. Tell them that plainly and briefly, then offer the nearby times below.';
+else message = slots.length
+  ? 'Offer these times to the caller. Use the label to speak them. Each slot has an estimated visit length in minutes. Pass the start value of the one they pick to book_appointment.'
+  : 'No openings in the booking window. Offer to take a message so the office can call back.';
+return [{ json: { requestedTime: req, slots: slots, message: message } }];`;
 
 const check = wf('Receptionist - Check Availability', [
   webhookNode('receptionist/check-availability'),
@@ -135,9 +137,9 @@ else {
       String(e.description || '').indexOf(phone) !== -1;
   });
   if (dup) out = { status: 'duplicate' };
-  else if (isSlotStillOpen(ctx.config, events, a.start, ctx.nowMs, a.service)) out = { status: 'open' };
-  else out = { status: 'taken', alternatives: offerSlots(ctx.config, events, { preferred_date: a.start.slice(0, 10), service: a.service }, ctx.nowMs) };
-  var minutes = durationFor(ctx.config, a.service);
+  else if (isSlotStillOpen(ctx.config, events, a.start, ctx.nowMs, a.service, a.visit_type)) out = { status: 'open' };
+  else out = { status: 'taken', alternatives: offerSlots(ctx.config, events, { preferred_date: a.start.slice(0, 10), service: a.service, visit_type: a.visit_type }, ctx.nowMs) };
+  var minutes = durationFor(ctx.config, a.service, a.visit_type);
   var endMs = startMs + minutes * 60000;
   out.durationMinutes = minutes;
   out.startIso = toLocalIso(startMs, tz);
@@ -149,18 +151,19 @@ out.name = name;
 out.address = address;
 out.problem = problem;
 out.service = String(a.service || 'Service visit').trim();
-var estimate = isBigJob(ctx.config, a.service);
-out.visitKind = estimate ? 'estimate' : 'service';
+var big = isBigJob(ctx.config, a.service);
+var estimate = big && a.visit_type !== 'job';
+out.visitKind = estimate ? 'estimate' : (big ? 'big_job' : 'service');
 out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name;
 out.description = 'Booked by AI receptionist\\nCaller: ' + name + '\\nPhone: ' + phone + '\\nAddress: ' + address +
-  '\\nProblem: ' + problem + '\\nVisit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : 'Service visit') + '\\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
+  '\\nProblem: ' + problem + '\\nVisit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : (big ? 'FULL JOB booked by the caller (exact price confirmed on site before work starts)' : 'Service visit')) + '\\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
   '\\nLanguage: ' + (a.language || 'en') + '\\nCall: ' + ctx.callId;
 return [{ json: out }];`;
 
 const buildResponse = `var v = $('Verify Slot').first().json;
 var res;
 if (v.status === 'open' || v.status === 'duplicate') {
-  res = { booked: true, when: v.label, visitKind: v.visitKind, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + (v.visitKind === 'estimate' ? ' as an on-site ESTIMATE visit; the technician gives an exact price after seeing the job' : '') + ' (estimated visit about ' + v.durationMinutes + ' minutes, an estimate only). Confirm this back to the caller. Say a confirmation text is on its way. Do not promise an exact arrival time.' };
+  res = { booked: true, when: v.label, visitKind: v.visitKind, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + (v.visitKind === 'estimate' ? ' as an on-site ESTIMATE visit; the technician gives an exact price after seeing the job' : (v.visitKind === 'big_job' ? ' as the full job; the technician confirms the exact price on site before any work starts' : '')) + ' (estimated visit about ' + v.durationMinutes + ' minutes, an estimate only). Confirm this back to the caller. Say a confirmation text is on its way. Do not promise an exact arrival time.' };
 } else if (v.status === 'taken') {
   res = { booked: false, reason: 'slot_taken', alternatives: v.alternatives, message: 'That time was just taken. Apologize briefly and offer these alternatives.' };
 } else {

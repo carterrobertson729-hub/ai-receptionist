@@ -85,9 +85,12 @@ function serviceFor(config, service) {
 }
 
 // Visit length in minutes for a job type. Unknown or missing types get the safe default length.
-// For big jobs this is the length of the on-site ESTIMATE visit, not of the whole job.
-function durationFor(config, service) {
+// Big jobs have two lengths: the short on-site ESTIMATE visit (durationMinutes, the default) and the whole
+// job (jobMinutes), used when the caller chooses to book the job itself (visitType 'job').
+function durationFor(config, service, visitType) {
   var found = serviceFor(config, service);
+  var isBig = !!(found && found.pricing && found.pricing.type === 'big_job');
+  if (isBig && visitType === 'job' && found.jobMinutes) return found.jobMinutes;
   return found && found.durationMinutes ? found.durationMinutes : config.bookingRules.appointmentMinutes;
 }
 
@@ -135,7 +138,7 @@ function describeSlot(slot, tz) {
 
 function offerSlots(config, events, args, nowMs) {
   var tz = config.timeZone;
-  var slots = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, durationFor(config, args.service));
+  var slots = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, durationFor(config, args.service, args.visit_type));
   if (args.part_of_day === 'morning' || args.part_of_day === 'afternoon') {
     var filtered = slots.filter(function (s) {
       var hour = +toLocalIso(s.startMs, tz).slice(11, 13);
@@ -143,21 +146,52 @@ function offerSlots(config, events, args, nowMs) {
     });
     if (filtered.length) slots = filtered;
   }
-  // Spread the offers so we don't read out near-identical times (e.g. 12:30, 1:00, 1:30).
-  var spacing = (config.bookingRules.offerSpacingMinutes || 0) * 60000;
-  var picked = [];
-  for (var i = 0; i < slots.length && picked.length < config.bookingRules.maxSlotsOffered; i++) {
-    if (!picked.length || slots[i].startMs >= picked[picked.length - 1].startMs + spacing) picked.push(slots[i]);
+  // If the caller asked for a specific time, offer that exact time first when it is open,
+  // then the nearest other openings. Otherwise offer the earliest openings.
+  var wantMs = NaN;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(args.preferred_date || '')) && /^\d{2}:\d{2}$/.test(String(args.preferred_time || ''))) {
+    wantMs = localToUtcMs(args.preferred_date, args.preferred_time, tz);
   }
-  return picked.map(function (s) { return describeSlot(s, tz); });
+  var spacing = (config.bookingRules.offerSpacingMinutes || 0) * 60000;   // avoid near-identical offers
+  var max = config.bookingRules.maxSlotsOffered;
+  var picked = [];
+  var exact = isNaN(wantMs) ? null : slots.filter(function (s) { return s.startMs === wantMs; })[0] || null;
+  if (exact) picked.push(exact);
+  var rest = slots.filter(function (s) { return s !== exact; });
+  if (!isNaN(wantMs)) rest.sort(function (a, b) { return Math.abs(a.startMs - wantMs) - Math.abs(b.startMs - wantMs); });
+  for (var i = 0; i < rest.length && picked.length < max; i++) {
+    var farEnough = picked.every(function (p) { return Math.abs(rest[i].startMs - p.startMs) >= spacing; });
+    if (farEnough) picked.push(rest[i]);
+  }
+  var first = exact ? picked.slice(1) : picked;
+  first.sort(function (a, b) { return a.startMs - b.startMs; });
+  var ordered = exact ? [exact].concat(first) : first;
+  return ordered.map(function (s) { return describeSlot(s, tz); });
+}
+
+// Is the exact time the caller asked for open? If not, why not (so the agent can explain honestly).
+function requestedTimeStatus(config, events, args, nowMs) {
+  var tz = config.timeZone;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(args.preferred_date || '')) || !/^\d{2}:\d{2}$/.test(String(args.preferred_time || ''))) return null;
+  var dur = durationFor(config, args.service, args.visit_type) * 60000;
+  var startMs = localToUtcMs(args.preferred_date, args.preferred_time, tz);
+  var status = { time: args.preferred_time, label: friendlyLabel(startMs, tz), visitMinutes: dur / 60000, available: false, reason: '' };
+  var open = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, dur / 60000);
+  if (open.some(function (s) { return s.startMs === startMs; })) { status.available = true; return status; }
+  var hours = config.hours[weekdayKey(args.preferred_date)];
+  if (!hours) status.reason = 'the office takes no visits that day';
+  else if (startMs < localToUtcMs(args.preferred_date, hours[0], tz) || startMs + dur > localToUtcMs(args.preferred_date, hours[1], tz)) status.reason = 'that time falls outside booking hours, or the visit would run past closing';
+  else if (startMs < nowMs + config.bookingRules.minNoticeHours * 3600000) status.reason = 'that is too soon, the office needs about ' + config.bookingRules.minNoticeHours + ' hours notice';
+  else status.reason = 'it overlaps another appointment or the travel time needed between jobs';
+  return status;
 }
 
 // True only if startIso is exactly one of the business's open slots right now.
-function isSlotStillOpen(config, events, startIso, nowMs, service) {
+function isSlotStillOpen(config, events, startIso, nowMs, service, visitType) {
   var tz = config.timeZone;
   var startMs = Date.parse(startIso);
   if (isNaN(startMs)) return false;
-  var slots = allSlots(config, busyFromEvents(events, tz), localDateStr(startMs, tz), nowMs, durationFor(config, service));
+  var slots = allSlots(config, busyFromEvents(events, tz), localDateStr(startMs, tz), nowMs, durationFor(config, service, visitType));
   return slots.some(function (s) { return s.startMs === startMs; });
 }
 
@@ -165,6 +199,6 @@ if (typeof module !== 'undefined') {
   module.exports = {
     zoneOffsetMinutes: zoneOffsetMinutes, localToUtcMs: localToUtcMs, toLocalIso: toLocalIso,
     offerSlots: offerSlots, isSlotStillOpen: isSlotStillOpen, busyFromEvents: busyFromEvents,
-    allSlots: allSlots, describeSlot: describeSlot, durationFor: durationFor, serviceFor: serviceFor, isBigJob: isBigJob
+    allSlots: allSlots, describeSlot: describeSlot, durationFor: durationFor, serviceFor: serviceFor, isBigJob: isBigJob, requestedTimeStatus: requestedTimeStatus
   };
 }
