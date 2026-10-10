@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 const require = createRequire(import.meta.url);
 const S = require('../n8n/code/slots.js');
 const config = { ...JSON.parse(readFileSync(new URL('../config/demo-plumbing.json', import.meta.url))), timeZone: 'America/New_York' };
+config.hours = { ...config.hours, sat: null, sun: null };   // tests assume a weekdays-only business
 const tz = 'America/New_York';  // fixtures are written in Eastern time
 let passed = 0;
 const test = (name, fn) => { fn(); passed++; console.log('ok  ' + name); };
