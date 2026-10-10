@@ -118,10 +118,38 @@
     },
     {
       "name": "Water heater replacement",
-      "durationMinutes": 180,
+      "durationMinutes": 60,
+      "jobMinutes": 180,
       "emergency": false,
       "pricing": {
-        "type": "callback"
+        "type": "big_job",
+        "startingAt": 1200,
+        "typical": "$1,800 to $3,200",
+        "estimateVisit": "a free on-site estimate visit"
+      }
+    },
+    {
+      "name": "Sewer line repair or replacement",
+      "durationMinutes": 60,
+      "jobMinutes": 480,
+      "emergency": false,
+      "pricing": {
+        "type": "big_job",
+        "startingAt": 2500,
+        "typical": "$4,000 to $12,000",
+        "estimateVisit": "a free on-site estimate visit"
+      }
+    },
+    {
+      "name": "Whole-house repipe",
+      "durationMinutes": 60,
+      "jobMinutes": 480,
+      "emergency": false,
+      "pricing": {
+        "type": "big_job",
+        "startingAt": 4000,
+        "typical": "$6,000 to $15,000",
+        "estimateVisit": "a free on-site estimate visit"
       }
     },
     {
@@ -156,6 +184,9 @@
       "booked",
       "message",
       "urgent"
+    ],
+    "skipOutcomes": [
+      "callback"
     ]
   },
   "serviceCallFee": 65

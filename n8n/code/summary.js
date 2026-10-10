@@ -36,6 +36,7 @@ function buildSummary(config, payload) {
   var outcomeLine = {
     booked: 'Appointment booked' + (appt ? ' for ' + appt : ''),
     message: 'No booking. A message was taken - please call back.',
+    callback: 'Callback requested (a separate callback email was sent).',
     urgent: 'URGENT - needs a human to follow up now. No technician has been contacted automatically.',
     unknown: 'Outcome not recorded - see the summary below.'
   }[outcome] || outcome;
@@ -64,7 +65,8 @@ function buildSummary(config, payload) {
   // wants (default: booked, message) or the caller left real contact details (a lead worth a callback).
   var allow = (config.notifications && config.notifications.emailOutcomes) || ['booked', 'message', 'urgent'];
   var hasLead = name !== 'Unknown caller' && pick(custom.caller_phone, '') !== '';
-  var send = urgent || allow.indexOf(outcome) !== -1 || hasLead;
+  var skip = (config.notifications && config.notifications.skipOutcomes) || ['callback'];   // already emailed by their own workflow
+  var send = urgent || (skip.indexOf(outcome) === -1 && (allow.indexOf(outcome) !== -1 || hasLead));
 
   return { send: send, subject: (urgent ? '[URGENT] ' : '') + config.businessName + ': ' + headline, body: lines.join('\n'), urgent: urgent };
 }

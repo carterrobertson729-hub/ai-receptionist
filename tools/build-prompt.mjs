@@ -29,6 +29,10 @@ export function priceList(config) {
   return config.services.filter((s) => !s.emergency).map((s) => {
     const p = s.pricing || { type: 'quote_on_site' };
     if (p.type === 'flat') return `- ${s.name}: flat price of $${p.amount}${p.details ? ' (' + p.details + ')' : ''}. State this price.`;
+    if (p.type === 'big_job') {
+      const range = p.typical ? `These typically run ${p.typical}, and they start around $${Number(p.startingAt).toLocaleString('en-US')}, depending on the setup.` : `These start around $${Number(p.startingAt).toLocaleString('en-US')}, depending on the setup.`;
+      return `- ${s.name}: BIG JOB. Never give an exact price. If the caller asks what it costs (an average, a ballpark, or the lowest price), you may say ONLY this, as an estimate and not a quote: "${range}" Then say the technician gives an exact price after seeing the job. Offer these choices, none of them forced: (1) ${p.estimateVisit || 'an on-site estimate visit'}, which holds their spot (book it with check_availability and book_appointment as usual, and tell the caller it is an estimate visit of about ${s.durationMinutes || 60} minutes, not the job itself); (2) have the office call them back at a time that suits them (ask for the best day and time to call, then use request_callback and put the price information you gave in price_discussed); (3) neither, in which case thank them. They may choose both.`;
+    }
     if (p.type === 'callback') return `- ${s.name}: do NOT quote a price and do NOT check availability or book. Say pricing for this job is custom, take the caller's name, phone number, address and a short description, and tell them someone from the office will call them back to go over it.`;
     return `- ${s.name}: no fixed price. ${fee ? 'Say there is a $' + fee + ' service call fee, and that ' : 'Say that '}the technician gives an exact price on site before any work starts. Book the visit as usual.`;
   }).join('\n');

@@ -8,6 +8,7 @@ const stripExports = (t) => t.replace(/\nif \(typeof module[\s\S]*$/, '\n');
 const slotsLib = stripExports(read('n8n/code/slots.js'));
 const summaryLib = stripExports(read('n8n/code/summary.js'));
 const oncallLib = stripExports(read('n8n/code/oncall.js'));
+const callbackLib = stripExports(read('n8n/code/callback.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -148,16 +149,18 @@ out.name = name;
 out.address = address;
 out.problem = problem;
 out.service = String(a.service || 'Service visit').trim();
-out.summary = out.service + ' - ' + name;
+var estimate = isBigJob(ctx.config, a.service);
+out.visitKind = estimate ? 'estimate' : 'service';
+out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name;
 out.description = 'Booked by AI receptionist\\nCaller: ' + name + '\\nPhone: ' + phone + '\\nAddress: ' + address +
-  '\\nProblem: ' + problem + '\\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
+  '\\nProblem: ' + problem + '\\nVisit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : 'Service visit') + '\\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
   '\\nLanguage: ' + (a.language || 'en') + '\\nCall: ' + ctx.callId;
 return [{ json: out }];`;
 
 const buildResponse = `var v = $('Verify Slot').first().json;
 var res;
 if (v.status === 'open' || v.status === 'duplicate') {
-  res = { booked: true, when: v.label, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + ' (estimated visit about ' + v.durationMinutes + ' minutes, an estimate only). Confirm this back to the caller. Say a confirmation text is on its way. Do not promise an exact arrival time.' };
+  res = { booked: true, when: v.label, visitKind: v.visitKind, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + (v.visitKind === 'estimate' ? ' as an on-site ESTIMATE visit; the technician gives an exact price after seeing the job' : '') + ' (estimated visit about ' + v.durationMinutes + ' minutes, an estimate only). Confirm this back to the caller. Say a confirmation text is on its way. Do not promise an exact arrival time.' };
 } else if (v.status === 'taken') {
   res = { booked: false, reason: 'slot_taken', alternatives: v.alternatives, message: 'That time was just taken. Apologize briefly and offer these alternatives.' };
 } else {
@@ -287,8 +290,35 @@ const urgent = wf('Receptionist - Urgent Alert', [
   respond('d1000000-0000-4000-8000-000000000005', [960, 0], '={{ JSON.stringify($json) }}')
 ], link('Retell Tool Call', 'Build Alerts', 'Email Alert', 'Build Response', 'Respond to Retell'));
 
+// ---------- 5. callback request ----------
+const callbackCode = `${callbackLib}
+var item = $input.first().json;
+var args = (item.body && item.body.args) || {};
+var CONFIGS = ${JSON.stringify(configs)};
+var config = CONFIGS[(item.query && item.query.business) || ''];
+if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');
+var e = buildCallbackEmail(config, args, Date.now());
+return [{ json: e }];`;
+
+const callback = wf('Receptionist - Callback Request', [
+  webhookNode('receptionist/callback-request'),
+  code('e1000000-0000-4000-8000-000000000002', 'Build Callback Email', [240, 0], callbackCode),
+  {
+    id: 'e1000000-0000-4000-8000-000000000003', name: 'Email Office', type: 'n8n-nodes-base.gmail',
+    typeVersion: 2.1, position: [480, 0],
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  },
+  code('e1000000-0000-4000-8000-000000000004', 'Build Response', [720, 0], `return [{ json: { requested: true, message: 'The office has been emailed this callback request. Tell the caller the office will call them back at the time they asked for. Do not promise an exact time.' } }];`),
+  respond('e1000000-0000-4000-8000-000000000005', [960, 0], '={{ JSON.stringify($json) }}')
+], link('Retell Tool Call', 'Build Callback Email', 'Email Office', 'Build Response', 'Respond to Retell'));
+
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
 writeFileSync(new URL('n8n/book-appointment.json', root), JSON.stringify(book, null, 2) + '\n');
 writeFileSync(new URL('n8n/owner-call-summary.json', root), JSON.stringify(summary, null, 2) + '\n');
 writeFileSync(new URL('n8n/urgent-alert.json', root), JSON.stringify(urgent, null, 2) + '\n');
-console.log('Wrote 4 workflows: check-availability, book-appointment, owner-call-summary, urgent-alert');
+writeFileSync(new URL('n8n/callback-request.json', root), JSON.stringify(callback, null, 2) + '\n');
+console.log('Wrote 5 workflows: check-availability, book-appointment, owner-call-summary, urgent-alert, callback-request');

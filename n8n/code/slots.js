@@ -76,15 +76,24 @@ function busyFromEvents(events, tz) {
   return out;
 }
 
-// Visit length in minutes for a job type. Matches the business's service list by name
-// (exact first, then partial); unknown or missing types get the safe default length.
-function durationFor(config, service) {
-  var fallback = config.bookingRules.appointmentMinutes;
+// The business's service entry for a job type: exact name first, then partial match.
+function serviceFor(config, service) {
   var name = String(service || '').trim().toLowerCase();
-  if (!name || !config.services) return fallback;
-  var found = config.services.filter(function (x) { return String(x.name).toLowerCase() === name; })[0] ||
-    config.services.filter(function (x) { var n = String(x.name).toLowerCase(); return n.indexOf(name) !== -1 || name.indexOf(n) !== -1; })[0];
-  return found && found.durationMinutes ? found.durationMinutes : fallback;
+  if (!name || !config.services) return null;
+  return config.services.filter(function (x) { return String(x.name).toLowerCase() === name; })[0] ||
+    config.services.filter(function (x) { var n = String(x.name).toLowerCase(); return n.indexOf(name) !== -1 || name.indexOf(n) !== -1; })[0] || null;
+}
+
+// Visit length in minutes for a job type. Unknown or missing types get the safe default length.
+// For big jobs this is the length of the on-site ESTIMATE visit, not of the whole job.
+function durationFor(config, service) {
+  var found = serviceFor(config, service);
+  return found && found.durationMinutes ? found.durationMinutes : config.bookingRules.appointmentMinutes;
+}
+
+function isBigJob(config, service) {
+  var found = serviceFor(config, service);
+  return !!(found && found.pricing && found.pricing.type === 'big_job');
 }
 
 // All bookable slots in the window, earliest first. No cap; callers cap.
@@ -156,6 +165,6 @@ if (typeof module !== 'undefined') {
   module.exports = {
     zoneOffsetMinutes: zoneOffsetMinutes, localToUtcMs: localToUtcMs, toLocalIso: toLocalIso,
     offerSlots: offerSlots, isSlotStillOpen: isSlotStillOpen, busyFromEvents: busyFromEvents,
-    allSlots: allSlots, describeSlot: describeSlot, durationFor: durationFor
+    allSlots: allSlots, describeSlot: describeSlot, durationFor: durationFor, serviceFor: serviceFor, isBigJob: isBigJob
   };
 }

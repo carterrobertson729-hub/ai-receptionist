@@ -129,6 +129,54 @@
           "problem"
         ]
       }
+    },
+    {
+      "name": "request_callback",
+      "description": "Email the office a callback request for a caller who wants to talk about price or details before booking (usually a big job). Use only after the caller agrees to a callback. Never use it for emergencies.",
+      "url": "https://YOUR_N8N.app.n8n.cloud/webhook/receptionist/callback-request?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "Let me send that to the office.",
+      "timeout_ms": 15000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Caller's full name."
+          },
+          "phone": {
+            "type": "string",
+            "description": "Callback phone number, exactly as the caller said it."
+          },
+          "address": {
+            "type": "string",
+            "description": "Service address, if given."
+          },
+          "service": {
+            "type": "string",
+            "description": "The job type, exactly as written in the list."
+          },
+          "problem": {
+            "type": "string",
+            "description": "Short description of what the caller needs, in their words."
+          },
+          "preferred_callback_time": {
+            "type": "string",
+            "description": "When the caller would like the call back, in their words (for example 'tomorrow afternoon')."
+          },
+          "price_discussed": {
+            "type": "string",
+            "description": "Any price information you gave the caller on this call, or 'none'."
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "service",
+          "problem"
+        ]
+      }
     }
   ]
 }

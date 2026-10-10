@@ -1,0 +1,149 @@
+{
+  "name": "Receptionist - Callback Request",
+  "nodes": [
+    {
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Retell Tool Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "receptionist-callback-request",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "receptionist/callback-request",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE",
+          "name": "Retell tool secret"
+        }
+      }
+    },
+    {
+      "id": "e1000000-0000-4000-8000-000000000002",
+      "name": "Build Callback Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Builds the \"callback requested\" email for the office. Inlined into an n8n Code node; unit-tested by tools/test-callback.mjs.\n\nfunction buildCallbackEmail(config, args, nowMs) {\n  function clean(v, fallback) {\n    var t = v === undefined || v === null ? '' : String(v).replace(/[\\r\\n]+/g, ' ').trim();\n    return t ? t.slice(0, 500) : fallback;\n  }\n  var name = clean(args.name, 'Unknown caller');\n  var phone = clean(args.phone, 'not given');\n  var address = clean(args.address, 'not given');\n  var service = clean(args.service, 'Job');\n  var problem = clean(args.problem, 'not given');\n  var when = clean(args.preferred_callback_time, 'as soon as possible');\n  var priceInfo = clean(args.price_discussed, 'none');\n  var called = new Intl.DateTimeFormat('en-US', {\n    timeZone: config.timeZone, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'\n  }).format(new Date(nowMs));\n  var body = [\n    'CALLBACK REQUESTED - ' + service,\n    '',\n    'Caller: ' + name,\n    'Phone: ' + phone,\n    'Address: ' + address,\n    'Job: ' + service,\n    'Details: ' + problem,\n    'Best time to call back: ' + when,\n    'Price information the caller was given: ' + priceInfo,\n    'Requested: ' + called + ' (' + config.timeZone + ')',\n    '',\n    'The caller was told the office will call them back. No appointment has been booked.'\n  ].join('\\n');\n  var to = config.callbackEmail || config.ownerEmail;\n  return { to: to, subject: config.businessName + ': Callback requested - ' + service + ' - ' + name, body: body };\n}\n\n\nvar item = $input.first().json;\nvar args = (item.body && item.body.args) || {};\nvar CONFIGS = {\"demo-plumbing\":{\"businessId\":\"demo-plumbing\",\"businessName\":\"Demo Plumbing Co\",\"trade\":\"plumbing\",\"timeZone\":\"America/Chicago\",\"receptionistNumber\":\"REPLACE_WITH_RETELL_NUMBER_E164\",\"smsFromNumber\":\"REPLACE_WITH_TWILIO_NUMBER_E164\",\"ownerPhone\":\"REPLACE_WITH_OWNER_NUMBER_E164\",\"ownerEmail\":\"carter.robertson729@gmail.com\",\"people\":{\"carter\":{\"name\":\"Carter\",\"email\":\"carter.robertson729@gmail.com\",\"phone\":\"REPLACE_WITH_ONCALL_NUMBER_E164\"}},\"onCallSchedule\":{\"mon\":\"carter\",\"tue\":\"carter\",\"wed\":\"carter\",\"thu\":\"carter\",\"fri\":\"carter\",\"sat\":\"carter\",\"sun\":\"carter\"},\"calendarId\":\"d8f2a8fbc0b04e3460f2971b0c7d82d953936566b3e9f560190bc3317cf2367c@group.calendar.google.com\",\"bookingRules\":{\"appointmentMinutes\":120,\"slotStepMinutes\":30,\"bufferMinutes\":30,\"minNoticeHours\":2,\"maxDaysAhead\":14,\"maxSlotsOffered\":3,\"offerSpacingMinutes\":60},\"hours\":{\"mon\":[\"08:00\",\"17:00\"],\"tue\":[\"08:00\",\"17:00\"],\"wed\":[\"08:00\",\"17:00\"],\"thu\":[\"08:00\",\"17:00\"],\"fri\":[\"08:00\",\"17:00\"],\"sat\":[\"08:00\",\"17:00\"],\"sun\":[\"08:00\",\"17:00\"]},\"services\":[{\"name\":\"Clogged toilet\",\"durationMinutes\":30,\"emergency\":false,\"pricing\":{\"type\":\"flat\",\"amount\":50,\"details\":\"standard clog\"}},{\"name\":\"Drain cleaning\",\"durationMinutes\":60,\"emergency\":false,\"pricing\":{\"type\":\"flat\",\"amount\":120,\"details\":\"one standard drain\"}},{\"name\":\"Leak repair\",\"durationMinutes\":60,\"emergency\":false,\"pricing\":{\"type\":\"quote_on_site\"}},{\"name\":\"Faucet or fixture repair\",\"durationMinutes\":60,\"emergency\":false,\"pricing\":{\"type\":\"quote_on_site\"}},{\"name\":\"Toilet repair or replacement\",\"durationMinutes\":90,\"emergency\":false,\"pricing\":{\"type\":\"quote_on_site\"}},{\"name\":\"Water heater repair\",\"durationMinutes\":90,\"emergency\":false,\"pricing\":{\"type\":\"quote_on_site\"}},{\"name\":\"Water heater replacement\",\"durationMinutes\":60,\"jobMinutes\":180,\"emergency\":false,\"pricing\":{\"type\":\"big_job\",\"startingAt\":1200,\"typical\":\"$1,800 to $3,200\",\"estimateVisit\":\"a free on-site estimate visit\"}},{\"name\":\"Sewer line repair or replacement\",\"durationMinutes\":60,\"jobMinutes\":480,\"emergency\":false,\"pricing\":{\"type\":\"big_job\",\"startingAt\":2500,\"typical\":\"$4,000 to $12,000\",\"estimateVisit\":\"a free on-site estimate visit\"}},{\"name\":\"Whole-house repipe\",\"durationMinutes\":60,\"jobMinutes\":480,\"emergency\":false,\"pricing\":{\"type\":\"big_job\",\"startingAt\":4000,\"typical\":\"$6,000 to $15,000\",\"estimateVisit\":\"a free on-site estimate visit\"}},{\"name\":\"Other or not sure\",\"durationMinutes\":120,\"emergency\":false,\"pricing\":{\"type\":\"quote_on_site\"}},{\"name\":\"Burst pipe or active flooding\",\"emergency\":true},{\"name\":\"No water or sewage backup\",\"emergency\":true}],\"fixedPrices\":[],\"neverSay\":[\"Never quote a price that is not in the price list, and never estimate, round, or give a range.\",\"Never promise an exact arrival time; offer only the booked window.\",\"Never diagnose the problem or tell the caller how to repair it.\"],\"languages\":[\"en\",\"es\"],\"notifications\":{\"emailOutcomes\":[\"booked\",\"message\",\"urgent\"],\"skipOutcomes\":[\"callback\"]},\"serviceCallFee\":65}};\nvar config = CONFIGS[(item.query && item.query.business) || ''];\nif (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');\nvar e = buildCallbackEmail(config, args, Date.now());\nreturn [{ json: e }];"
+      }
+    },
+    {
+      "id": "e1000000-0000-4000-8000-000000000003",
+      "name": "Email Office",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "e1000000-0000-4000-8000-000000000004",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { requested: true, message: 'The office has been emailed this callback request. Tell the caller the office will call them back at the time they asked for. Do not promise an exact time.' } }];"
+      }
+    },
+    {
+      "id": "e1000000-0000-4000-8000-000000000005",
+      "name": "Respond to Retell",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Retell Tool Call": {
+      "main": [
+        [
+          {
+            "node": "Build Callback Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Callback Email": {
+      "main": [
+        [
+          {
+            "node": "Email Office",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Office": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Retell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

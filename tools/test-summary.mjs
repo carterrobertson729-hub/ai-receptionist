@@ -49,4 +49,8 @@ test('business can narrow what it wants (urgent + message only)', () => {
   assert.equal(buildSummary(c2, mk({ outcome: 'booked', caller_name: '', caller_phone: '' })).send, false);
 });
 test('empty payload does not send', () => { assert.equal(buildSummary(config, {}).send, false); });
+test('callback outcome is not emailed again by the summary (it has its own email)', () => {
+  assert.equal(buildSummary(config, mk({ outcome: 'callback' })).send, false);
+  assert.equal(buildSummary(config, mk({ outcome: 'callback', urgent: true })).send, true);
+});
 console.log(`\n${n} tests passed`);
