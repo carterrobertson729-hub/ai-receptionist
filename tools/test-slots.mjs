@@ -110,4 +110,32 @@ test('12:00 is rejected, 12:30 accepted when booking', () => {
   assert.equal(S.isSlotStillOpen(cfg, booked, '2026-10-07T12:30:00-04:00', NOW), true);
 });
 
+const typed = { ...config, bookingRules: { ...config.bookingRules, slotStepMinutes: 30, bufferMinutes: 30, appointmentMinutes: 120 },
+  services: [{ name: 'Clogged toilet', durationMinutes: 30 }, { name: 'Toilet repair or replacement', durationMinutes: 90 }, { name: 'Other or not sure', durationMinutes: 120 }, { name: 'Burst pipe', emergency: true }] };
+test('durationFor: exact, partial, unknown, missing', () => {
+  assert.equal(S.durationFor(typed, 'Clogged toilet'), 30);
+  assert.equal(S.durationFor(typed, 'clogged TOILET'), 30);
+  assert.equal(S.durationFor(typed, 'something weird'), 120);
+  assert.equal(S.durationFor(typed, ''), 120);
+  assert.equal(S.durationFor(typed, 'Burst pipe'), 120);   // no duration listed -> default
+});
+test('a 30 min job fits in the morning before a 10 AM job; a 2 hour job does not', () => {
+  const dayStarts = (mins) => S.allSlots(typed, S.busyFromEvents(booked, tz), '2026-10-07', NOW, mins).map((x) => S.toLocalIso(x.startMs, tz)).filter((x) => x.startsWith('2026-10-07')).map((x) => x.slice(11, 16));
+  const short = dayStarts(30);
+  assert.ok(short.includes('08:00') && short.includes('08:30') && short.includes('09:00'));   // 9:00-9:30 ends exactly at the gap edge
+  assert.ok(!short.includes('09:30'));
+  const long = dayStarts(120);
+  assert.ok(long.length > 0 && !long.some((x) => x < '12:30'));
+});
+test('offers carry the visit length and booking checks use the job type', () => {
+  const out = S.offerSlots(typed, booked, { preferred_date: '2026-10-07', service: 'Clogged toilet' }, NOW);
+  assert.equal(out[0].minutes, 30); assert.equal(out[0].start.slice(11, 16), '08:00');
+  assert.equal(S.isSlotStillOpen(typed, booked, '2026-10-07T08:00:00-04:00', NOW, 'Clogged toilet'), true);
+  assert.equal(S.isSlotStillOpen(typed, booked, '2026-10-07T08:00:00-04:00', NOW, 'Other or not sure'), false);
+});
+test('last start of the day respects the job length', () => {
+  const day = S.allSlots(typed, [], '2026-10-07', NOW, 30).map((x) => S.toLocalIso(x.startMs, tz)).filter((x) => x.startsWith('2026-10-07')).map((x) => x.slice(11, 16));
+  assert.equal(day[day.length - 1], '16:30');   // 4:30-5:00 closes at 5
+});
+
 console.log(`\n${passed} tests passed`);

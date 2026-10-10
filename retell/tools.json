@@ -3,7 +3,7 @@
   "tools": [
     {
       "name": "check_availability",
-      "description": "Get the next open appointment times for routine visits. Call this after you know what the caller needs and before offering times.",
+      "description": "Get the next open appointment times for routine visits. Call this after you know the caller's problem and job type, and before offering times.",
       "url": "https://YOUR_N8N.app.n8n.cloud/webhook/receptionist/check-availability?business=demo-plumbing",
       "method": "POST",
       "speak_during_execution": true,
@@ -24,6 +24,10 @@
               "any"
             ],
             "description": "Morning or afternoon preference, if the caller gave one."
+          },
+          "service": {
+            "type": "string",
+            "description": "The job type that best matches the caller's problem, exactly as written in the business's list of routine job types. Use 'Other or not sure' if nothing fits."
           }
         },
         "required": []
@@ -62,7 +66,7 @@
           },
           "service": {
             "type": "string",
-            "description": "Closest service type from the business's list."
+            "description": "The same job type you passed to check_availability, exactly as written in the list."
           },
           "someone_on_site": {
             "type": "string",

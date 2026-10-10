@@ -65,19 +65,43 @@
   },
   "services": [
     {
-      "name": "Leak repair",
+      "name": "Clogged toilet",
+      "durationMinutes": 30,
       "emergency": false
     },
     {
       "name": "Drain cleaning",
+      "durationMinutes": 60,
       "emergency": false
     },
     {
-      "name": "Water heater repair or replacement",
+      "name": "Leak repair",
+      "durationMinutes": 60,
       "emergency": false
     },
     {
-      "name": "Toilet, faucet or fixture repair",
+      "name": "Faucet or fixture repair",
+      "durationMinutes": 60,
+      "emergency": false
+    },
+    {
+      "name": "Toilet repair or replacement",
+      "durationMinutes": 90,
+      "emergency": false
+    },
+    {
+      "name": "Water heater repair",
+      "durationMinutes": 90,
+      "emergency": false
+    },
+    {
+      "name": "Water heater replacement",
+      "durationMinutes": 180,
+      "emergency": false
+    },
+    {
+      "name": "Other or not sure",
+      "durationMinutes": 120,
       "emergency": false
     },
     {

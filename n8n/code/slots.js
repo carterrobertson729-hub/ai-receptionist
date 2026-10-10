@@ -76,11 +76,23 @@ function busyFromEvents(events, tz) {
   return out;
 }
 
+// Visit length in minutes for a job type. Matches the business's service list by name
+// (exact first, then partial); unknown or missing types get the safe default length.
+function durationFor(config, service) {
+  var fallback = config.bookingRules.appointmentMinutes;
+  var name = String(service || '').trim().toLowerCase();
+  if (!name || !config.services) return fallback;
+  var found = config.services.filter(function (x) { return String(x.name).toLowerCase() === name; })[0] ||
+    config.services.filter(function (x) { var n = String(x.name).toLowerCase(); return n.indexOf(name) !== -1 || name.indexOf(n) !== -1; })[0];
+  return found && found.durationMinutes ? found.durationMinutes : fallback;
+}
+
 // All bookable slots in the window, earliest first. No cap; callers cap.
-function allSlots(config, busy, fromDate, nowMs) {
+// durationMin is the visit length for this job type (defaults to the business default).
+function allSlots(config, busy, fromDate, nowMs, durationMin) {
   var rules = config.bookingRules;
   var tz = config.timeZone;
-  var dur = rules.appointmentMinutes * 60000;
+  var dur = (durationMin || rules.appointmentMinutes) * 60000;
   var step = rules.slotStepMinutes * 60000;
   var buf = (rules.bufferMinutes || 0) * 60000;
   var earliest = nowMs + rules.minNoticeHours * 3600000;
@@ -107,13 +119,14 @@ function describeSlot(slot, tz) {
   return {
     start: toLocalIso(slot.startMs, tz),
     end: toLocalIso(slot.endMs, tz),
+    minutes: Math.round((slot.endMs - slot.startMs) / 60000),
     label: friendlyLabel(slot.startMs, tz)
   };
 }
 
 function offerSlots(config, events, args, nowMs) {
   var tz = config.timeZone;
-  var slots = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs);
+  var slots = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, durationFor(config, args.service));
   if (args.part_of_day === 'morning' || args.part_of_day === 'afternoon') {
     var filtered = slots.filter(function (s) {
       var hour = +toLocalIso(s.startMs, tz).slice(11, 13);
@@ -131,11 +144,11 @@ function offerSlots(config, events, args, nowMs) {
 }
 
 // True only if startIso is exactly one of the business's open slots right now.
-function isSlotStillOpen(config, events, startIso, nowMs) {
+function isSlotStillOpen(config, events, startIso, nowMs, service) {
   var tz = config.timeZone;
   var startMs = Date.parse(startIso);
   if (isNaN(startMs)) return false;
-  var slots = allSlots(config, busyFromEvents(events, tz), localDateStr(startMs, tz), nowMs);
+  var slots = allSlots(config, busyFromEvents(events, tz), localDateStr(startMs, tz), nowMs, durationFor(config, service));
   return slots.some(function (s) { return s.startMs === startMs; });
 }
 
@@ -143,6 +156,6 @@ if (typeof module !== 'undefined') {
   module.exports = {
     zoneOffsetMinutes: zoneOffsetMinutes, localToUtcMs: localToUtcMs, toLocalIso: toLocalIso,
     offerSlots: offerSlots, isSlotStillOpen: isSlotStillOpen, busyFromEvents: busyFromEvents,
-    allSlots: allSlots, describeSlot: describeSlot
+    allSlots: allSlots, describeSlot: describeSlot, durationFor: durationFor
   };
 }

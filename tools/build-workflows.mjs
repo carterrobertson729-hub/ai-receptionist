@@ -93,7 +93,7 @@ var slots = offerSlots(ctx.config, events, ctx.args, ctx.nowMs);
 return [{ json: {
   slots: slots,
   message: slots.length
-    ? 'Offer these times to the caller. Use the label to speak them. Pass the start value of the one they pick to book_appointment.'
+    ? 'Offer these times to the caller. Use the label to speak them. Each slot has an estimated visit length in minutes. Pass the start value of the one they pick to book_appointment.'
     : 'No openings in the booking window. Offer to take a message so the office can call back.'
 } }];`;
 
@@ -134,9 +134,11 @@ else {
       String(e.description || '').indexOf(phone) !== -1;
   });
   if (dup) out = { status: 'duplicate' };
-  else if (isSlotStillOpen(ctx.config, events, a.start, ctx.nowMs)) out = { status: 'open' };
-  else out = { status: 'taken', alternatives: offerSlots(ctx.config, events, { preferred_date: a.start.slice(0, 10) }, ctx.nowMs) };
-  var endMs = startMs + ctx.config.bookingRules.appointmentMinutes * 60000;
+  else if (isSlotStillOpen(ctx.config, events, a.start, ctx.nowMs, a.service)) out = { status: 'open' };
+  else out = { status: 'taken', alternatives: offerSlots(ctx.config, events, { preferred_date: a.start.slice(0, 10), service: a.service }, ctx.nowMs) };
+  var minutes = durationFor(ctx.config, a.service);
+  var endMs = startMs + minutes * 60000;
+  out.durationMinutes = minutes;
   out.startIso = toLocalIso(startMs, tz);
   out.endIso = toLocalIso(endMs, tz);
   out.label = friendlyLabel(startMs, tz);
@@ -155,7 +157,7 @@ return [{ json: out }];`;
 const buildResponse = `var v = $('Verify Slot').first().json;
 var res;
 if (v.status === 'open' || v.status === 'duplicate') {
-  res = { booked: true, when: v.label, message: 'Booked for ' + v.label + '. Confirm this back to the caller. Say a confirmation text is on its way. Do not promise an exact arrival time.' };
+  res = { booked: true, when: v.label, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + ' (estimated visit about ' + v.durationMinutes + ' minutes, an estimate only). Confirm this back to the caller. Say a confirmation text is on its way. Do not promise an exact arrival time.' };
 } else if (v.status === 'taken') {
   res = { booked: false, reason: 'slot_taken', alternatives: v.alternatives, message: 'That time was just taken. Apologize briefly and offer these alternatives.' };
 } else {
