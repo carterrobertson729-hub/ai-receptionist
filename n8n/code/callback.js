@@ -1,4 +1,6 @@
-// Builds the "callback requested" email for the office. Inlined into an n8n Code node; unit-tested by tools/test-callback.mjs.
+// Builds the "callback requested" email AND calendar entry for the office.
+// Needs slots.js helpers (localToUtcMs, toLocalIso, allSlots, localDateStr, friendlyLabel) inlined before it.
+// Unit-tested by tools/test-callback.mjs.
 
 function buildCallbackEmail(config, args, nowMs) {
   function clean(v, fallback) {
@@ -29,8 +31,38 @@ function buildCallbackEmail(config, args, nowMs) {
     '',
     'The caller was told the office will call them back. No appointment has been booked.'
   ].join('\n');
+  // Calendar entry: at the day/time the caller asked for, else at the next time the office is open.
+  var tz = config.timeZone;
+  var startMs = NaN;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(args.callback_date || '')) && /^\d{2}:\d{2}$/.test(String(args.callback_time || ''))) {
+    startMs = localToUtcMs(args.callback_date, args.callback_time, tz);
+  }
+  var asap = isNaN(startMs) || startMs < nowMs;
+  if (asap) {
+    var next = allSlots(config, [], localDateStr(nowMs, tz), nowMs, 15)[0];
+    startMs = next ? next.startMs : nowMs;
+  }
+  var endMs = startMs + 15 * 60000;
+  var calendarWhen = friendlyLabel(startMs, tz);
+  body += '\n\nOn the calendar as a callback for: ' + calendarWhen + (asap ? ' (next time the office is open)' : '');
+  var eventDescription = [
+    'CALLBACK REQUEST (not a job visit)',
+    'Caller: ' + name,
+    'Phone: ' + phone,
+    'Address: ' + address,
+    'Job: ' + service,
+    'Details: ' + problem,
+    'Wants to talk about: price / details before booking',
+    'Price information given: ' + priceInfo,
+    'Preferred time said by caller: ' + when
+  ].join('\n');
   var to = config.callbackEmail || config.ownerEmail;
-  return { to: to, subject: config.businessName + ': Callback requested - ' + service + ' - ' + name, body: body };
+  return {
+    to: to, subject: config.businessName + ': Callback requested - ' + service + ' - ' + name, body: body,
+    calendarId: config.calendarId,
+    eventStart: toLocalIso(startMs, tz), eventEnd: toLocalIso(endMs, tz), calendarWhen: calendarWhen,
+    eventTitle: 'CALLBACK: ' + service + ' - ' + name, eventDescription: eventDescription
+  };
 }
 
 if (typeof module !== 'undefined') module.exports = { buildCallbackEmail: buildCallbackEmail };

@@ -168,6 +168,14 @@
           "price_discussed": {
             "type": "string",
             "description": "Any price information you gave the caller on this call, or 'none'."
+          },
+          "callback_date": {
+            "type": "string",
+            "description": "The day the caller wants the call back, as YYYY-MM-DD (convert 'tomorrow' etc. using the current date). Omit if they have no preference or want it as soon as possible."
+          },
+          "callback_time": {
+            "type": "string",
+            "description": "The time of day for the call back in 24-hour HH:MM, in the business's local time (for example 14:00). Omit if they have no preference."
           }
         },
         "required": [

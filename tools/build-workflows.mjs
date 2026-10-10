@@ -290,8 +290,9 @@ const urgent = wf('Receptionist - Urgent Alert', [
   respond('d1000000-0000-4000-8000-000000000005', [960, 0], '={{ JSON.stringify($json) }}')
 ], link('Retell Tool Call', 'Build Alerts', 'Email Alert', 'Build Response', 'Respond to Retell'));
 
-// ---------- 5. callback request ----------
-const callbackCode = `${callbackLib}
+// ---------- 5. callback request (email + calendar entry) ----------
+const callbackCode = `${slotsLib}
+${callbackLib}
 var item = $input.first().json;
 var args = (item.body && item.body.args) || {};
 var CONFIGS = ${JSON.stringify(configs)};
@@ -299,6 +300,15 @@ var config = CONFIGS[(item.query && item.query.business) || ''];
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');
 var e = buildCallbackEmail(config, args, Date.now());
 return [{ json: e }];`;
+
+const callbackResponse = `var made = $input.first().json;
+var b = $('Build Callback Email').first().json;
+var onCalendar = !!(made && (made.id || made.htmlLink));
+return [{ json: {
+  requested: true,
+  onCalendar: onCalendar,
+  message: 'The office has been emailed this callback request' + (onCalendar ? ' and it is on their calendar for ' + b.calendarWhen : '') + '. Tell the caller the office will call them back around the time they asked. Do not promise an exact time.'
+} }];`;
 
 const callback = wf('Receptionist - Callback Request', [
   webhookNode('receptionist/callback-request'),
@@ -312,9 +322,27 @@ const callback = wf('Receptionist - Callback Request', [
     },
     credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
   },
-  code('e1000000-0000-4000-8000-000000000004', 'Build Response', [720, 0], `return [{ json: { requested: true, message: 'The office has been emailed this callback request. Tell the caller the office will call them back at the time they asked for. Do not promise an exact time.' } }];`),
-  respond('e1000000-0000-4000-8000-000000000005', [960, 0], '={{ JSON.stringify($json) }}')
-], link('Retell Tool Call', 'Build Callback Email', 'Email Office', 'Build Response', 'Respond to Retell'));
+  {
+    id: 'e1000000-0000-4000-8000-000000000006', name: 'Add Callback To Calendar', type: 'n8n-nodes-base.googleCalendar',
+    typeVersion: 1.3, position: [720, 0], onError: 'continueRegularOutput',
+    parameters: {
+      resource: 'event', operation: 'create',
+      calendar: { __rl: true, mode: 'id', value: "={{ $('Build Callback Email').first().json.calendarId }}" },
+      start: "={{ $('Build Callback Email').first().json.eventStart }}",
+      end: "={{ $('Build Callback Email').first().json.eventEnd }}",
+      useDefaultReminders: true,
+      additionalFields: {
+        summary: "={{ $('Build Callback Email').first().json.eventTitle }}",
+        description: "={{ $('Build Callback Email').first().json.eventDescription }}",
+        showMeAs: 'transparent',
+        color: '11'
+      }
+    },
+    credentials: { googleCalendarOAuth2Api: { id: 'REPLACE', name: 'Google Calendar account' } }
+  },
+  code('e1000000-0000-4000-8000-000000000004', 'Build Response', [960, 0], callbackResponse),
+  respond('e1000000-0000-4000-8000-000000000005', [1200, 0], '={{ JSON.stringify($json) }}')
+], link('Retell Tool Call', 'Build Callback Email', 'Email Office', 'Add Callback To Calendar', 'Build Response', 'Respond to Retell'));
 
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
 writeFileSync(new URL('n8n/book-appointment.json', root), JSON.stringify(book, null, 2) + '\n');
