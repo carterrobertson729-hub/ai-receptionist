@@ -68,4 +68,11 @@ test('prompt explains check / cancel / reschedule safely', () => {
   assert.match(out, /check_appointment/); assert.match(out, /cancel_appointment/); assert.match(out, /reschedule_appointment/);
   assert.match(out, /never share anyone else's details/i);
 });
+test('cancellation policy text comes from the config; no policy means never invent a fee', () => {
+  const out = build(config);
+  assert.match(out, /free to cancel until 24 hours before the visit; after that a \$50 late cancellation fee may apply \(free estimate visits are exempt\)/);
+  assert.match(out, /You never charge anything/); assert.match(out, /never promise to waive it/);
+  const none = build({ ...config, cancellationPolicy: undefined });
+  assert.match(none, /No cancellation policy is on file\. Never mention or invent a cancellation fee/);
+});
 console.log(`\n${n} tests passed`);

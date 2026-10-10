@@ -193,5 +193,11 @@
       "rescheduled"
     ]
   },
-  "serviceCallFee": 65
+  "serviceCallFee": 65,
+  "cancellationPolicy": {
+    "freeUntilHoursBefore": 24,
+    "feeAmount": 50,
+    "estimateVisitsExempt": true,
+    "rescheduleCountsAsCancel": false
+  }
 }

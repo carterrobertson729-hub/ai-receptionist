@@ -42,12 +42,18 @@ export function priceList(config) {
   }).join('\n');
 }
 
+export function cancellationPolicyText(config) {
+  const p = config.cancellationPolicy;
+  if (!p || !p.feeAmount) return 'No cancellation policy is on file. Never mention or invent a cancellation fee. If the caller asks about fees, say the office can answer that.';
+  return `Cancellation policy on file: free to cancel until ${p.freeUntilHoursBefore} hours before the visit; after that a $${p.feeAmount} late cancellation fee may apply${p.estimateVisitsExempt !== false ? ' (free estimate visits are exempt)' : ''}${p.rescheduleCountsAsCancel ? '; moving a visit close to the time counts the same as cancelling' : '; moving a visit to a new time does not carry a fee'}. You never charge anything. For each appointment, the lookup result says whether a fee may apply (cancellation.feeMayApply).`;
+}
+
 export function build(config) {
   const routine = config.services.filter((s) => !s.emergency).map((s) => s.name).join(', ');
   const vars = {
     business_name: config.businessName, trade: config.trade, time_zone: config.timeZone,
     services_list: routine, booking_hours: bookingHours(config.hours),
-    extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config)
+    extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config), cancellation_policy: cancellationPolicyText(config)
   };
   let out = template.replace(/\{\{current_time_<[^}]*>\}\}/, `{{current_time_${config.timeZone}}}`);
   for (const [k, v] of Object.entries(vars)) out = out.split(`{{${k}}}`).join(v);

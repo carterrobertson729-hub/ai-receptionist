@@ -60,4 +60,39 @@ test('reschedule outside office hours is refused', () => {
   const r = checkReschedule(config, all, { event_id: 'e1', phone: '5551234567', name: 'Sam', new_start: '2026-10-14T20:00:00-05:00' }, NOW);
   assert.equal(r.status, 'taken');
 });
+const policy = { freeUntilHoursBefore: 24, feeAmount: 50, estimateVisitsExempt: true, rescheduleCountsAsCancel: false };
+const cfgWith = (cancellationPolicy) => ({ ...config, cancellationPolicy });
+const soon = ev('s1', '2026-10-12T20:00:00-05:00', '2026-10-12T21:00:00-05:00', desc('Sam Smith', '+15551234567'));   // 10 hours from NOW (10:00 AM now, 8:00 PM visit)
+const q = { phone: '5551234567', name: 'Sam' };
+test('inside the free window: no fee, nothing to mention', () => {
+  const r = findAppointments(cfgWith(policy), [mine], q, NOW)[0];   // ~2 days away
+  assert.equal(r.cancellation.policyOnFile, true); assert.equal(r.cancellation.feeMayApply, false);
+  const c = checkCancel(cfgWith(policy), [mine], { event_id: 'e1', ...q }, NOW);
+  assert.doesNotMatch(c.body, /LATE CANCELLATION/); assert.doesNotMatch(c.subject, /LATE/);
+});
+test('too close to the visit: the lookup says a fee may apply, and the office email flags it without charging', () => {
+  const r = findAppointments(cfgWith(policy), [soon], q, NOW)[0];
+  assert.equal(r.cancellation.feeMayApply, true); assert.equal(r.cancellation.feeAmount, 50); assert.equal(r.cancellation.hoursUntilVisit, 10);
+  const c = checkCancel(cfgWith(policy), [soon], { event_id: 's1', ...q }, NOW);
+  assert.equal(c.status, 'ok'); assert.match(c.subject, /\(LATE - fee may apply\)/);
+  assert.match(c.body, /LATE CANCELLATION: cancelled about 10 hours before/); assert.match(c.body, /did not charge anything/);
+});
+test('free estimate visits are exempt by default, but not if the business says so', () => {
+  const est = ev('s2', '2026-10-12T20:00:00-05:00', '2026-10-12T21:00:00-05:00', desc('Sam Smith', '+15551234567').replace('Service visit', 'On-site estimate visit (big job)'), { summary: 'ESTIMATE VISIT: Water heater replacement - Sam Smith' });
+  assert.equal(findAppointments(cfgWith(policy), [est], q, NOW)[0].cancellation.feeMayApply, false);
+  assert.equal(findAppointments(cfgWith({ ...policy, estimateVisitsExempt: false }), [est], q, NOW)[0].cancellation.feeMayApply, true);
+});
+test('no policy on file: never any fee talk, cancel still works', () => {
+  const r = findAppointments({ ...config, cancellationPolicy: undefined }, [soon], q, NOW)[0];
+  assert.equal(r.cancellation.policyOnFile, false); assert.equal(r.cancellation.feeMayApply, false);
+  const c = checkCancel({ ...config, cancellationPolicy: undefined }, [soon], { event_id: 's1', ...q }, NOW);
+  assert.equal(c.status, 'ok'); assert.doesNotMatch(c.body, /LATE CANCELLATION/);
+});
+test('a late reschedule only carries a fee if the business treats it like a cancellation', () => {
+  const args = { event_id: 's1', ...q, new_start: '2026-10-14T10:00:00-05:00' };
+  const off = checkReschedule(cfgWith(policy), [soon], args, NOW);
+  assert.equal(off.status, 'ok'); assert.equal(off.changeFeeMayApply, false); assert.doesNotMatch(off.body, /LATE CHANGE/);
+  const on = checkReschedule(cfgWith({ ...policy, rescheduleCountsAsCancel: true }), [soon], args, NOW);
+  assert.equal(on.changeFeeMayApply, true); assert.match(on.body, /LATE CHANGE: moved about 10 hours before/);
+});
 console.log(`\n${n} tests passed`);
