@@ -350,3 +350,16 @@ writeFileSync(new URL('n8n/owner-call-summary.json', root), JSON.stringify(summa
 writeFileSync(new URL('n8n/urgent-alert.json', root), JSON.stringify(urgent, null, 2) + '\n');
 writeFileSync(new URL('n8n/callback-request.json', root), JSON.stringify(callback, null, 2) + '\n');
 console.log('Wrote 5 workflows: check-availability, book-appointment, owner-call-summary, urgent-alert, callback-request');
+
+// ---------- per-node code files: paste these into an existing n8n workflow instead of re-importing ----------
+import { mkdirSync, rmSync } from 'node:fs';
+const nodeCodeDir = new URL('n8n/node-code/', root);
+rmSync(nodeCodeDir, { recursive: true, force: true });
+mkdirSync(nodeCodeDir, { recursive: true });
+const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+for (const w of [check, book, summary, urgent, callback]) {
+  for (const n of w.nodes.filter((n) => n.type === 'n8n-nodes-base.code')) {
+    const header = `// PASTE INTO n8n: workflow "${w.name}" > node "${n.name}" > Code tab (select all, replace, Save).\n`;
+    writeFileSync(new URL(`${slug(w.name.replace('Receptionist - ', ''))}__${slug(n.name)}.js`, nodeCodeDir), header + n.parameters.jsCode + '\n');
+  }
+}

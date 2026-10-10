@@ -25,3 +25,9 @@ Files: `config/` (one JSON per business), `n8n/` (workflows to import), `retell/
 ## Do not yet
 - Do not forward a real business line to this. Emergency dispatch, human transfer, and owner summaries are the next milestones.
 - Texting at volume needs Twilio A2P 10DLC approval; start the ISV registration now.
+
+## Updating a live workflow without re-importing
+
+Most changes only touch the code inside one or two nodes. `node tools/build-workflows.mjs` writes each Code node's script to `n8n/node-code/<workflow>__<node>.js`. To apply a change: open that workflow in n8n, click the named node, open the Code tab, select all, paste the file's contents, Save. Credentials, webhook URLs, and the deactivated Twilio node are untouched. Re-import a whole workflow only when nodes are added, removed, or re-wired (the release notes say when).
+
+Business facts (hours, prices, job types) are currently embedded in the Load Business Config / Build Summary / Build Alerts / Build Callback Email nodes, so a facts change means pasting into each of those. Planned fix: one central config workflow that the others read.
