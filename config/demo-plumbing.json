@@ -67,42 +67,70 @@
     {
       "name": "Clogged toilet",
       "durationMinutes": 30,
-      "emergency": false
+      "emergency": false,
+      "pricing": {
+        "type": "flat",
+        "amount": 50,
+        "details": "standard clog"
+      }
     },
     {
       "name": "Drain cleaning",
       "durationMinutes": 60,
-      "emergency": false
+      "emergency": false,
+      "pricing": {
+        "type": "flat",
+        "amount": 120,
+        "details": "one standard drain"
+      }
     },
     {
       "name": "Leak repair",
       "durationMinutes": 60,
-      "emergency": false
+      "emergency": false,
+      "pricing": {
+        "type": "quote_on_site"
+      }
     },
     {
       "name": "Faucet or fixture repair",
       "durationMinutes": 60,
-      "emergency": false
+      "emergency": false,
+      "pricing": {
+        "type": "quote_on_site"
+      }
     },
     {
       "name": "Toilet repair or replacement",
       "durationMinutes": 90,
-      "emergency": false
+      "emergency": false,
+      "pricing": {
+        "type": "quote_on_site"
+      }
     },
     {
       "name": "Water heater repair",
       "durationMinutes": 90,
-      "emergency": false
+      "emergency": false,
+      "pricing": {
+        "type": "quote_on_site"
+      }
     },
     {
       "name": "Water heater replacement",
       "durationMinutes": 180,
-      "emergency": false
+      "emergency": false,
+      "pricing": {
+        "type": "callback"
+      }
     },
     {
       "name": "Other or not sure",
       "durationMinutes": 120,
-      "emergency": false
+      "emergency": false,
+      "pricing": {
+        "type": "quote_on_site"
+      }
     },
     {
       "name": "Burst pipe or active flooding",
@@ -115,7 +143,7 @@
   ],
   "fixedPrices": [],
   "neverSay": [
-    "Never quote a price, estimate, or range.",
+    "Never quote a price that is not in the price list, and never estimate, round, or give a range.",
     "Never promise an exact arrival time; offer only the booked window.",
     "Never diagnose the problem or tell the caller how to repair it."
   ],
@@ -129,5 +157,6 @@
       "message",
       "urgent"
     ]
-  }
+  },
+  "serviceCallFee": 65
 }
