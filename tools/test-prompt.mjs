@@ -58,4 +58,8 @@ test('callback steps offer real callback times from the tool', () => {
   const out = build(config);
   assert.match(out, /purpose` set to "callback"/); assert.match(out, /Never invent a callback time/);
 });
+test('agent must ask morning or afternoon first and offer all returned times', () => {
+  const out = build(config);
+  assert.match(out, /ALWAYS ask whether they would prefer a morning or an afternoon visit/); assert.match(out, /offer all of the times it returns/);
+});
 console.log(`\n${n} tests passed`);

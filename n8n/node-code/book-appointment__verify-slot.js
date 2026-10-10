@@ -146,6 +146,35 @@ function describeSlot(slot, tz) {
   };
 }
 
+// Pick up to max offers spread across the first day that has openings: the earliest, a middle one, and a late one,
+// preferring times on the hour, never closer together than spacing. If that day has fewer than max openings, the
+// earliest openings of the following days fill the rest.
+function spreadPick(slots, max, spacing, tz) {
+  if (!slots.length) return [];
+  var dayOf = function (s) { return toLocalIso(s.startMs, tz).slice(0, 10); };
+  var day = dayOf(slots[0]);
+  var sameDay = slots.filter(function (s) { return dayOf(s) === day; });
+  var picked = [sameDay[0]];
+  var far = function (s) { return picked.every(function (p) { return p !== s && Math.abs(s.startMs - p.startMs) >= spacing; }); };
+  if (sameDay.length > 1 && max > 1) {
+    var first = sameDay[0].startMs, last = sameDay[sameDay.length - 1].startMs;
+    for (var i = 1; i < max; i++) {
+      var target = first + (last - first) * i / (max - 1);
+      var best = null, bestCost = Infinity;
+      sameDay.forEach(function (s) {
+        if (!far(s)) return;
+        var cost = Math.abs(s.startMs - target) + (toLocalIso(s.startMs, tz).slice(14, 16) === '00' ? 0 : 45 * 60000);
+        if (cost < bestCost) { best = s; bestCost = cost; }
+      });
+      if (best) picked.push(best);
+    }
+  }
+  for (var j = 0; j < slots.length && picked.length < max; j++) {
+    if (dayOf(slots[j]) !== day && far(slots[j])) picked.push(slots[j]);
+  }
+  return picked.sort(function (a, b) { return a.startMs - b.startMs; });
+}
+
 function offerSlots(config, events, args, nowMs) {
   var tz = config.timeZone;
   var slots = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, durationFor(config, args.service, args.visit_type));
@@ -164,18 +193,23 @@ function offerSlots(config, events, args, nowMs) {
   }
   var spacing = (config.bookingRules.offerSpacingMinutes || 0) * 60000;   // avoid near-identical offers
   var max = config.bookingRules.maxSlotsOffered;
-  var picked = [];
-  var exact = isNaN(wantMs) ? null : slots.filter(function (s) { return s.startMs === wantMs; })[0] || null;
-  if (exact) picked.push(exact);
-  var rest = slots.filter(function (s) { return s !== exact; });
-  if (!isNaN(wantMs)) rest.sort(function (a, b) { return Math.abs(a.startMs - wantMs) - Math.abs(b.startMs - wantMs); });
-  for (var i = 0; i < rest.length && picked.length < max; i++) {
-    var farEnough = picked.every(function (p) { return Math.abs(rest[i].startMs - p.startMs) >= spacing; });
-    if (farEnough) picked.push(rest[i]);
+  var ordered;
+  if (isNaN(wantMs)) {
+    ordered = spreadPick(slots, max, spacing, tz);   // no specific time: spread across the day
+  } else {
+    // A specific time was asked for: that exact time first when open, then the nearest other openings.
+    var picked = [];
+    var exact = slots.filter(function (s) { return s.startMs === wantMs; })[0] || null;
+    if (exact) picked.push(exact);
+    var rest = slots.filter(function (s) { return s !== exact; });
+    rest.sort(function (a, b) { return Math.abs(a.startMs - wantMs) - Math.abs(b.startMs - wantMs); });
+    for (var i = 0; i < rest.length && picked.length < max; i++) {
+      var farEnough = picked.every(function (p) { return Math.abs(rest[i].startMs - p.startMs) >= spacing; });
+      if (farEnough) picked.push(rest[i]);
+    }
+    var others = picked.filter(function (s) { return s !== exact; }).sort(function (a, b) { return a.startMs - b.startMs; });
+    ordered = exact ? [exact].concat(others) : others;
   }
-  var first = exact ? picked.slice(1) : picked;
-  first.sort(function (a, b) { return a.startMs - b.startMs; });
-  var ordered = exact ? [exact].concat(first) : first;
   return ordered.map(function (s) { return describeSlot(s, tz); });
 }
 

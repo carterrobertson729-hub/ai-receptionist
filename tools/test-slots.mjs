@@ -95,14 +95,14 @@ test('isSlotStillOpen enforces the gap', () => {
   assert.equal(S.isSlotStillOpen(gapCfg, booked, '2026-10-07T13:00:00-04:00', NOW), true);
 });
 
-test('30 min step + 60 min spacing: first offer is right at the gap edge, offers are spread', () => {
+test('30 min step + 60 min spacing: first offer is right at the gap edge, then spread toward the latest start', () => {
   const cfg = { ...config, bookingRules: { ...config.bookingRules, slotStepMinutes: 30, bufferMinutes: 30, offerSpacingMinutes: 60 } };
   const out = S.offerSlots(cfg, booked, { preferred_date: '2026-10-07' }, NOW).map((x) => x.start.slice(11, 16));
-  assert.deepEqual(out, ['12:30', '13:30', '14:30']);
+  assert.deepEqual(out, ['12:30', '14:00', '15:00']);   // earliest right at the gap edge, then spread to the latest start
 });
-test('spacing off keeps old behaviour', () => {
+test('spacing off still spreads the offers across the day (no longer just the earliest three)', () => {
   const cfg = { ...config, bookingRules: { ...config.bookingRules, slotStepMinutes: 30, bufferMinutes: 30 } };
-  assert.deepEqual(S.offerSlots(cfg, booked, { preferred_date: '2026-10-07' }, NOW).map((x) => x.start.slice(11, 16)), ['12:30', '13:00', '13:30']);
+  assert.deepEqual(S.offerSlots(cfg, booked, { preferred_date: '2026-10-07' }, NOW).map((x) => x.start.slice(11, 16)), ['12:30', '14:00', '15:00']);
 });
 test('12:00 is rejected, 12:30 accepted when booking', () => {
   const cfg = { ...config, bookingRules: { ...config.bookingRules, slotStepMinutes: 30, bufferMinutes: 30 } };
@@ -197,7 +197,7 @@ test('CALLBACK calendar entries never block technician slots, even if not marked
 test('callback times: office hours, 15 min, every 30 min, spread, ignore technician jobs', () => {
   const job = [{ summary: 'Leak - Bob', start: { dateTime: SUN + 'T09:00:00-04:00' }, end: { dateTime: SUN + 'T12:00:00-04:00' } }];
   const out = S.offerCallbackSlots(full, job, { preferred_date: SUN, part_of_day: 'morning' }, NOW);
-  assert.deepEqual(out.map((x) => x.start.slice(11, 16)), ['08:00', '09:00', '10:00']); assert.equal(out[0].minutes, 15);
+  assert.deepEqual(out.map((x) => x.start.slice(11, 16)), ['08:00', '10:00', '11:00']); assert.equal(out[0].minutes, 15);   // spread across the morning
 });
 test('callback times skip a slot another caller already took', () => {
   const taken = [{ summary: 'CALLBACK: Repipe - Ann', start: { dateTime: SUN + 'T08:00:00-04:00' }, end: { dateTime: SUN + 'T08:15:00-04:00' } }];
@@ -206,6 +206,30 @@ test('callback times skip a slot another caller already took', () => {
 test('a specific callback time is answered exactly, with a reason when it is not open', () => {
   assert.equal(S.requestedCallbackStatus(full, [], { preferred_date: SUN, preferred_time: '10:30' }, NOW).available, true);
   assert.match(S.requestedCallbackStatus(full, [], { preferred_date: SUN, preferred_time: '19:00' }, NOW).reason, /outside booking hours|past closing/);
+});
+
+const hourCfg = { ...full, bookingRules: { ...full.bookingRules, slotStepMinutes: 30, bufferMinutes: 30, offerSpacingMinutes: 60, appointmentMinutes: 60 } };
+const pickTimes = (args, ev = []) => S.offerSlots(hourCfg, ev, { preferred_date: SUN, ...args }, NOW).map((x) => x.start.slice(0, 16).replace('2026-10-11T', ''));
+test('morning request spreads across the morning and includes 11:00 without being asked', () => {
+  assert.deepEqual(pickTimes({ part_of_day: 'morning' }), ['08:00', '10:00', '11:00']);
+});
+test('afternoon request spreads across the afternoon', () => {
+  assert.deepEqual(pickTimes({ part_of_day: 'afternoon' }), ['12:00', '14:00', '16:00']);
+});
+test('no preference spreads across the whole day', () => {
+  assert.deepEqual(pickTimes({}), ['08:00', '12:00', '16:00']);
+});
+test('offers never repeat a time, even with no minimum spacing', () => {
+  const noSpacing = { ...hourCfg, bookingRules: { ...hourCfg.bookingRules, offerSpacingMinutes: 0 } };
+  const t = S.offerSlots(noSpacing, [], { preferred_date: SUN, part_of_day: 'morning' }, NOW).map((x) => x.start);
+  assert.equal(new Set(t).size, t.length);
+  const two = { ...config, bookingRules: { ...config.bookingRules } };   // 2h grid, 2 slots left today: no duplicates either
+  const u = S.offerSlots(two, [], {}, NOW).map((x) => x.start); assert.equal(new Set(u).size, u.length);
+});
+test('a day with few openings fills the rest from the next day', () => {
+  const ev = [{ start: { dateTime: SUN + 'T08:00:00-04:00' }, end: { dateTime: SUN + 'T11:00:00-04:00' } }];
+  const t = pickTimes({ part_of_day: 'morning' }, ev);
+  assert.equal(t[0], '11:30'); assert.equal(t.length, 3);
 });
 
 console.log(`\n${passed} tests passed`);
