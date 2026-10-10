@@ -229,6 +229,7 @@ var CONFIGS = ${JSON.stringify(configs)};
 var config = CONFIGS[(item.query && item.query.business) || ''];
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the Retell webhook URL.');
 var s = buildSummary(config, body);
+if (!s.send) return [];   // nothing worth emailing; the call stays in Retell's history
 return [{ json: { to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent } }];`;
 
 const summary = wf('Receptionist - Owner Call Summary', [

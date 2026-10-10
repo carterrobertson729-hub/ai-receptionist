@@ -60,7 +60,13 @@ function buildSummary(config, payload) {
   ];
   if (transcript) lines.push('', '--- Transcript ---', transcript);
 
-  return { subject: (urgent ? '[URGENT] ' : '') + config.businessName + ': ' + headline, body: lines.join('\n'), urgent: urgent };
+  // Only email calls that matter. Urgent calls always send. Otherwise send if the outcome is one the business
+  // wants (default: booked, message) or the caller left real contact details (a lead worth a callback).
+  var allow = (config.notifications && config.notifications.emailOutcomes) || ['booked', 'message', 'urgent'];
+  var hasLead = name !== 'Unknown caller' && pick(custom.caller_phone, '') !== '';
+  var send = urgent || allow.indexOf(outcome) !== -1 || hasLead;
+
+  return { send: send, subject: (urgent ? '[URGENT] ' : '') + config.businessName + ': ' + headline, body: lines.join('\n'), urgent: urgent };
 }
 
 if (typeof module !== 'undefined') module.exports = { buildSummary: buildSummary };

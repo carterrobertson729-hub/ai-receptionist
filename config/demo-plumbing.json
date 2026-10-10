@@ -122,5 +122,12 @@
   "languages": [
     "en",
     "es"
-  ]
+  ],
+  "notifications": {
+    "emailOutcomes": [
+      "booked",
+      "message",
+      "urgent"
+    ]
+  }
 }
