@@ -232,4 +232,20 @@ test('a day with few openings fills the rest from the next day', () => {
   assert.equal(t[0], '11:30'); assert.equal(t.length, 3);
 });
 
+const four = { ...hourCfg, bookingRules: { ...hourCfg.bookingRules, maxSlotsOffered: 4 } };
+const pick4 = (args, ev = []) => S.offerSlots(four, ev, { preferred_date: SUN, ...args }, NOW).map((x) => x.start.slice(11, 16));
+test('with four offers a morning request lists 8, 9, 10 and 11 so nobody has to ask for 9', () => {
+  assert.deepEqual(pick4({ part_of_day: 'morning' }), ['08:00', '09:00', '10:00', '11:00']);
+});
+test('with four offers the afternoon and the whole day are still spread out', () => {
+  assert.deepEqual(pick4({ part_of_day: 'afternoon' }), ['12:00', '13:00', '15:00', '16:00']);
+  const day = pick4({});
+  assert.equal(day.length, 4); assert.equal(day[0], '08:00'); assert.equal(day[3], '16:00'); assert.equal(new Set(day).size, 4);
+});
+test('four offers never repeat a time and respect the gap after an earlier job', () => {
+  const ev = [{ start: { dateTime: SUN + 'T08:00:00-04:00' }, end: { dateTime: SUN + 'T10:00:00-04:00' } }];
+  const t = pick4({ part_of_day: 'morning' }, ev);
+  assert.equal(new Set(t).size, t.length); assert.equal(t[0], '10:30');
+});
+
 console.log(`\n${passed} tests passed`);

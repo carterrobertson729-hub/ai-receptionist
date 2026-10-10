@@ -75,4 +75,8 @@ test('cancellation policy text comes from the config; no policy means never inve
   const none = build({ ...config, cancellationPolicy: undefined });
   assert.match(none, /No cancellation policy is on file\. Never mention or invent a cancellation fee/);
 });
+test('prompt allows up to four offered times', () => {
+  const out = build(config);
+  assert.match(out, /Offer at most four times/); assert.match(out, /\(up to four\)/); assert.doesNotMatch(out, /up to three/);
+});
 console.log(`\n${n} tests passed`);

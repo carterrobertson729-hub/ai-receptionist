@@ -30,7 +30,7 @@
     "bufferMinutes": 30,
     "minNoticeHours": 2,
     "maxDaysAhead": 14,
-    "maxSlotsOffered": 3,
+    "maxSlotsOffered": 4,
     "offerSpacingMinutes": 60,
     "callbackMinNoticeMinutes": 30
   },
