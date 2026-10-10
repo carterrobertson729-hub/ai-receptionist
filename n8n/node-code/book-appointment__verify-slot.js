@@ -315,6 +315,6 @@ var estimate = big && effectiveVisitType(ctx.config, a.service, a.visit_type) !=
 out.visitKind = estimate ? 'estimate' : (big ? 'big_job' : 'service');
 out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name;
 out.description = 'Booked by AI receptionist\nCaller: ' + name + '\nPhone: ' + phone + '\nAddress: ' + address +
-  '\nProblem: ' + problem + '\nVisit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : (big ? 'FULL JOB booked by the caller (exact price confirmed on site before work starts)' : 'Service visit')) + '\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
+  '\nProblem: ' + problem + '\nJob type: ' + out.service + '\nVisit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : (big ? 'FULL JOB booked by the caller (exact price confirmed on site before work starts)' : 'Service visit')) + '\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
   '\nLanguage: ' + (a.language || 'en') + '\nCall: ' + ctx.callId;
 return [{ json: out }];

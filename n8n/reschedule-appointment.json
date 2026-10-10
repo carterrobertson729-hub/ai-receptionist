@@ -1,0 +1,312 @@
+{
+  "name": "Receptionist - Reschedule Appointment",
+  "nodes": [
+    {
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Retell Tool Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "receptionist-reschedule-appointment",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "receptionist/reschedule-appointment",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE",
+          "name": "Retell tool secret"
+        }
+      }
+    },
+    {
+      "id": "h1000000-0000-4000-8000-000000000002",
+      "name": "Load Business Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Resolves which business this call is for, and reads the tool arguments.\nvar CONFIGS = {\"demo-plumbing\":{\"businessId\":\"demo-plumbing\",\"businessName\":\"Demo Plumbing Co\",\"trade\":\"plumbing\",\"timeZone\":\"America/Chicago\",\"receptionistNumber\":\"REPLACE_WITH_RETELL_NUMBER_E164\",\"smsFromNumber\":\"REPLACE_WITH_TWILIO_NUMBER_E164\",\"ownerPhone\":\"REPLACE_WITH_OWNER_NUMBER_E164\",\"ownerEmail\":\"carter.robertson729@gmail.com\",\"people\":{\"carter\":{\"name\":\"Carter\",\"email\":\"carter.robertson729@gmail.com\",\"phone\":\"REPLACE_WITH_ONCALL_NUMBER_E164\"}},\"onCallSchedule\":{\"mon\":\"carter\",\"tue\":\"carter\",\"wed\":\"carter\",\"thu\":\"carter\",\"fri\":\"carter\",\"sat\":\"carter\",\"sun\":\"carter\"},\"calendarId\":\"d8f2a8fbc0b04e3460f2971b0c7d82d953936566b3e9f560190bc3317cf2367c@group.calendar.google.com\",\"bookingRules\":{\"appointmentMinutes\":120,\"slotStepMinutes\":30,\"bufferMinutes\":30,\"minNoticeHours\":2,\"maxDaysAhead\":14,\"maxSlotsOffered\":3,\"offerSpacingMinutes\":60,\"callbackMinNoticeMinutes\":30},\"hours\":{\"mon\":[\"08:00\",\"17:00\"],\"tue\":[\"08:00\",\"17:00\"],\"wed\":[\"08:00\",\"17:00\"],\"thu\":[\"08:00\",\"17:00\"],\"fri\":[\"08:00\",\"17:00\"],\"sat\":[\"08:00\",\"17:00\"],\"sun\":[\"08:00\",\"17:00\"]},\"services\":[{\"name\":\"Clogged toilet\",\"durationMinutes\":30,\"emergency\":false,\"pricing\":{\"type\":\"flat\",\"amount\":50,\"details\":\"standard clog\"}},{\"name\":\"Drain cleaning\",\"durationMinutes\":60,\"emergency\":false,\"pricing\":{\"type\":\"flat\",\"amount\":120,\"details\":\"one standard drain\"}},{\"name\":\"Leak repair\",\"durationMinutes\":60,\"emergency\":false,\"pricing\":{\"type\":\"quote_on_site\"}},{\"name\":\"Faucet or fixture repair\",\"durationMinutes\":60,\"emergency\":false,\"pricing\":{\"type\":\"quote_on_site\"}},{\"name\":\"Toilet repair or replacement\",\"durationMinutes\":90,\"emergency\":false,\"pricing\":{\"type\":\"quote_on_site\"}},{\"name\":\"Water heater repair\",\"durationMinutes\":90,\"emergency\":false,\"pricing\":{\"type\":\"quote_on_site\"}},{\"name\":\"Water heater replacement\",\"durationMinutes\":60,\"jobMinutes\":180,\"emergency\":false,\"pricing\":{\"type\":\"big_job\",\"startingAt\":1200,\"typical\":\"$1,800 to $3,200\",\"estimateVisit\":\"a free on-site estimate visit\"}},{\"name\":\"Sewer line repair or replacement\",\"durationMinutes\":60,\"emergency\":false,\"pricing\":{\"type\":\"big_job\",\"startingAt\":2500,\"typical\":\"$4,000 to $12,000\",\"estimateVisit\":\"a free on-site estimate visit\"},\"multiDay\":true},{\"name\":\"Whole-house repipe\",\"durationMinutes\":60,\"emergency\":false,\"pricing\":{\"type\":\"big_job\",\"startingAt\":4000,\"typical\":\"$6,000 to $15,000\",\"estimateVisit\":\"a free on-site estimate visit\"},\"multiDay\":true},{\"name\":\"Other or not sure\",\"durationMinutes\":120,\"emergency\":false,\"pricing\":{\"type\":\"quote_on_site\"}},{\"name\":\"Burst pipe or active flooding\",\"emergency\":true},{\"name\":\"No water or sewage backup\",\"emergency\":true}],\"fixedPrices\":[],\"neverSay\":[\"Never quote a price that is not in the price list, and never estimate, round, or give a range.\",\"Never promise an exact arrival time; offer only the booked window.\",\"Never diagnose the problem or tell the caller how to repair it.\"],\"languages\":[\"en\",\"es\"],\"notifications\":{\"emailOutcomes\":[\"booked\",\"estimate\",\"message\",\"urgent\"],\"skipOutcomes\":[\"callback\",\"cancelled\",\"rescheduled\"]},\"serviceCallFee\":65}};\nvar item = $input.first().json;\nvar body = item.body || {};\nvar args = body.args || {};\nvar call = body.call || {};\nvar id = (item.query && item.query.business) || '';\nvar config = CONFIGS[id];\nif (!config) {\n  var toNumber = call.to_number || '';\n  config = Object.values(CONFIGS).find(function (c) { return c.receptionistNumber === toNumber; });\n}\nif (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');\nvar now = Date.now();\nvar windowEnd = now + Math.max(config.bookingRules.maxDaysAhead + 1, 45) * 86400000;\nreturn [{ json: {\n  config: config, args: args, callId: call.call_id || '',\n  nowMs: now, timeMin: new Date(now).toISOString(), timeMax: new Date(windowEnd).toISOString()\n} }];"
+      }
+    },
+    {
+      "id": "h1000000-0000-4000-8000-000000000003",
+      "name": "Get Calendar Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        0
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "resource": "event",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.config.calendarId }}"
+        },
+        "returnAll": false,
+        "limit": 250,
+        "timeMin": "={{ $json.timeMin }}",
+        "timeMax": "={{ $json.timeMax }}",
+        "options": {
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "h1000000-0000-4000-8000-000000000004",
+      "name": "Verify Reschedule",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Shared scheduling logic. Inlined into n8n Code nodes by tools/build-workflows.mjs\n// and unit-tested by tools/test-slots.mjs. No dependencies; time zones via Intl.\n\nvar DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];\n\n// Minutes the zone is ahead of UTC at the given instant.\nfunction zoneOffsetMinutes(utcMs, tz) {\n  var parts = new Intl.DateTimeFormat('en-US', {\n    timeZone: tz, hourCycle: 'h23',\n    year: 'numeric', month: '2-digit', day: '2-digit',\n    hour: '2-digit', minute: '2-digit', second: '2-digit'\n  }).formatToParts(new Date(utcMs));\n  var p = {};\n  parts.forEach(function (x) { p[x.type] = x.value; });\n  var asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);\n  return Math.round((asUtc - Math.floor(utcMs / 1000) * 1000) / 60000);\n}\n\n// Wall-clock time in the zone (\"2026-10-13\", \"08:00\") -> UTC ms.\nfunction localToUtcMs(dateStr, hhmm, tz) {\n  var d = dateStr.split('-').map(Number);\n  var t = hhmm.split(':').map(Number);\n  var guess = Date.UTC(d[0], d[1] - 1, d[2], t[0], t[1], 0);\n  var utc = guess - zoneOffsetMinutes(guess, tz) * 60000;\n  var off2 = zoneOffsetMinutes(utc, tz);\n  return guess - off2 * 60000;\n}\n\nfunction pad2(n) { return (n < 10 ? '0' : '') + n; }\n\n// UTC ms -> \"2026-10-13T08:00:00-04:00\" in the zone.\nfunction toLocalIso(utcMs, tz) {\n  var off = zoneOffsetMinutes(utcMs, tz);\n  var local = new Date(utcMs + off * 60000);\n  var sign = off < 0 ? '-' : '+';\n  var a = Math.abs(off);\n  return local.getUTCFullYear() + '-' + pad2(local.getUTCMonth() + 1) + '-' + pad2(local.getUTCDate()) +\n    'T' + pad2(local.getUTCHours()) + ':' + pad2(local.getUTCMinutes()) + ':' + pad2(local.getUTCSeconds()) +\n    sign + pad2(Math.floor(a / 60)) + ':' + pad2(a % 60);\n}\n\nfunction localDateStr(utcMs, tz) {\n  return toLocalIso(utcMs, tz).slice(0, 10);\n}\n\nfunction addDays(dateStr, n) {\n  var d = dateStr.split('-').map(Number);\n  var t = new Date(Date.UTC(d[0], d[1] - 1, d[2] + n));\n  return t.getUTCFullYear() + '-' + pad2(t.getUTCMonth() + 1) + '-' + pad2(t.getUTCDate());\n}\n\nfunction weekdayKey(dateStr) {\n  var d = dateStr.split('-').map(Number);\n  return DAY_KEYS[new Date(Date.UTC(d[0], d[1] - 1, d[2])).getUTCDay()];\n}\n\nfunction friendlyLabel(utcMs, tz) {\n  var day = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(utcMs));\n  var time = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(new Date(utcMs));\n  return day + ' at ' + time;\n}\n\n// Google Calendar events -> [{start, end}] in UTC ms. Skips cancelled and \"free\" events.\nfunction busyFromEvents(events, tz) {\n  var out = [];\n  (events || []).forEach(function (e) {\n    if (!e || e.status === 'cancelled' || e.transparency === 'transparent') return;\n    if (String(e.summary || '').indexOf('CALLBACK:') === 0) return;   // callback reminders never block technicians\n    var s = e.start || {};\n    var en = e.end || {};\n    if (s.dateTime && en.dateTime) {\n      out.push({ start: Date.parse(s.dateTime), end: Date.parse(en.dateTime) });\n    } else if (s.date && en.date) {\n      out.push({ start: localToUtcMs(s.date, '00:00', tz), end: localToUtcMs(en.date, '00:00', tz) });\n    }\n  });\n  return out;\n}\n\n// The business's service entry for a job type: exact name first, then partial match.\nfunction serviceFor(config, service) {\n  var name = String(service || '').trim().toLowerCase();\n  if (!name || !config.services) return null;\n  return config.services.filter(function (x) { return String(x.name).toLowerCase() === name; })[0] ||\n    config.services.filter(function (x) { var n = String(x.name).toLowerCase(); return n.indexOf(name) !== -1 || name.indexOf(n) !== -1; })[0] || null;\n}\n\n// For big jobs only: 'job' (book the whole job) or 'estimate' (short on-site visit). Jobs the business marks\n// multiDay are never booked by the AI, so they always become an estimate visit. Ordinary jobs return undefined.\nfunction effectiveVisitType(config, service, visitType) {\n  var found = serviceFor(config, service);\n  if (!(found && found.pricing && found.pricing.type === 'big_job')) return undefined;\n  if (found.multiDay) return 'estimate';\n  return visitType === 'job' ? 'job' : 'estimate';\n}\n\n// Visit length in minutes for a job type. Unknown or missing types get the safe default length.\n// Big jobs have two lengths: the short on-site ESTIMATE visit (durationMinutes, the default) and the whole\n// job (jobMinutes), used only when the caller books the job itself and it fits in one day.\nfunction durationFor(config, service, visitType) {\n  var found = serviceFor(config, service);\n  if (effectiveVisitType(config, service, visitType) === 'job' && found.jobMinutes) return found.jobMinutes;\n  return found && found.durationMinutes ? found.durationMinutes : config.bookingRules.appointmentMinutes;\n}\n\nfunction isBigJob(config, service) {\n  var found = serviceFor(config, service);\n  return !!(found && found.pricing && found.pricing.type === 'big_job');\n}\n\n// All bookable slots in the window, earliest first. No cap; callers cap.\n// durationMin is the visit length for this job type (defaults to the business default).\nfunction allSlots(config, busy, fromDate, nowMs, durationMin) {\n  var rules = config.bookingRules;\n  var tz = config.timeZone;\n  var dur = (durationMin || rules.appointmentMinutes) * 60000;\n  var step = rules.slotStepMinutes * 60000;\n  var buf = (rules.bufferMinutes || 0) * 60000;\n  var earliest = nowMs + rules.minNoticeHours * 3600000;\n  var today = localDateStr(nowMs, tz);\n  var startDate = fromDate && fromDate > today ? fromDate : today;\n  var slots = [];\n  for (var i = 0; i < rules.maxDaysAhead; i++) {\n    var date = addDays(startDate, i);\n    var hours = config.hours[weekdayKey(date)];\n    if (!hours) continue;\n    var open = localToUtcMs(date, hours[0], tz);\n    var close = localToUtcMs(date, hours[1], tz);\n    for (var s = open; s + dur <= close; s += step) {\n      if (s < earliest) continue;\n      var clash = busy.some(function (b) { return s < b.end + buf && s + dur > b.start - buf; });\n      if (clash) continue;\n      slots.push({ startMs: s, endMs: s + dur });\n    }\n  }\n  return slots;\n}\n\nfunction describeSlot(slot, tz) {\n  return {\n    start: toLocalIso(slot.startMs, tz),\n    end: toLocalIso(slot.endMs, tz),\n    minutes: Math.round((slot.endMs - slot.startMs) / 60000),\n    label: friendlyLabel(slot.startMs, tz)\n  };\n}\n\n// Pick up to max offers spread across the first day that has openings: the earliest, a middle one, and a late one,\n// preferring times on the hour, never closer together than spacing. If that day has fewer than max openings, the\n// earliest openings of the following days fill the rest.\nfunction spreadPick(slots, max, spacing, tz) {\n  if (!slots.length) return [];\n  var dayOf = function (s) { return toLocalIso(s.startMs, tz).slice(0, 10); };\n  var day = dayOf(slots[0]);\n  var sameDay = slots.filter(function (s) { return dayOf(s) === day; });\n  var picked = [sameDay[0]];\n  var far = function (s) { return picked.every(function (p) { return p !== s && Math.abs(s.startMs - p.startMs) >= spacing; }); };\n  if (sameDay.length > 1 && max > 1) {\n    var first = sameDay[0].startMs, last = sameDay[sameDay.length - 1].startMs;\n    for (var i = 1; i < max; i++) {\n      var target = first + (last - first) * i / (max - 1);\n      var best = null, bestCost = Infinity;\n      sameDay.forEach(function (s) {\n        if (!far(s)) return;\n        var cost = Math.abs(s.startMs - target) + (toLocalIso(s.startMs, tz).slice(14, 16) === '00' ? 0 : 45 * 60000);\n        if (cost < bestCost) { best = s; bestCost = cost; }\n      });\n      if (best) picked.push(best);\n    }\n  }\n  for (var j = 0; j < slots.length && picked.length < max; j++) {\n    if (dayOf(slots[j]) !== day && far(slots[j])) picked.push(slots[j]);\n  }\n  return picked.sort(function (a, b) { return a.startMs - b.startMs; });\n}\n\nfunction offerSlots(config, events, args, nowMs) {\n  var tz = config.timeZone;\n  var slots = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, durationFor(config, args.service, args.visit_type));\n  if (args.part_of_day === 'morning' || args.part_of_day === 'afternoon') {\n    var filtered = slots.filter(function (s) {\n      var hour = +toLocalIso(s.startMs, tz).slice(11, 13);\n      return args.part_of_day === 'morning' ? hour < 12 : hour >= 12;\n    });\n    if (filtered.length) slots = filtered;\n  }\n  // If the caller asked for a specific time, offer that exact time first when it is open,\n  // then the nearest other openings. Otherwise offer the earliest openings.\n  var wantMs = NaN;\n  if (/^\\d{4}-\\d{2}-\\d{2}$/.test(String(args.preferred_date || '')) && /^\\d{2}:\\d{2}$/.test(String(args.preferred_time || ''))) {\n    wantMs = localToUtcMs(args.preferred_date, args.preferred_time, tz);\n  }\n  var spacing = (config.bookingRules.offerSpacingMinutes || 0) * 60000;   // avoid near-identical offers\n  var max = config.bookingRules.maxSlotsOffered;\n  var ordered;\n  if (isNaN(wantMs)) {\n    ordered = spreadPick(slots, max, spacing, tz);   // no specific time: spread across the day\n  } else {\n    // A specific time was asked for: that exact time first when open, then the nearest other openings.\n    var picked = [];\n    var exact = slots.filter(function (s) { return s.startMs === wantMs; })[0] || null;\n    if (exact) picked.push(exact);\n    var rest = slots.filter(function (s) { return s !== exact; });\n    rest.sort(function (a, b) { return Math.abs(a.startMs - wantMs) - Math.abs(b.startMs - wantMs); });\n    for (var i = 0; i < rest.length && picked.length < max; i++) {\n      var farEnough = picked.every(function (p) { return Math.abs(rest[i].startMs - p.startMs) >= spacing; });\n      if (farEnough) picked.push(rest[i]);\n    }\n    var others = picked.filter(function (s) { return s !== exact; }).sort(function (a, b) { return a.startMs - b.startMs; });\n    ordered = exact ? [exact].concat(others) : others;\n  }\n  return ordered.map(function (s) { return describeSlot(s, tz); });\n}\n\n// Is the exact time the caller asked for open? If not, why not (so the agent can explain honestly).\nfunction requestedTimeStatus(config, events, args, nowMs) {\n  var tz = config.timeZone;\n  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(args.preferred_date || '')) || !/^\\d{2}:\\d{2}$/.test(String(args.preferred_time || ''))) return null;\n  var dur = durationFor(config, args.service, args.visit_type) * 60000;\n  var startMs = localToUtcMs(args.preferred_date, args.preferred_time, tz);\n  var status = { time: args.preferred_time, label: friendlyLabel(startMs, tz), visitMinutes: dur / 60000, available: false, reason: '' };\n  var open = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, dur / 60000);\n  if (open.some(function (s) { return s.startMs === startMs; })) { status.available = true; return status; }\n  var hours = config.hours[weekdayKey(args.preferred_date)];\n  if (!hours) status.reason = 'the office takes no visits that day';\n  else if (startMs < localToUtcMs(args.preferred_date, hours[0], tz) || startMs + dur > localToUtcMs(args.preferred_date, hours[1], tz)) status.reason = 'that time falls outside booking hours, or the visit would run past closing';\n  else if (startMs < nowMs + config.bookingRules.minNoticeHours * 3600000) status.reason = 'that is too soon, the office needs about ' + config.bookingRules.minNoticeHours + ' hours notice';\n  else status.reason = 'it overlaps another appointment or the travel time needed between jobs';\n  return status;\n}\n\n// ---- Callback times: when the office can phone the caller back. Separate from technician availability. ----\n// Technician jobs never matter here; only other callbacks already on the calendar (so two callers do not get the\n// same minute). Office hours apply. 15 minute slots every 30 minutes, about 30 minutes notice.\nfunction callbackConfig(config) {\n  var r = config.bookingRules;\n  return Object.assign({}, config, {\n    services: [],\n    bookingRules: Object.assign({}, r, {\n      appointmentMinutes: 15, slotStepMinutes: 30, bufferMinutes: 0, offerSpacingMinutes: 60,\n      minNoticeHours: (r.callbackMinNoticeMinutes || 30) / 60\n    })\n  });\n}\n\nfunction callbackOnly(events) {\n  return (events || []).filter(function (e) { return e && e.status !== 'cancelled' && String(e.summary || '').indexOf('CALLBACK:') === 0; })\n    .map(function (e) { return { start: e.start, end: e.end }; });\n}\n\nfunction offerCallbackSlots(config, events, args, nowMs) {\n  return offerSlots(callbackConfig(config), callbackOnly(events),\n    { preferred_date: args.preferred_date, part_of_day: args.part_of_day, preferred_time: args.preferred_time }, nowMs);\n}\n\nfunction requestedCallbackStatus(config, events, args, nowMs) {\n  return requestedTimeStatus(callbackConfig(config), callbackOnly(events),\n    { preferred_date: args.preferred_date, preferred_time: args.preferred_time }, nowMs);\n}\n\n// True only if startIso is exactly one of the business's open slots right now.\nfunction isSlotStillOpen(config, events, startIso, nowMs, service, visitType) {\n  var tz = config.timeZone;\n  var startMs = Date.parse(startIso);\n  if (isNaN(startMs)) return false;\n  var slots = allSlots(config, busyFromEvents(events, tz), localDateStr(startMs, tz), nowMs, durationFor(config, service, visitType));\n  return slots.some(function (s) { return s.startMs === startMs; });\n}\n\n\n// Find, cancel and reschedule appointments that this system booked.\n// Needs slots.js helpers (busyFromEvents, allSlots, offerSlots, localDateStr, toLocalIso, friendlyLabel) inlined before it.\n// Unit-tested by tools/test-appointments.mjs.\n\nfunction apptDigits(s) { return String(s || '').replace(/\\D/g, ''); }\n\nfunction apptPhone(raw) {\n  var d = apptDigits(raw);\n  if (d.length === 10) d = '1' + d;\n  return d.length === 11 && d.charAt(0) === '1' ? '+' + d : null;\n}\n\n// Pull \"Label: value\" out of the event description the booking workflow wrote.\nfunction apptField(desc, label) {\n  var lines = String(desc || '').split('\\n');\n  for (var i = 0; i < lines.length; i++) {\n    if (lines[i].indexOf(label + ':') === 0) return lines[i].slice(label.length + 1).trim();\n  }\n  return '';\n}\n\n// Only real appointments this system booked: not callback reminders, not cancelled, not events someone typed in by hand.\nfunction isAppointment(e) {\n  if (!e || e.status === 'cancelled' || !e.start || !e.start.dateTime || !e.end || !e.end.dateTime) return false;\n  if (String(e.summary || '').indexOf('CALLBACK:') === 0) return false;\n  return String(e.description || '').indexOf('Booked by AI receptionist') !== -1;\n}\n\n// The caller must give the phone number AND a name that matches the booking, so nobody can cancel a stranger's visit.\nfunction apptOwnedBy(e, phone, name) {\n  var want = apptPhone(phone);\n  if (!want || apptDigits(apptField(e.description, 'Phone')) !== apptDigits(want)) return false;\n  var words = String(name || '').toLowerCase().split(/\\s+/).filter(Boolean);\n  if (!words.length) return false;\n  var booked = apptField(e.description, 'Caller').toLowerCase();\n  return words.every(function (w) { return booked.indexOf(w) !== -1; });\n}\n\nfunction apptSummary(config, e) {\n  var tz = config.timeZone;\n  var startMs = Date.parse(e.start.dateTime), endMs = Date.parse(e.end.dateTime);\n  var visitText = apptField(e.description, 'Visit type');\n  var summary = String(e.summary || '');\n  var service = apptField(e.description, 'Job type') || summary.replace(/^ESTIMATE VISIT:\\s*/, '').replace(/\\s+-\\s+[^-]*$/, '');\n  return {\n    eventId: e.id,\n    when: friendlyLabel(startMs, tz),\n    start: toLocalIso(startMs, tz),\n    end: toLocalIso(endMs, tz),\n    minutes: Math.round((endMs - startMs) / 60000),\n    service: service,\n    visitType: /estimate/i.test(visitText) || /^ESTIMATE VISIT:/.test(summary) ? 'estimate' : (/FULL JOB/.test(visitText) ? 'job' : undefined),\n    address: apptField(e.description, 'Address'),\n    problem: apptField(e.description, 'Problem')\n  };\n}\n\n// Upcoming appointments that belong to this caller.\nfunction findAppointments(config, events, args, nowMs) {\n  return (events || []).filter(function (e) {\n    return isAppointment(e) && Date.parse(e.end.dateTime) > nowMs && apptOwnedBy(e, args.phone, args.name);\n  }).sort(function (a, b) { return Date.parse(a.start.dateTime) - Date.parse(b.start.dateTime); })\n    .map(function (e) { return apptSummary(config, e); });\n}\n\nfunction locateOwned(events, args) {\n  var ev = (events || []).filter(function (e) { return e && e.id === args.event_id; })[0];\n  if (!ev || !isAppointment(ev)) return { status: 'not_found' };\n  if (!apptOwnedBy(ev, args.phone, args.name)) return { status: 'not_verified' };\n  return { status: 'ok', event: ev };\n}\n\nfunction checkCancel(config, events, args, nowMs) {\n  var found = locateOwned(events, args);\n  if (found.status !== 'ok') return found;\n  var a = apptSummary(config, found.event);\n  var who = apptField(found.event.description, 'Caller');\n  var subject = config.businessName + ': Appointment CANCELLED - ' + a.service + ' - ' + who;\n  var body = ['APPOINTMENT CANCELLED BY THE CALLER', '', 'Caller: ' + who, 'Phone: ' + apptField(found.event.description, 'Phone'),\n    'Job: ' + a.service + (a.visitType === 'estimate' ? ' (estimate visit)' : ''), 'Was scheduled: ' + a.when + ' (about ' + a.minutes + ' minutes)',\n    'Address: ' + a.address, 'Problem: ' + a.problem, '', 'The time is open again on the calendar.'].join('\\n');\n  return { status: 'ok', eventId: found.event.id, appointment: a, to: config.ownerEmail, subject: subject, body: body };\n}\n\nfunction checkReschedule(config, events, args, nowMs) {\n  var found = locateOwned(events, args);\n  if (found.status !== 'ok') return found;\n  var tz = config.timeZone;\n  var ev = found.event;\n  var a = apptSummary(config, ev);\n  var newStart = Date.parse(args.new_start);\n  if (isNaN(newStart)) return { status: 'invalid_start' };\n  var others = events.filter(function (e) { return e !== ev; });\n  var open = allSlots(config, busyFromEvents(others, tz), localDateStr(newStart, tz), nowMs, a.minutes)\n    .some(function (s) { return s.startMs === newStart; });\n  if (!open) {\n    return { status: 'taken', alternatives: offerSlots(config, others, { preferred_date: localDateStr(newStart, tz), service: a.service, visit_type: a.visitType }, nowMs) };\n  }\n  var newEnd = newStart + a.minutes * 60000;\n  var newWhen = friendlyLabel(newStart, tz);\n  var who = apptField(ev.description, 'Caller');\n  var subject = config.businessName + ': Appointment RESCHEDULED - ' + a.service + ' - ' + who;\n  var body = ['APPOINTMENT RESCHEDULED BY THE CALLER', '', 'Caller: ' + who, 'Phone: ' + apptField(ev.description, 'Phone'),\n    'Job: ' + a.service + (a.visitType === 'estimate' ? ' (estimate visit)' : ''), 'Was: ' + a.when, 'Now: ' + newWhen + ' (about ' + a.minutes + ' minutes)',\n    'Address: ' + a.address, 'Problem: ' + a.problem].join('\\n');\n  return {\n    status: 'ok', eventId: ev.id, appointment: a, oldWhen: a.when, newWhen: newWhen,\n    newStart: toLocalIso(newStart, tz), newEnd: toLocalIso(newEnd, tz),\n    newDescription: String(ev.description || '') + '\\nRescheduled by caller from: ' + a.when,\n    to: config.ownerEmail, subject: subject, body: body\n  };\n}\n\n\nvar ctx = $('Load Business Config').first().json;\nvar events = $input.all().map(function (i) { return i.json; });\nreturn [{ json: checkReschedule(ctx.config, events, ctx.args, ctx.nowMs) }];"
+      }
+    },
+    {
+      "id": "h1000000-0000-4000-8000-000000000005",
+      "name": "Verified?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "h1000000-0000-4000-8000-000000000006",
+      "name": "Update Calendar Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        -120
+      ],
+      "parameters": {
+        "resource": "event",
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Load Business Config').first().json.config.calendarId }}"
+        },
+        "eventId": "={{ $('Verify Reschedule').first().json.eventId }}",
+        "useDefaultReminders": true,
+        "updateFields": {
+          "start": "={{ $('Verify Reschedule').first().json.newStart }}",
+          "end": "={{ $('Verify Reschedule').first().json.newEnd }}",
+          "description": "={{ $('Verify Reschedule').first().json.newDescription }}"
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "h1000000-0000-4000-8000-000000000007",
+      "name": "Email Office",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        -120
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Verify Reschedule').first().json.to }}",
+        "subject": "={{ $('Verify Reschedule').first().json.subject }}",
+        "emailType": "text",
+        "message": "={{ $('Verify Reschedule').first().json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "h1000000-0000-4000-8000-000000000008",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ],
+      "parameters": {
+        "jsCode": "var v = $('Verify Reschedule').first().json;\nvar res;\nif (v.status === 'ok') res = { rescheduled: true, was: v.oldWhen, now: v.newWhen, message: 'Moved from ' + v.oldWhen + ' to ' + v.newWhen + ', and the office has been told. Confirm the new time to the caller.' };\nelse if (v.status === 'taken') res = { rescheduled: false, reason: 'slot_taken', alternatives: v.alternatives, message: 'That new time is not available. Apologize briefly and offer these alternatives. Their original appointment is unchanged.' };\nelse if (v.status === 'not_verified' || v.status === 'not_found') res = { rescheduled: false, reason: v.status, message: 'Could not find that appointment for this name and phone number. Do not guess. Ask them to repeat the name and number, or offer to take a message.' };\nelse res = { rescheduled: false, reason: v.status, message: 'Could not reschedule (' + v.status + '). Their original appointment is unchanged. Apologize and offer to take a message.' };\nreturn [{ json: res }];"
+      }
+    },
+    {
+      "id": "h1000000-0000-4000-8000-000000000009",
+      "name": "Respond to Retell",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1920,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Retell Tool Call": {
+      "main": [
+        [
+          {
+            "node": "Load Business Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Business Config": {
+      "main": [
+        [
+          {
+            "node": "Get Calendar Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Calendar Events": {
+      "main": [
+        [
+          {
+            "node": "Verify Reschedule",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Reschedule": {
+      "main": [
+        [
+          {
+            "node": "Verified?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verified?": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar Event": {
+      "main": [
+        [
+          {
+            "node": "Email Office",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Office": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Retell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

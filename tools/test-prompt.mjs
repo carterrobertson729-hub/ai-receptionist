@@ -62,4 +62,10 @@ test('agent must ask morning or afternoon first and offer all returned times', (
   const out = build(config);
   assert.match(out, /ALWAYS ask whether they would prefer a morning or an afternoon visit/); assert.match(out, /offer all of the times it returns/);
 });
+test('prompt explains check / cancel / reschedule safely', () => {
+  const out = build(config);
+  assert.match(out, /Existing appointments \(check, cancel, reschedule\)/); assert.match(out, /Never cancel without that confirmation/);
+  assert.match(out, /check_appointment/); assert.match(out, /cancel_appointment/); assert.match(out, /reschedule_appointment/);
+  assert.match(out, /never share anyone else's details/i);
+});
 console.log(`\n${n} tests passed`);

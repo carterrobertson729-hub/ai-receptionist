@@ -213,6 +213,99 @@
           "problem"
         ]
       }
+    },
+    {
+      "name": "check_appointment",
+      "description": "Look up the caller's upcoming appointments by name and phone number. Use when a caller wants to check, cancel, or reschedule an appointment they already have. Returns each appointment's eventId, time, job type and visit type.",
+      "url": "https://YOUR_N8N.app.n8n.cloud/webhook/receptionist/find-appointment?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "Let me look that up.",
+      "timeout_ms": 15000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The caller's full name as the appointment was booked."
+          },
+          "phone": {
+            "type": "string",
+            "description": "The phone number the appointment was booked under, exactly as the caller said it."
+          }
+        },
+        "required": [
+          "name",
+          "phone"
+        ]
+      }
+    },
+    {
+      "name": "cancel_appointment",
+      "description": "Cancel one of the caller's appointments. Only call after check_appointment found it AND the caller clearly confirmed they want it cancelled.",
+      "url": "https://YOUR_N8N.app.n8n.cloud/webhook/receptionist/cancel-appointment?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "One moment while I cancel that.",
+      "timeout_ms": 20000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "description": "The eventId of the appointment, exactly as returned by check_appointment."
+          },
+          "name": {
+            "type": "string",
+            "description": "The caller's full name as the appointment was booked."
+          },
+          "phone": {
+            "type": "string",
+            "description": "The phone number the appointment was booked under, exactly as the caller said it."
+          }
+        },
+        "required": [
+          "event_id",
+          "name",
+          "phone"
+        ]
+      }
+    },
+    {
+      "name": "reschedule_appointment",
+      "description": "Move one of the caller's appointments to a new time. Only call after check_appointment found it and the caller picked a new time that check_availability offered.",
+      "url": "https://YOUR_N8N.app.n8n.cloud/webhook/receptionist/reschedule-appointment?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "One moment while I move that.",
+      "timeout_ms": 20000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "description": "The eventId of the appointment, exactly as returned by check_appointment."
+          },
+          "name": {
+            "type": "string",
+            "description": "The caller's full name as the appointment was booked."
+          },
+          "phone": {
+            "type": "string",
+            "description": "The phone number the appointment was booked under, exactly as the caller said it."
+          },
+          "new_start": {
+            "type": "string",
+            "description": "The exact 'start' value from check_availability for the new time the caller chose."
+          }
+        },
+        "required": [
+          "event_id",
+          "name",
+          "phone",
+          "new_start"
+        ]
+      }
     }
   ]
 }

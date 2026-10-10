@@ -30,13 +30,17 @@ function buildSummary(config, payload) {
   var headline;
   if (urgent) headline = 'URGENT call from ' + name;
   else if (outcome === 'booked') headline = 'Booked: ' + name + (appt ? ' - ' + appt : '');
+  else if (outcome === 'estimate') headline = 'Estimate visit booked: ' + name + (appt ? ' - ' + appt : '');
   else if (outcome === 'message') headline = 'Message from ' + name;
   else headline = 'Call from ' + (name !== 'Unknown caller' ? name : phone);
 
   var outcomeLine = {
     booked: 'Appointment booked' + (appt ? ' for ' + appt : ''),
     message: 'No booking. A message was taken - please call back.',
+    estimate: 'Free estimate visit booked' + (appt ? ' for ' + appt : ''),
     callback: 'Callback requested (a separate callback email was sent).',
+    cancelled: 'Appointment cancelled (a separate cancellation email was sent).',
+    rescheduled: 'Appointment rescheduled (a separate email was sent).',
     urgent: 'URGENT - needs a human to follow up now. No technician has been contacted automatically.',
     unknown: 'Outcome not recorded - see the summary below.'
   }[outcome] || outcome;
@@ -63,9 +67,9 @@ function buildSummary(config, payload) {
 
   // Only email calls that matter. Urgent calls always send. Otherwise send if the outcome is one the business
   // wants (default: booked, message) or the caller left real contact details (a lead worth a callback).
-  var allow = (config.notifications && config.notifications.emailOutcomes) || ['booked', 'message', 'urgent'];
+  var allow = (config.notifications && config.notifications.emailOutcomes) || ['booked', 'estimate', 'message', 'urgent'];
   var hasLead = name !== 'Unknown caller' && pick(custom.caller_phone, '') !== '';
-  var skip = (config.notifications && config.notifications.skipOutcomes) || ['callback'];   // already emailed by their own workflow
+  var skip = (config.notifications && config.notifications.skipOutcomes) || ['callback', 'cancelled', 'rescheduled'];   // already emailed by their own workflow
   var send = urgent || (skip.indexOf(outcome) === -1 && (allow.indexOf(outcome) !== -1 || hasLead));
 
   return { send: send, subject: (urgent ? '[URGENT] ' : '') + config.businessName + ': ' + headline, body: lines.join('\n'), urgent: urgent };

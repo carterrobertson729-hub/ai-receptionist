@@ -9,6 +9,7 @@ const slotsLib = stripExports(read('n8n/code/slots.js'));
 const summaryLib = stripExports(read('n8n/code/summary.js'));
 const oncallLib = stripExports(read('n8n/code/oncall.js'));
 const callbackLib = stripExports(read('n8n/code/callback.js'));
+const apptLib = stripExports(read('n8n/code/appointments.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -159,7 +160,7 @@ var estimate = big && effectiveVisitType(ctx.config, a.service, a.visit_type) !=
 out.visitKind = estimate ? 'estimate' : (big ? 'big_job' : 'service');
 out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name;
 out.description = 'Booked by AI receptionist\\nCaller: ' + name + '\\nPhone: ' + phone + '\\nAddress: ' + address +
-  '\\nProblem: ' + problem + '\\nVisit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : (big ? 'FULL JOB booked by the caller (exact price confirmed on site before work starts)' : 'Service visit')) + '\\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
+  '\\nProblem: ' + problem + '\\nJob type: ' + out.service + '\\nVisit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : (big ? 'FULL JOB booked by the caller (exact price confirmed on site before work starts)' : 'Service visit')) + '\\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
   '\\nLanguage: ' + (a.language || 'en') + '\\nCall: ' + ctx.callId;
 return [{ json: out }];`;
 
@@ -350,12 +351,137 @@ const callback = wf('Receptionist - Callback Request', [
   respond('e1000000-0000-4000-8000-000000000005', [1200, 0], '={{ JSON.stringify($json) }}')
 ], link('Retell Tool Call', 'Build Callback Email', 'Email Office', 'Add Callback To Calendar', 'Build Response', 'Respond to Retell'));
 
+// ---------- 6-8. change an existing appointment: look up, cancel, reschedule ----------
+// These look further ahead than booking does, so existing appointments up to ~6 weeks out are found.
+const lookupConfigCode = loadConfigCode.replace('(config.bookingRules.maxDaysAhead + 1) * 86400000', 'Math.max(config.bookingRules.maxDaysAhead + 1, 45) * 86400000');
+if (lookupConfigCode === loadConfigCode) throw new Error('could not widen the lookup window');
+
+const gmailNode = (id, name, position, from) => ({
+  id, name, type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position,
+  parameters: {
+    resource: 'message', operation: 'send',
+    sendTo: `={{ $('${from}').first().json.to }}`, subject: `={{ $('${from}').first().json.subject }}`,
+    emailType: 'text', message: `={{ $('${from}').first().json.body }}`, options: { appendAttribution: false }
+  },
+  credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+});
+const okIf = (id, from, position) => ({
+  id, name: 'Verified?', type: 'n8n-nodes-base.if', typeVersion: 2.2, position,
+  parameters: {
+    conditions: {
+      options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+      conditions: [{ id: 'c1', leftValue: '={{ $json.status }}', rightValue: 'ok', operator: { type: 'string', operation: 'equals' } }],
+      combinator: 'and'
+    },
+    options: {}
+  }
+});
+const calId = "={{ $('Load Business Config').first().json.config.calendarId }}";
+
+// --- look up (check_appointment) ---
+const lookupCode = `${slotsLib}
+${apptLib}
+var ctx = $('Load Business Config').first().json;
+var events = $input.all().map(function (i) { return i.json; });
+var found = findAppointments(ctx.config, events, ctx.args, ctx.nowMs);
+return [{ json: {
+  found: found.length,
+  appointments: found,
+  message: found.length
+    ? 'These are the caller\\'s upcoming appointments. If there is more than one, ask which. Read back the time and job type to confirm it is the right one.'
+    : 'No upcoming appointment matched that name and phone number. Say you could not find one, ask them to repeat the name and number once, and otherwise offer to take a message.'
+} }];`;
+const lookup = wf('Receptionist - Find Appointment', [
+  webhookNode('receptionist/find-appointment'),
+  code('f1000000-0000-4000-8000-000000000002', 'Load Business Config', [240, 0], lookupConfigCode),
+  eventsNode('f1000000-0000-4000-8000-000000000003', [480, 0]),
+  code('f1000000-0000-4000-8000-000000000004', 'Find Appointments', [720, 0], lookupCode),
+  respond('f1000000-0000-4000-8000-000000000005', [960, 0], '={{ JSON.stringify($json) }}')
+], link('Retell Tool Call', 'Load Business Config', 'Get Calendar Events', 'Find Appointments', 'Respond to Retell'));
+
+// --- cancel ---
+const cancelVerify = `${slotsLib}
+${apptLib}
+var ctx = $('Load Business Config').first().json;
+var events = $input.all().map(function (i) { return i.json; });
+return [{ json: checkCancel(ctx.config, events, ctx.args, ctx.nowMs) }];`;
+const cancelResponse = `var v = $('Verify Cancel').first().json;
+var res;
+if (v.status === 'ok') res = { cancelled: true, was: v.appointment.when, message: 'The appointment (' + v.appointment.service + ', ' + v.appointment.when + ') is cancelled and the office has been told. Confirm that to the caller and ask if they would like to book a new time.' };
+else if (v.status === 'not_verified' || v.status === 'not_found') res = { cancelled: false, reason: v.status, message: 'Could not cancel: that appointment was not found for this name and phone number. Do not guess. Ask them to repeat the name and number, or offer to take a message.' };
+else res = { cancelled: false, reason: v.status, message: 'Could not cancel (' + v.status + '). Apologize, and offer to take a message for the office.' };
+return [{ json: res }];`;
+const cancel = wf('Receptionist - Cancel Appointment', [
+  webhookNode('receptionist/cancel-appointment'),
+  code('g1000000-0000-4000-8000-000000000002', 'Load Business Config', [240, 0], lookupConfigCode),
+  eventsNode('g1000000-0000-4000-8000-000000000003', [480, 0]),
+  code('g1000000-0000-4000-8000-000000000004', 'Verify Cancel', [720, 0], cancelVerify),
+  okIf('g1000000-0000-4000-8000-000000000005', 'Verify Cancel', [960, 0]),
+  {
+    id: 'g1000000-0000-4000-8000-000000000006', name: 'Delete Calendar Event', type: 'n8n-nodes-base.googleCalendar',
+    typeVersion: 1.3, position: [1200, -120],
+    parameters: { resource: 'event', operation: 'delete', calendar: { __rl: true, mode: 'id', value: calId },
+      eventId: "={{ $('Verify Cancel').first().json.eventId }}", options: { sendUpdates: 'none' } },
+    credentials: { googleCalendarOAuth2Api: { id: 'REPLACE', name: 'Google Calendar account' } }
+  },
+  { ...gmailNode('g1000000-0000-4000-8000-000000000007', 'Email Office', [1440, -120], 'Verify Cancel'), onError: 'continueRegularOutput' },
+  code('g1000000-0000-4000-8000-000000000008', 'Build Response', [1680, 0], cancelResponse),
+  respond('g1000000-0000-4000-8000-000000000009', [1920, 0], '={{ JSON.stringify($json) }}')
+], {
+  ...link('Retell Tool Call', 'Load Business Config', 'Get Calendar Events', 'Verify Cancel', 'Verified?'),
+  'Verified?': { main: [[{ node: 'Delete Calendar Event', type: 'main', index: 0 }], [{ node: 'Build Response', type: 'main', index: 0 }]] },
+  ...link('Delete Calendar Event', 'Email Office', 'Build Response', 'Respond to Retell')
+});
+
+// --- reschedule ---
+const reschedVerify = `${slotsLib}
+${apptLib}
+var ctx = $('Load Business Config').first().json;
+var events = $input.all().map(function (i) { return i.json; });
+return [{ json: checkReschedule(ctx.config, events, ctx.args, ctx.nowMs) }];`;
+const reschedResponse = `var v = $('Verify Reschedule').first().json;
+var res;
+if (v.status === 'ok') res = { rescheduled: true, was: v.oldWhen, now: v.newWhen, message: 'Moved from ' + v.oldWhen + ' to ' + v.newWhen + ', and the office has been told. Confirm the new time to the caller.' };
+else if (v.status === 'taken') res = { rescheduled: false, reason: 'slot_taken', alternatives: v.alternatives, message: 'That new time is not available. Apologize briefly and offer these alternatives. Their original appointment is unchanged.' };
+else if (v.status === 'not_verified' || v.status === 'not_found') res = { rescheduled: false, reason: v.status, message: 'Could not find that appointment for this name and phone number. Do not guess. Ask them to repeat the name and number, or offer to take a message.' };
+else res = { rescheduled: false, reason: v.status, message: 'Could not reschedule (' + v.status + '). Their original appointment is unchanged. Apologize and offer to take a message.' };
+return [{ json: res }];`;
+const resched = wf('Receptionist - Reschedule Appointment', [
+  webhookNode('receptionist/reschedule-appointment'),
+  code('h1000000-0000-4000-8000-000000000002', 'Load Business Config', [240, 0], lookupConfigCode),
+  eventsNode('h1000000-0000-4000-8000-000000000003', [480, 0]),
+  code('h1000000-0000-4000-8000-000000000004', 'Verify Reschedule', [720, 0], reschedVerify),
+  okIf('h1000000-0000-4000-8000-000000000005', 'Verify Reschedule', [960, 0]),
+  {
+    id: 'h1000000-0000-4000-8000-000000000006', name: 'Update Calendar Event', type: 'n8n-nodes-base.googleCalendar',
+    typeVersion: 1.3, position: [1200, -120],
+    parameters: { resource: 'event', operation: 'update', calendar: { __rl: true, mode: 'id', value: calId },
+      eventId: "={{ $('Verify Reschedule').first().json.eventId }}", useDefaultReminders: true,
+      updateFields: {
+        start: "={{ $('Verify Reschedule').first().json.newStart }}",
+        end: "={{ $('Verify Reschedule').first().json.newEnd }}",
+        description: "={{ $('Verify Reschedule').first().json.newDescription }}"
+      } },
+    credentials: { googleCalendarOAuth2Api: { id: 'REPLACE', name: 'Google Calendar account' } }
+  },
+  { ...gmailNode('h1000000-0000-4000-8000-000000000007', 'Email Office', [1440, -120], 'Verify Reschedule'), onError: 'continueRegularOutput' },
+  code('h1000000-0000-4000-8000-000000000008', 'Build Response', [1680, 0], reschedResponse),
+  respond('h1000000-0000-4000-8000-000000000009', [1920, 0], '={{ JSON.stringify($json) }}')
+], {
+  ...link('Retell Tool Call', 'Load Business Config', 'Get Calendar Events', 'Verify Reschedule', 'Verified?'),
+  'Verified?': { main: [[{ node: 'Update Calendar Event', type: 'main', index: 0 }], [{ node: 'Build Response', type: 'main', index: 0 }]] },
+  ...link('Update Calendar Event', 'Email Office', 'Build Response', 'Respond to Retell')
+});
+
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
 writeFileSync(new URL('n8n/book-appointment.json', root), JSON.stringify(book, null, 2) + '\n');
 writeFileSync(new URL('n8n/owner-call-summary.json', root), JSON.stringify(summary, null, 2) + '\n');
 writeFileSync(new URL('n8n/urgent-alert.json', root), JSON.stringify(urgent, null, 2) + '\n');
 writeFileSync(new URL('n8n/callback-request.json', root), JSON.stringify(callback, null, 2) + '\n');
-console.log('Wrote 5 workflows: check-availability, book-appointment, owner-call-summary, urgent-alert, callback-request');
+writeFileSync(new URL('n8n/find-appointment.json', root), JSON.stringify(lookup, null, 2) + '\n');
+writeFileSync(new URL('n8n/cancel-appointment.json', root), JSON.stringify(cancel, null, 2) + '\n');
+writeFileSync(new URL('n8n/reschedule-appointment.json', root), JSON.stringify(resched, null, 2) + '\n');
+console.log('Wrote 8 workflows');
 
 // ---------- per-node code files: paste these into an existing n8n workflow instead of re-importing ----------
 import { mkdirSync, rmSync } from 'node:fs';
@@ -363,7 +489,7 @@ const nodeCodeDir = new URL('n8n/node-code/', root);
 rmSync(nodeCodeDir, { recursive: true, force: true });
 mkdirSync(nodeCodeDir, { recursive: true });
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-for (const w of [check, book, summary, urgent, callback]) {
+for (const w of [check, book, summary, urgent, callback, lookup, cancel, resched]) {
   for (const n of w.nodes.filter((n) => n.type === 'n8n-nodes-base.code')) {
     const header = `// PASTE INTO n8n: workflow "${w.name}" > node "${n.name}" > Code tab (select all, replace, Save).\n`;
     writeFileSync(new URL(`${slug(w.name.replace('Receptionist - ', ''))}__${slug(n.name)}.js`, nodeCodeDir), header + n.parameters.jsCode + '\n');

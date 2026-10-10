@@ -183,11 +183,14 @@
   "notifications": {
     "emailOutcomes": [
       "booked",
+      "estimate",
       "message",
       "urgent"
     ],
     "skipOutcomes": [
-      "callback"
+      "callback",
+      "cancelled",
+      "rescheduled"
     ]
   },
   "serviceCallFee": 65

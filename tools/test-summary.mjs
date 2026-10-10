@@ -53,4 +53,12 @@ test('callback outcome is not emailed again by the summary (it has its own email
   assert.equal(buildSummary(config, mk({ outcome: 'callback' })).send, false);
   assert.equal(buildSummary(config, mk({ outcome: 'callback', urgent: true })).send, true);
 });
+test('estimate visits email like bookings, with their own headline', () => {
+  const r = buildSummary(config, mk({ outcome: 'estimate', appointment_time: 'Monday at 9 AM' }));
+  assert.equal(r.send, true); assert.match(r.subject, /Estimate visit booked: Sam Smith - Monday at 9 AM/); assert.match(r.body, /Free estimate visit booked for Monday at 9 AM/);
+});
+test('cancelled and rescheduled calls do not get a second email (their workflows already emailed)', () => {
+  assert.equal(buildSummary(config, mk({ outcome: 'cancelled' })).send, false);
+  assert.equal(buildSummary(config, mk({ outcome: 'rescheduled' })).send, false);
+});
 console.log(`\n${n} tests passed`);
