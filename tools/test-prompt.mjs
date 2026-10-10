@@ -34,7 +34,7 @@ test('big jobs: share only the estimate range, offer visit and callback, never f
   const p = priceList(config);
   assert.match(p, /Water heater replacement: BIG JOB\. Never give an exact price/);
   assert.match(p, /These typically run \$1,800 to \$3,200, and they start around \$1,200/);
-  assert.match(p, /Do NOT decide for the caller/); assert.match(p, /Never pick \(A\) or \(B\) for the caller/); assert.match(p, /request_callback/);
+  assert.match(p, /Do NOT decide for the caller/); assert.match(p, /Never pick \(A\), \(B\) or \(C\) for the caller/); assert.match(p, /request_callback/);
 });
 test('prompt tells the agent how to use request_callback safely', () => {
   const out = build(config);
@@ -47,5 +47,15 @@ test('big jobs offer book-now (A) vs free estimate (B) vs callback (C) with the 
 test('prompt tells the agent to ask the tool about an exact time instead of guessing', () => {
   const out = build(config);
   assert.match(out, /preferred_time/); assert.match(out, /requestedTime/); assert.doesNotMatch(out, /set `part_of_day` to `any`/);
+});
+test('multi-day jobs never offer to book the job itself', () => {
+  const p = priceList(config);
+  const sewer = p.split('\n').find((l) => l.startsWith('- Sewer line'));
+  assert.match(sewer, /NEVER book the job itself/); assert.doesNotMatch(sewer, /\(A\)/);
+  assert.match(p.split('\n').find((l) => l.startsWith('- Water heater replacement')), /\(A\) book the job now/);
+});
+test('callback steps offer real callback times from the tool', () => {
+  const out = build(config);
+  assert.match(out, /purpose` set to "callback"/); assert.match(out, /Never invent a callback time/);
 });
 console.log(`\n${n} tests passed`);

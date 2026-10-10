@@ -31,7 +31,8 @@
     "minNoticeHours": 2,
     "maxDaysAhead": 14,
     "maxSlotsOffered": 3,
-    "offerSpacingMinutes": 60
+    "offerSpacingMinutes": 60,
+    "callbackMinNoticeMinutes": 30
   },
   "hours": {
     "mon": [
@@ -131,26 +132,26 @@
     {
       "name": "Sewer line repair or replacement",
       "durationMinutes": 60,
-      "jobMinutes": 480,
       "emergency": false,
       "pricing": {
         "type": "big_job",
         "startingAt": 2500,
         "typical": "$4,000 to $12,000",
         "estimateVisit": "a free on-site estimate visit"
-      }
+      },
+      "multiDay": true
     },
     {
       "name": "Whole-house repipe",
       "durationMinutes": 60,
-      "jobMinutes": 480,
       "emergency": false,
       "pricing": {
         "type": "big_job",
         "startingAt": 4000,
         "typical": "$6,000 to $15,000",
         "estimateVisit": "a free on-site estimate visit"
-      }
+      },
+      "multiDay": true
     },
     {
       "name": "Other or not sure",

@@ -90,10 +90,13 @@ const wf = (name, nodes, connections) => ({
 const checkCompute = `${slotsLib}
 var ctx = $('Load Business Config').first().json;
 var events = $input.all().map(function (i) { return i.json; });
-var slots = offerSlots(ctx.config, events, ctx.args, ctx.nowMs);
-var req = requestedTimeStatus(ctx.config, events, ctx.args, ctx.nowMs);
+var isCallback = ctx.args.purpose === 'callback';   // times the OFFICE can phone the caller back, not technician visits
+var slots = isCallback ? offerCallbackSlots(ctx.config, events, ctx.args, ctx.nowMs) : offerSlots(ctx.config, events, ctx.args, ctx.nowMs);
+var req = isCallback ? requestedCallbackStatus(ctx.config, events, ctx.args, ctx.nowMs) : requestedTimeStatus(ctx.config, events, ctx.args, ctx.nowMs);
 var message;
-if (req && req.available) message = 'The exact time the caller asked for (' + req.label + ') IS open. Offer it first, using its label. The other slots are nearby alternatives.';
+if (isCallback && slots.length) message = 'These are times the office can phone the caller back. Offer them using the label. When the caller picks one, call request_callback with callback_date and callback_time taken from that slot start value.';
+else if (isCallback) message = 'No callback times in the booking window. Take the details and say the office will call as soon as possible.';
+else if (req && req.available) message = 'The exact time the caller asked for (' + req.label + ') IS open. Offer it first, using its label. The other slots are nearby alternatives.';
 else if (req) message = 'The exact time the caller asked for (' + req.label + ') is NOT available because ' + req.reason + '. Tell them that plainly and briefly, then offer the nearby times below.';
 else message = slots.length
   ? 'Offer these times to the caller. Use the label to speak them. Each slot has an estimated visit length in minutes. Pass the start value of the one they pick to book_appointment.'
@@ -152,7 +155,7 @@ out.address = address;
 out.problem = problem;
 out.service = String(a.service || 'Service visit').trim();
 var big = isBigJob(ctx.config, a.service);
-var estimate = big && a.visit_type !== 'job';
+var estimate = big && effectiveVisitType(ctx.config, a.service, a.visit_type) !== 'job';
 out.visitKind = estimate ? 'estimate' : (big ? 'big_job' : 'service');
 out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name;
 out.description = 'Booked by AI receptionist\\nCaller: ' + name + '\\nPhone: ' + phone + '\\nAddress: ' + address +

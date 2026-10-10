@@ -173,4 +173,39 @@ test('booking check honors the visit type (a 3 hour job does not fit a 1 hour ga
   assert.equal(S.isSlotStillOpen(full, ev, SUN + 'T08:00:00-04:00', NOW, 'Water heater replacement', 'job'), false);       // would end 11:00
 });
 
+const multi = { ...full, services: [...full.services, { name: 'Repipe', durationMinutes: 60, jobMinutes: 480, multiDay: true, pricing: { type: 'big_job' } }] };
+test('a long job can start any time of day as long as it ends by closing (3h job: 8:00 through 14:00)', () => {
+  const day = S.allSlots(full, [], SUN, NOW, 180).map((x) => S.toLocalIso(x.startMs, tz)).filter((x) => x.startsWith(SUN)).map((x) => x.slice(11, 16));
+  assert.equal(day[0], '08:00'); assert.equal(day[day.length - 1], '14:00');
+});
+test('after a 3h job 8-11 the next start is 11:30 (30 minute gap), which is what Carter saw', () => {
+  const ev = [{ start: { dateTime: SUN + 'T08:00:00-04:00' }, end: { dateTime: SUN + 'T11:00:00-04:00' } }];
+  const day = S.allSlots(full, S.busyFromEvents(ev, tz), SUN, NOW, 180).map((x) => S.toLocalIso(x.startMs, tz)).filter((x) => x.startsWith(SUN)).map((x) => x.slice(11, 16));
+  assert.equal(day[0], '11:30');
+});
+test('multi-day jobs are never booked as the job: "job" quietly becomes an estimate visit', () => {
+  assert.equal(S.effectiveVisitType(multi, 'Repipe', 'job'), 'estimate');
+  assert.equal(S.durationFor(multi, 'Repipe', 'job'), 60);
+  assert.equal(S.effectiveVisitType(multi, 'Water heater replacement', 'job'), 'job');
+  assert.equal(S.effectiveVisitType(multi, 'Clogged toilet', 'job'), undefined);
+});
+test('CALLBACK calendar entries never block technician slots, even if not marked Free', () => {
+  const cb = [{ summary: 'CALLBACK: Repipe - Sam', start: { dateTime: SUN + 'T09:00:00-04:00' }, end: { dateTime: SUN + '15:00'.replace('15:00', 'T09:15:00-04:00') } }];
+  assert.equal(S.busyFromEvents(cb, tz).length, 0);
+  assert.equal(S.offerSlots(full, cb, { preferred_date: SUN, service: 'Clogged toilet' }, NOW)[0].start.slice(11, 16), '08:00');
+});
+test('callback times: office hours, 15 min, every 30 min, spread, ignore technician jobs', () => {
+  const job = [{ summary: 'Leak - Bob', start: { dateTime: SUN + 'T09:00:00-04:00' }, end: { dateTime: SUN + 'T12:00:00-04:00' } }];
+  const out = S.offerCallbackSlots(full, job, { preferred_date: SUN, part_of_day: 'morning' }, NOW);
+  assert.deepEqual(out.map((x) => x.start.slice(11, 16)), ['08:00', '09:00', '10:00']); assert.equal(out[0].minutes, 15);
+});
+test('callback times skip a slot another caller already took', () => {
+  const taken = [{ summary: 'CALLBACK: Repipe - Ann', start: { dateTime: SUN + 'T08:00:00-04:00' }, end: { dateTime: SUN + 'T08:15:00-04:00' } }];
+  assert.equal(S.offerCallbackSlots(full, taken, { preferred_date: SUN, part_of_day: 'morning' }, NOW)[0].start.slice(11, 16), '08:30');
+});
+test('a specific callback time is answered exactly, with a reason when it is not open', () => {
+  assert.equal(S.requestedCallbackStatus(full, [], { preferred_date: SUN, preferred_time: '10:30' }, NOW).available, true);
+  assert.match(S.requestedCallbackStatus(full, [], { preferred_date: SUN, preferred_time: '19:00' }, NOW).reason, /outside booking hours|past closing/);
+});
+
 console.log(`\n${passed} tests passed`);

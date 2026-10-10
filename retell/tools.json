@@ -40,6 +40,14 @@
               "estimate"
             ],
             "description": "Only for big jobs (such as a water heater replacement): 'job' if the caller wants to book the whole job now, 'estimate' if they want the free on-site estimate visit first. Omit for ordinary jobs."
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "booking",
+              "callback"
+            ],
+            "description": "'booking' (default) to find technician appointment times. 'callback' to find times the office can phone the caller back, used when the caller chose a callback."
           }
         },
         "required": []

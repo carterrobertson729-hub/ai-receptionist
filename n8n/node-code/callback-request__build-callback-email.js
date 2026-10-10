@@ -66,6 +66,7 @@ function busyFromEvents(events, tz) {
   var out = [];
   (events || []).forEach(function (e) {
     if (!e || e.status === 'cancelled' || e.transparency === 'transparent') return;
+    if (String(e.summary || '').indexOf('CALLBACK:') === 0) return;   // callback reminders never block technicians
     var s = e.start || {};
     var en = e.end || {};
     if (s.dateTime && en.dateTime) {
@@ -85,13 +86,21 @@ function serviceFor(config, service) {
     config.services.filter(function (x) { var n = String(x.name).toLowerCase(); return n.indexOf(name) !== -1 || name.indexOf(n) !== -1; })[0] || null;
 }
 
+// For big jobs only: 'job' (book the whole job) or 'estimate' (short on-site visit). Jobs the business marks
+// multiDay are never booked by the AI, so they always become an estimate visit. Ordinary jobs return undefined.
+function effectiveVisitType(config, service, visitType) {
+  var found = serviceFor(config, service);
+  if (!(found && found.pricing && found.pricing.type === 'big_job')) return undefined;
+  if (found.multiDay) return 'estimate';
+  return visitType === 'job' ? 'job' : 'estimate';
+}
+
 // Visit length in minutes for a job type. Unknown or missing types get the safe default length.
 // Big jobs have two lengths: the short on-site ESTIMATE visit (durationMinutes, the default) and the whole
-// job (jobMinutes), used when the caller chooses to book the job itself (visitType 'job').
+// job (jobMinutes), used only when the caller books the job itself and it fits in one day.
 function durationFor(config, service, visitType) {
   var found = serviceFor(config, service);
-  var isBig = !!(found && found.pricing && found.pricing.type === 'big_job');
-  if (isBig && visitType === 'job' && found.jobMinutes) return found.jobMinutes;
+  if (effectiveVisitType(config, service, visitType) === 'job' && found.jobMinutes) return found.jobMinutes;
   return found && found.durationMinutes ? found.durationMinutes : config.bookingRules.appointmentMinutes;
 }
 
@@ -187,6 +196,35 @@ function requestedTimeStatus(config, events, args, nowMs) {
   return status;
 }
 
+// ---- Callback times: when the office can phone the caller back. Separate from technician availability. ----
+// Technician jobs never matter here; only other callbacks already on the calendar (so two callers do not get the
+// same minute). Office hours apply. 15 minute slots every 30 minutes, about 30 minutes notice.
+function callbackConfig(config) {
+  var r = config.bookingRules;
+  return Object.assign({}, config, {
+    services: [],
+    bookingRules: Object.assign({}, r, {
+      appointmentMinutes: 15, slotStepMinutes: 30, bufferMinutes: 0, offerSpacingMinutes: 60,
+      minNoticeHours: (r.callbackMinNoticeMinutes || 30) / 60
+    })
+  });
+}
+
+function callbackOnly(events) {
+  return (events || []).filter(function (e) { return e && e.status !== 'cancelled' && String(e.summary || '').indexOf('CALLBACK:') === 0; })
+    .map(function (e) { return { start: e.start, end: e.end }; });
+}
+
+function offerCallbackSlots(config, events, args, nowMs) {
+  return offerSlots(callbackConfig(config), callbackOnly(events),
+    { preferred_date: args.preferred_date, part_of_day: args.part_of_day, preferred_time: args.preferred_time }, nowMs);
+}
+
+function requestedCallbackStatus(config, events, args, nowMs) {
+  return requestedTimeStatus(callbackConfig(config), callbackOnly(events),
+    { preferred_date: args.preferred_date, preferred_time: args.preferred_time }, nowMs);
+}
+
 // True only if startIso is exactly one of the business's open slots right now.
 function isSlotStillOpen(config, events, startIso, nowMs, service, visitType) {
   var tz = config.timeZone;
@@ -267,7 +305,7 @@ function buildCallbackEmail(config, args, nowMs) {
 
 var item = $input.first().json;
 var args = (item.body && item.body.args) || {};
-var CONFIGS = {"demo-plumbing":{"businessId":"demo-plumbing","businessName":"Demo Plumbing Co","trade":"plumbing","timeZone":"America/Chicago","receptionistNumber":"REPLACE_WITH_RETELL_NUMBER_E164","smsFromNumber":"REPLACE_WITH_TWILIO_NUMBER_E164","ownerPhone":"REPLACE_WITH_OWNER_NUMBER_E164","ownerEmail":"carter.robertson729@gmail.com","people":{"carter":{"name":"Carter","email":"carter.robertson729@gmail.com","phone":"REPLACE_WITH_ONCALL_NUMBER_E164"}},"onCallSchedule":{"mon":"carter","tue":"carter","wed":"carter","thu":"carter","fri":"carter","sat":"carter","sun":"carter"},"calendarId":"d8f2a8fbc0b04e3460f2971b0c7d82d953936566b3e9f560190bc3317cf2367c@group.calendar.google.com","bookingRules":{"appointmentMinutes":120,"slotStepMinutes":30,"bufferMinutes":30,"minNoticeHours":2,"maxDaysAhead":14,"maxSlotsOffered":3,"offerSpacingMinutes":60},"hours":{"mon":["08:00","17:00"],"tue":["08:00","17:00"],"wed":["08:00","17:00"],"thu":["08:00","17:00"],"fri":["08:00","17:00"],"sat":["08:00","17:00"],"sun":["08:00","17:00"]},"services":[{"name":"Clogged toilet","durationMinutes":30,"emergency":false,"pricing":{"type":"flat","amount":50,"details":"standard clog"}},{"name":"Drain cleaning","durationMinutes":60,"emergency":false,"pricing":{"type":"flat","amount":120,"details":"one standard drain"}},{"name":"Leak repair","durationMinutes":60,"emergency":false,"pricing":{"type":"quote_on_site"}},{"name":"Faucet or fixture repair","durationMinutes":60,"emergency":false,"pricing":{"type":"quote_on_site"}},{"name":"Toilet repair or replacement","durationMinutes":90,"emergency":false,"pricing":{"type":"quote_on_site"}},{"name":"Water heater repair","durationMinutes":90,"emergency":false,"pricing":{"type":"quote_on_site"}},{"name":"Water heater replacement","durationMinutes":60,"jobMinutes":180,"emergency":false,"pricing":{"type":"big_job","startingAt":1200,"typical":"$1,800 to $3,200","estimateVisit":"a free on-site estimate visit"}},{"name":"Sewer line repair or replacement","durationMinutes":60,"jobMinutes":480,"emergency":false,"pricing":{"type":"big_job","startingAt":2500,"typical":"$4,000 to $12,000","estimateVisit":"a free on-site estimate visit"}},{"name":"Whole-house repipe","durationMinutes":60,"jobMinutes":480,"emergency":false,"pricing":{"type":"big_job","startingAt":4000,"typical":"$6,000 to $15,000","estimateVisit":"a free on-site estimate visit"}},{"name":"Other or not sure","durationMinutes":120,"emergency":false,"pricing":{"type":"quote_on_site"}},{"name":"Burst pipe or active flooding","emergency":true},{"name":"No water or sewage backup","emergency":true}],"fixedPrices":[],"neverSay":["Never quote a price that is not in the price list, and never estimate, round, or give a range.","Never promise an exact arrival time; offer only the booked window.","Never diagnose the problem or tell the caller how to repair it."],"languages":["en","es"],"notifications":{"emailOutcomes":["booked","message","urgent"],"skipOutcomes":["callback"]},"serviceCallFee":65}};
+var CONFIGS = {"demo-plumbing":{"businessId":"demo-plumbing","businessName":"Demo Plumbing Co","trade":"plumbing","timeZone":"America/Chicago","receptionistNumber":"REPLACE_WITH_RETELL_NUMBER_E164","smsFromNumber":"REPLACE_WITH_TWILIO_NUMBER_E164","ownerPhone":"REPLACE_WITH_OWNER_NUMBER_E164","ownerEmail":"carter.robertson729@gmail.com","people":{"carter":{"name":"Carter","email":"carter.robertson729@gmail.com","phone":"REPLACE_WITH_ONCALL_NUMBER_E164"}},"onCallSchedule":{"mon":"carter","tue":"carter","wed":"carter","thu":"carter","fri":"carter","sat":"carter","sun":"carter"},"calendarId":"d8f2a8fbc0b04e3460f2971b0c7d82d953936566b3e9f560190bc3317cf2367c@group.calendar.google.com","bookingRules":{"appointmentMinutes":120,"slotStepMinutes":30,"bufferMinutes":30,"minNoticeHours":2,"maxDaysAhead":14,"maxSlotsOffered":3,"offerSpacingMinutes":60,"callbackMinNoticeMinutes":30},"hours":{"mon":["08:00","17:00"],"tue":["08:00","17:00"],"wed":["08:00","17:00"],"thu":["08:00","17:00"],"fri":["08:00","17:00"],"sat":["08:00","17:00"],"sun":["08:00","17:00"]},"services":[{"name":"Clogged toilet","durationMinutes":30,"emergency":false,"pricing":{"type":"flat","amount":50,"details":"standard clog"}},{"name":"Drain cleaning","durationMinutes":60,"emergency":false,"pricing":{"type":"flat","amount":120,"details":"one standard drain"}},{"name":"Leak repair","durationMinutes":60,"emergency":false,"pricing":{"type":"quote_on_site"}},{"name":"Faucet or fixture repair","durationMinutes":60,"emergency":false,"pricing":{"type":"quote_on_site"}},{"name":"Toilet repair or replacement","durationMinutes":90,"emergency":false,"pricing":{"type":"quote_on_site"}},{"name":"Water heater repair","durationMinutes":90,"emergency":false,"pricing":{"type":"quote_on_site"}},{"name":"Water heater replacement","durationMinutes":60,"jobMinutes":180,"emergency":false,"pricing":{"type":"big_job","startingAt":1200,"typical":"$1,800 to $3,200","estimateVisit":"a free on-site estimate visit"}},{"name":"Sewer line repair or replacement","durationMinutes":60,"emergency":false,"pricing":{"type":"big_job","startingAt":2500,"typical":"$4,000 to $12,000","estimateVisit":"a free on-site estimate visit"},"multiDay":true},{"name":"Whole-house repipe","durationMinutes":60,"emergency":false,"pricing":{"type":"big_job","startingAt":4000,"typical":"$6,000 to $15,000","estimateVisit":"a free on-site estimate visit"},"multiDay":true},{"name":"Other or not sure","durationMinutes":120,"emergency":false,"pricing":{"type":"quote_on_site"}},{"name":"Burst pipe or active flooding","emergency":true},{"name":"No water or sewage backup","emergency":true}],"fixedPrices":[],"neverSay":["Never quote a price that is not in the price list, and never estimate, round, or give a range.","Never promise an exact arrival time; offer only the booked window.","Never diagnose the problem or tell the caller how to repair it."],"languages":["en","es"],"notifications":{"emailOutcomes":["booked","message","urgent"],"skipOutcomes":["callback"]},"serviceCallFee":65}};
 var config = CONFIGS[(item.query && item.query.business) || ''];
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');
 var e = buildCallbackEmail(config, args, Date.now());

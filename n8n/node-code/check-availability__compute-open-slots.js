@@ -66,6 +66,7 @@ function busyFromEvents(events, tz) {
   var out = [];
   (events || []).forEach(function (e) {
     if (!e || e.status === 'cancelled' || e.transparency === 'transparent') return;
+    if (String(e.summary || '').indexOf('CALLBACK:') === 0) return;   // callback reminders never block technicians
     var s = e.start || {};
     var en = e.end || {};
     if (s.dateTime && en.dateTime) {
@@ -85,13 +86,21 @@ function serviceFor(config, service) {
     config.services.filter(function (x) { var n = String(x.name).toLowerCase(); return n.indexOf(name) !== -1 || name.indexOf(n) !== -1; })[0] || null;
 }
 
+// For big jobs only: 'job' (book the whole job) or 'estimate' (short on-site visit). Jobs the business marks
+// multiDay are never booked by the AI, so they always become an estimate visit. Ordinary jobs return undefined.
+function effectiveVisitType(config, service, visitType) {
+  var found = serviceFor(config, service);
+  if (!(found && found.pricing && found.pricing.type === 'big_job')) return undefined;
+  if (found.multiDay) return 'estimate';
+  return visitType === 'job' ? 'job' : 'estimate';
+}
+
 // Visit length in minutes for a job type. Unknown or missing types get the safe default length.
 // Big jobs have two lengths: the short on-site ESTIMATE visit (durationMinutes, the default) and the whole
-// job (jobMinutes), used when the caller chooses to book the job itself (visitType 'job').
+// job (jobMinutes), used only when the caller books the job itself and it fits in one day.
 function durationFor(config, service, visitType) {
   var found = serviceFor(config, service);
-  var isBig = !!(found && found.pricing && found.pricing.type === 'big_job');
-  if (isBig && visitType === 'job' && found.jobMinutes) return found.jobMinutes;
+  if (effectiveVisitType(config, service, visitType) === 'job' && found.jobMinutes) return found.jobMinutes;
   return found && found.durationMinutes ? found.durationMinutes : config.bookingRules.appointmentMinutes;
 }
 
@@ -187,6 +196,35 @@ function requestedTimeStatus(config, events, args, nowMs) {
   return status;
 }
 
+// ---- Callback times: when the office can phone the caller back. Separate from technician availability. ----
+// Technician jobs never matter here; only other callbacks already on the calendar (so two callers do not get the
+// same minute). Office hours apply. 15 minute slots every 30 minutes, about 30 minutes notice.
+function callbackConfig(config) {
+  var r = config.bookingRules;
+  return Object.assign({}, config, {
+    services: [],
+    bookingRules: Object.assign({}, r, {
+      appointmentMinutes: 15, slotStepMinutes: 30, bufferMinutes: 0, offerSpacingMinutes: 60,
+      minNoticeHours: (r.callbackMinNoticeMinutes || 30) / 60
+    })
+  });
+}
+
+function callbackOnly(events) {
+  return (events || []).filter(function (e) { return e && e.status !== 'cancelled' && String(e.summary || '').indexOf('CALLBACK:') === 0; })
+    .map(function (e) { return { start: e.start, end: e.end }; });
+}
+
+function offerCallbackSlots(config, events, args, nowMs) {
+  return offerSlots(callbackConfig(config), callbackOnly(events),
+    { preferred_date: args.preferred_date, part_of_day: args.part_of_day, preferred_time: args.preferred_time }, nowMs);
+}
+
+function requestedCallbackStatus(config, events, args, nowMs) {
+  return requestedTimeStatus(callbackConfig(config), callbackOnly(events),
+    { preferred_date: args.preferred_date, preferred_time: args.preferred_time }, nowMs);
+}
+
 // True only if startIso is exactly one of the business's open slots right now.
 function isSlotStillOpen(config, events, startIso, nowMs, service, visitType) {
   var tz = config.timeZone;
@@ -199,10 +237,13 @@ function isSlotStillOpen(config, events, startIso, nowMs, service, visitType) {
 
 var ctx = $('Load Business Config').first().json;
 var events = $input.all().map(function (i) { return i.json; });
-var slots = offerSlots(ctx.config, events, ctx.args, ctx.nowMs);
-var req = requestedTimeStatus(ctx.config, events, ctx.args, ctx.nowMs);
+var isCallback = ctx.args.purpose === 'callback';   // times the OFFICE can phone the caller back, not technician visits
+var slots = isCallback ? offerCallbackSlots(ctx.config, events, ctx.args, ctx.nowMs) : offerSlots(ctx.config, events, ctx.args, ctx.nowMs);
+var req = isCallback ? requestedCallbackStatus(ctx.config, events, ctx.args, ctx.nowMs) : requestedTimeStatus(ctx.config, events, ctx.args, ctx.nowMs);
 var message;
-if (req && req.available) message = 'The exact time the caller asked for (' + req.label + ') IS open. Offer it first, using its label. The other slots are nearby alternatives.';
+if (isCallback && slots.length) message = 'These are times the office can phone the caller back. Offer them using the label. When the caller picks one, call request_callback with callback_date and callback_time taken from that slot start value.';
+else if (isCallback) message = 'No callback times in the booking window. Take the details and say the office will call as soon as possible.';
+else if (req && req.available) message = 'The exact time the caller asked for (' + req.label + ') IS open. Offer it first, using its label. The other slots are nearby alternatives.';
 else if (req) message = 'The exact time the caller asked for (' + req.label + ') is NOT available because ' + req.reason + '. Tell them that plainly and briefly, then offer the nearby times below.';
 else message = slots.length
   ? 'Offer these times to the caller. Use the label to speak them. Each slot has an estimated visit length in minutes. Pass the start value of the one they pick to book_appointment.'
