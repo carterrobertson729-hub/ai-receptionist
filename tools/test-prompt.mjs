@@ -38,7 +38,7 @@ test('big jobs: share only the estimate range, offer visit and callback, never f
 });
 test('prompt tells the agent how to use request_callback safely', () => {
   const out = build(config);
-  assert.match(out, /call `request_callback`/); assert.match(out, /Never promise a callback time yourself/);
+  assert.match(out, /call `request_callback`/); assert.match(out, /Never invent a callback time the tool did not offer/);
 });
 test('big jobs offer book-now (A) vs free estimate (B) vs callback (C) with the right visit_type', () => {
   const p = priceList(config);
