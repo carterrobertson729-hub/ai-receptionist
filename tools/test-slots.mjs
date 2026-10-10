@@ -95,4 +95,19 @@ test('isSlotStillOpen enforces the gap', () => {
   assert.equal(S.isSlotStillOpen(gapCfg, booked, '2026-10-07T13:00:00-04:00', NOW), true);
 });
 
+test('30 min step + 60 min spacing: first offer is right at the gap edge, offers are spread', () => {
+  const cfg = { ...config, bookingRules: { ...config.bookingRules, slotStepMinutes: 30, bufferMinutes: 30, offerSpacingMinutes: 60 } };
+  const out = S.offerSlots(cfg, booked, { preferred_date: '2026-10-07' }, NOW).map((x) => x.start.slice(11, 16));
+  assert.deepEqual(out, ['12:30', '13:30', '14:30']);
+});
+test('spacing off keeps old behaviour', () => {
+  const cfg = { ...config, bookingRules: { ...config.bookingRules, slotStepMinutes: 30, bufferMinutes: 30 } };
+  assert.deepEqual(S.offerSlots(cfg, booked, { preferred_date: '2026-10-07' }, NOW).map((x) => x.start.slice(11, 16)), ['12:30', '13:00', '13:30']);
+});
+test('12:00 is rejected, 12:30 accepted when booking', () => {
+  const cfg = { ...config, bookingRules: { ...config.bookingRules, slotStepMinutes: 30, bufferMinutes: 30 } };
+  assert.equal(S.isSlotStillOpen(cfg, booked, '2026-10-07T12:00:00-04:00', NOW), false);
+  assert.equal(S.isSlotStillOpen(cfg, booked, '2026-10-07T12:30:00-04:00', NOW), true);
+});
+
 console.log(`\n${passed} tests passed`);

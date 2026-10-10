@@ -121,7 +121,13 @@ function offerSlots(config, events, args, nowMs) {
     });
     if (filtered.length) slots = filtered;
   }
-  return slots.slice(0, config.bookingRules.maxSlotsOffered).map(function (s) { return describeSlot(s, tz); });
+  // Spread the offers so we don't read out near-identical times (e.g. 12:30, 1:00, 1:30).
+  var spacing = (config.bookingRules.offerSpacingMinutes || 0) * 60000;
+  var picked = [];
+  for (var i = 0; i < slots.length && picked.length < config.bookingRules.maxSlotsOffered; i++) {
+    if (!picked.length || slots[i].startMs >= picked[picked.length - 1].startMs + spacing) picked.push(slots[i]);
+  }
+  return picked.map(function (s) { return describeSlot(s, tz); });
 }
 
 // True only if startIso is exactly one of the business's open slots right now.

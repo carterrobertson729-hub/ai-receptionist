@@ -26,11 +26,12 @@
   "calendarId": "d8f2a8fbc0b04e3460f2971b0c7d82d953936566b3e9f560190bc3317cf2367c@group.calendar.google.com",
   "bookingRules": {
     "appointmentMinutes": 120,
-    "slotStepMinutes": 60,
+    "slotStepMinutes": 30,
     "bufferMinutes": 30,
     "minNoticeHours": 2,
     "maxDaysAhead": 14,
-    "maxSlotsOffered": 3
+    "maxSlotsOffered": 3,
+    "offerSpacingMinutes": 60
   },
   "hours": {
     "mon": [
