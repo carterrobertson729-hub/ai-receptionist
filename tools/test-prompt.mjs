@@ -70,13 +70,21 @@ test('prompt explains check / cancel / reschedule safely', () => {
 });
 test('cancellation policy text comes from the config; no policy means never invent a fee', () => {
   const out = build(config);
-  assert.match(out, /free to cancel until 24 hours before the visit; after that a \$50 late cancellation fee may apply \(free estimate visits are exempt\)/);
-  assert.match(out, /You never charge anything/); assert.match(out, /never promise to waive it/);
+  assert.match(out, /free to cancel until 24 hours before the visit; after that there is a \$50 late cancellation fee \(free estimate visits are exempt\)/);
+  assert.match(out, /You never charge anything/); assert.match(out, /never promise to waive a fee/);
   const none = build({ ...config, cancellationPolicy: undefined });
   assert.match(none, /No cancellation policy is on file\. Never mention or invent a cancellation fee/);
 });
 test('prompt allows up to four offered times', () => {
   const out = build(config);
   assert.match(out, /Offer at most four times/); assert.match(out, /\(up to four\)/); assert.doesNotMatch(out, /up to three/);
+});
+test('fees are stated plainly, never as a maybe, and can be set to only-if-asked', () => {
+  const out = build(config);
+  assert.match(out, /State it as a fact\. Never say "might" or "may" about a fee/); assert.match(out, /whether there is a cancellation fee, answer from the policy/);
+  assert.match(build({ ...config, cancellationPolicy: { ...config.cancellationPolicy, announce: 'only_if_asked' } }), /Do not bring fees up yourself; only explain the policy if the caller asks/);
+});
+test('if no appointment is found the agent offers to have the office look into it', () => {
+  assert.match(build(config), /cannot find it in the system and offer to have the office look into it/);
 });
 console.log(`\n${n} tests passed`);

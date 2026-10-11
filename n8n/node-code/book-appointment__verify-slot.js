@@ -177,7 +177,7 @@ function spreadPick(slots, max, spacing, tz) {
 
 function offerSlots(config, events, args, nowMs) {
   var tz = config.timeZone;
-  var slots = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, durationFor(config, args.service, args.visit_type));
+  var slots = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, args.minutes || durationFor(config, args.service, args.visit_type));
   if (args.part_of_day === 'morning' || args.part_of_day === 'afternoon') {
     var filtered = slots.filter(function (s) {
       var hour = +toLocalIso(s.startMs, tz).slice(11, 13);

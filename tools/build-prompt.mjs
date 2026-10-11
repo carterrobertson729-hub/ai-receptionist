@@ -45,7 +45,8 @@ export function priceList(config) {
 export function cancellationPolicyText(config) {
   const p = config.cancellationPolicy;
   if (!p || !p.feeAmount) return 'No cancellation policy is on file. Never mention or invent a cancellation fee. If the caller asks about fees, say the office can answer that.';
-  return `Cancellation policy on file: free to cancel until ${p.freeUntilHoursBefore} hours before the visit; after that a $${p.feeAmount} late cancellation fee may apply${p.estimateVisitsExempt !== false ? ' (free estimate visits are exempt)' : ''}${p.rescheduleCountsAsCancel ? '; moving a visit close to the time counts the same as cancelling' : '; moving a visit to a new time does not carry a fee'}. You never charge anything. For each appointment, the lookup result says whether a fee may apply (cancellation.feeMayApply).`;
+  const ask = p.announce === 'only_if_asked' ? 'Do not bring fees up yourself; only explain the policy if the caller asks.' : 'When a fee applies to the appointment, tell the caller plainly before they confirm.';
+  return `Cancellation policy on file: free to cancel until ${p.freeUntilHoursBefore} hours before the visit; after that there is a $${p.feeAmount} late cancellation fee${p.estimateVisitsExempt !== false ? ' (free estimate visits are exempt)' : ''}${p.rescheduleCountsAsCancel ? '; moving a visit this close to the time counts the same as cancelling' : '; moving a visit to a new time does not carry a fee'}. ${ask} You never charge anything. For each appointment, the lookup result says whether the fee applies (cancellation.feeApplies).`;
 }
 
 export function build(config) {

@@ -198,6 +198,7 @@
     "freeUntilHoursBefore": 24,
     "feeAmount": 50,
     "estimateVisitsExempt": true,
-    "rescheduleCountsAsCancel": false
+    "rescheduleCountsAsCancel": false,
+    "announce": "when_applies"
   }
 }
