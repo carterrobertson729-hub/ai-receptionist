@@ -61,4 +61,22 @@ test('cancelled and rescheduled calls do not get a second email (their workflows
   assert.equal(buildSummary(config, mk({ outcome: 'cancelled' })).send, false);
   assert.equal(buildSummary(config, mk({ outcome: 'rescheduled' })).send, false);
 });
+test('call log: evening call is After hours on the local date, with outcome and minutes', () => {
+  const r = buildSummary(config, base).log;   // 2026-10-10 01:30Z = Fri Oct 9 8:30 PM Chicago
+  assert.equal(r.Date, '2026-10-09'); assert.equal(r.Day, 'Fri'); assert.equal(r.Time, '20:30');
+  assert.equal(r.Hours, 'After hours'); assert.equal(r.Outcome, 'booked'); assert.equal(r.Minutes, 2.1); assert.equal(r.Phone, '5551234567');
+});
+test('call log: midday call is Business hours; open/close edges', () => {
+  const at = (iso) => { const p = structuredClone(base); p.call.start_timestamp = Date.parse(iso); return buildSummary(config, p).log.Hours; };
+  assert.equal(at('2026-10-09T17:00:00Z'), 'Business hours');   // 12:00 Chicago
+  assert.equal(at('2026-10-09T13:00:00Z'), 'Business hours');   // 08:00 exactly
+  assert.equal(at('2026-10-09T22:00:00Z'), 'After hours');      // 17:00 exactly = closed
+  assert.equal(at('2026-10-09T12:59:00Z'), 'After hours');      // 07:59
+});
+test('call log: every call is logged even when no email is sent; urgent is marked', () => {
+  const r = buildSummary(config, { call: { call_id: 'x', from_number: '+15550000000', start_timestamp: Date.parse('2026-10-09T17:00:00Z'), call_analysis: { custom_analysis_data: { outcome: 'other' } } } });
+  assert.equal(r.send, false); assert.equal(r.log.Outcome, 'other'); assert.equal(r.log.Name, '');
+  assert.equal(buildSummary(config, mk({ urgent: true })).log.Outcome, 'urgent');
+  assert.equal(buildSummary(config, {}).log.Hours, 'Unknown');
+});
 console.log(`\n${n} tests passed`);

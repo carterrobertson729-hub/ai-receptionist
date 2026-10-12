@@ -31,3 +31,13 @@ Files: `config/` (one JSON per business), `n8n/` (workflows to import), `retell/
 Most changes only touch the code inside one or two nodes. `node tools/build-workflows.mjs` writes each Code node's script to `n8n/node-code/<workflow>__<node>.js`. To apply a change: open that workflow in n8n, click the named node, open the Code tab, select all, paste the file's contents, Save. Credentials, webhook URLs, and the deactivated Twilio node are untouched. Re-import a whole workflow only when nodes are added, removed, or re-wired (the release notes say when).
 
 Business facts (hours, prices, job types) are currently embedded in the Load Business Config / Build Summary / Build Alerts / Build Callback Email nodes, so a facts change means pasting into each of those. Planned fix: one central config workflow that the others read.
+
+## Call log sheet (day vs night counts)
+
+Every analyzed call adds one row to a Google Sheet tab named `Calls` (workflow "Owner Call Summary", node "Log Call"). Row 1 headers, exactly: `Date, Day, Time, Hours, Outcome, Urgent, Name, Phone, Problem, Minutes, Call ID`. The sheet ID (the long text between `/d/` and `/edit` in its URL) goes in `config/<id>.json` as `callLogSheetId`, then rebuild. `Hours` is `Business hours` or `After hours`, decided from the config hours in the business time zone.
+
+Add a second tab named `Report` with these formulas for the counts:
+
+- Calls during business hours: `=COUNTIF(Calls!D:D,"Business hours")`; after hours: `=COUNTIF(Calls!D:D,"After hours")`
+- Booked after hours: `=COUNTIFS(Calls!D:D,"After hours",Calls!E:E,"booked")` (swap `booked` for `estimate`, `callback`, `message`, `urgent`, `cancelled`, `rescheduled`)
+- Calls today: `=COUNTIF(Calls!A:A,TEXT(TODAY(),"yyyy-mm-dd"))`

@@ -72,7 +72,30 @@ function buildSummary(config, payload) {
   var skip = (config.notifications && config.notifications.skipOutcomes) || ['callback', 'cancelled', 'rescheduled'];   // already emailed by their own workflow
   var send = urgent || (skip.indexOf(outcome) === -1 && (allow.indexOf(outcome) !== -1 || hasLead));
 
-  return { send: send, subject: (urgent ? '[URGENT] ' : '') + config.businessName + ': ' + headline, body: lines.join('\n'), urgent: urgent };
+  return { send: send, subject: (urgent ? '[URGENT] ' : '') + config.businessName + ': ' + headline, body: lines.join('\n'), urgent: urgent,
+    log: callLogRow(config, call, { name: name, phone: phone, outcome: outcome, urgent: urgent, problem: problem, secs: secs }) };
+}
+
+// One row per call for the call log sheet: local date/time, business hours vs after hours, and the outcome.
+function callLogRow(config, call, f) {
+  var date = '', time = '', daypart = 'Unknown', weekday = '';
+  if (call.start_timestamp) {
+    var parts = {};
+    new Intl.DateTimeFormat('en-US', { timeZone: config.timeZone, year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+      .formatToParts(new Date(call.start_timestamp)).forEach(function (p) { parts[p.type] = p.value; });
+    date = parts.year + '-' + parts.month + '-' + parts.day;
+    time = parts.hour + ':' + parts.minute;
+    weekday = parts.weekday;
+    var h = (config.hours || {})[weekday.toLowerCase().slice(0, 3)];
+    daypart = h && time >= h[0] && time < h[1] ? 'Business hours' : 'After hours';
+  }
+  var outcome = f.urgent ? 'urgent' : f.outcome;
+  return {
+    Date: date, Day: weekday, Time: time, 'Hours': daypart, Outcome: outcome, Urgent: f.urgent ? 'yes' : 'no',
+    Name: f.name === 'Unknown caller' ? '' : f.name, Phone: f.phone === 'not given' ? '' : f.phone,
+    Problem: f.problem === 'not given' ? '' : f.problem, Minutes: f.secs ? Math.round(f.secs / 6) / 10 : 0,
+    'Call ID': call.call_id || ''
+  };
 }
 
 if (typeof module !== 'undefined') module.exports = { buildSummary: buildSummary };

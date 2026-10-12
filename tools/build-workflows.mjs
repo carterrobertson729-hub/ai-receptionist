@@ -239,8 +239,11 @@ var CONFIGS = ${JSON.stringify(configs)};
 var config = CONFIGS[(item.query && item.query.business) || ''];
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the Retell webhook URL.');
 var s = buildSummary(config, body);
-if (!s.send) return [];   // nothing worth emailing; the call stays in Retell's history
-return [{ json: { to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent } }];`;
+return [{ json: { send: s.send, to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent, log: s.log, sheetId: config.callLogSheetId || '' } }];`;
+
+const emailFilterCode = `// Only calls worth an email go on to the email step (the call log above gets every call).
+var j = $input.first().json;
+return j.send ? [{ json: j }] : [];`;
 
 const summary = wf('Receptionist - Owner Call Summary', [
   {
@@ -250,15 +253,36 @@ const summary = wf('Receptionist - Owner Call Summary', [
   },
   code('c1000000-0000-4000-8000-000000000002', 'Build Summary', [240, 0], summaryCode),
   {
+    id: 'c1000000-0000-4000-8000-000000000004', name: 'Log Call', type: 'n8n-nodes-base.googleSheets',
+    typeVersion: 4.5, position: [480, 200], onError: 'continueRegularOutput',
+    parameters: {
+      resource: 'sheet', operation: 'append',
+      documentId: { __rl: true, mode: 'id', value: '={{ $json.sheetId }}' },
+      sheetName: { __rl: true, mode: 'name', value: 'Calls' },
+      columns: { mappingMode: 'defineBelow', value: {
+        Date: '={{ $json.log.Date }}', Day: '={{ $json.log.Day }}', Time: '={{ $json.log.Time }}', Hours: '={{ $json.log.Hours }}',
+        Outcome: '={{ $json.log.Outcome }}', Urgent: '={{ $json.log.Urgent }}', Name: '={{ $json.log.Name }}', Phone: '={{ $json.log.Phone }}',
+        Problem: '={{ $json.log.Problem }}', Minutes: '={{ $json.log.Minutes }}', 'Call ID': '={{ $json.log["Call ID"] }}'
+      } },
+      options: {}
+    },
+    credentials: { googleSheetsOAuth2Api: { id: 'REPLACE', name: 'Google Sheets account' } }
+  },
+  code('c1000000-0000-4000-8000-000000000005', 'Only If Worth Emailing', [480, 0], emailFilterCode),
+  {
     id: 'c1000000-0000-4000-8000-000000000003', name: 'Email Owner', type: 'n8n-nodes-base.gmail',
-    typeVersion: 2.1, position: [480, 0],
+    typeVersion: 2.1, position: [720, 0],
     parameters: {
       resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
       emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
     },
     credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
   }
-], link('Retell Call Webhook', 'Build Summary', 'Email Owner'));
+], {
+  ...link('Retell Call Webhook', 'Build Summary'),
+  'Build Summary': { main: [[{ node: 'Log Call', type: 'main', index: 0 }, { node: 'Only If Worth Emailing', type: 'main', index: 0 }]] },
+  ...link('Only If Worth Emailing', 'Email Owner')
+});
 
 
 // ---------- 4. urgent alert ----------
