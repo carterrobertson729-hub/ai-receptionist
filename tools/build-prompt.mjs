@@ -49,12 +49,19 @@ export function cancellationPolicyText(config) {
   return `Cancellation policy on file: free to cancel until ${p.freeUntilHoursBefore} hours before the visit; after that there is a $${p.feeAmount} late cancellation fee${p.estimateVisitsExempt !== false ? ' (free estimate visits are exempt)' : ''}${p.rescheduleCountsAsCancel ? '; moving a visit this close to the time counts the same as cancelling' : '; moving a visit to a new time does not carry a fee'}. ${ask} You never charge anything. For each appointment, the lookup result says whether the fee applies (cancellation.feeApplies).`;
 }
 
+export function transferText(config) {
+  const t = config.transfer;
+  const fallback = 'If the caller asks for a person, a manager, or a specific employee: do not transfer. Say plainly that nobody is available to take the call right now, and offer to take a message or set up a callback with the office (use the callback steps in the Pricing section).';
+  if (!t || !t.enabled) return fallback;
+  return `If the caller asks to speak to a person, a manager, or a specific employee (or you cannot help them and they want a human): say "Sure, let me try to connect you," then call the transfer tool \`transfer_to_office\`. Only try a transfer during these hours: ${bookingHours(t.hours || config.hours)}. Outside those hours, do not transfer. ${fallback.replace('If the caller asks for a person, a manager, or a specific employee: do not transfer. ', '')} If a transfer is attempted and nobody picks up or it fails, apologize briefly and take a message (name, number, what it is about) so the office can call back. Never transfer an emergency or safety call: handle it with the urgent steps instead.`;
+}
+
 export function build(config) {
   const routine = config.services.filter((s) => !s.emergency).map((s) => s.name).join(', ');
   const vars = {
     business_name: config.businessName, trade: config.trade, time_zone: config.timeZone,
     services_list: routine, booking_hours: bookingHours(config.hours),
-    extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config), cancellation_policy: cancellationPolicyText(config)
+    extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config), cancellation_policy: cancellationPolicyText(config), transfer_policy: transferText(config)
   };
   let out = template.replace(/\{\{current_time_<[^}]*>\}\}/, `{{current_time_${config.timeZone}}}`);
   for (const [k, v] of Object.entries(vars)) out = out.split(`{{${k}}}`).join(v);

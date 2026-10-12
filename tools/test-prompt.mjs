@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { build, bookingHours, priceList } from './build-prompt.mjs';
+import { build, bookingHours, priceList, transferText } from './build-prompt.mjs';
 const config = JSON.parse(readFileSync(new URL('../config/demo-plumbing.json', import.meta.url)));
 let n = 0; const test = (t, f) => { f(); n++; console.log('ok  ' + t); };
 test('no unfilled placeholders except Retell\'s own time variable', () => {
@@ -86,5 +86,12 @@ test('fees are stated plainly, never as a maybe, and can be set to only-if-asked
 });
 test('if no appointment is found the agent offers to have the office look into it', () => {
   assert.match(build(config), /cannot find it in the system and offer to have the office look into it/);
+});
+test('transfer off: never transfers, offers message/callback', () => {
+  assert.match(transferText(config), /do not transfer/); assert.doesNotMatch(build(config), /transfer_to_office/);
+});
+test('transfer on: uses the tool, limited to hours, falls back to a message, never for emergencies', () => {
+  const t = transferText({ ...config, transfer: { enabled: true, number: '+15551230000' } });
+  assert.match(t, /transfer_to_office/); assert.match(t, /Only try a transfer during/); assert.match(t, /take a message/); assert.match(t, /Never transfer an emergency/);
 });
 console.log(`\n${n} tests passed`);
