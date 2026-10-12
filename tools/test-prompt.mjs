@@ -87,11 +87,15 @@ test('fees are stated plainly, never as a maybe, and can be set to only-if-asked
 test('if no appointment is found the agent offers to have the office look into it', () => {
   assert.match(build(config), /cannot find it in the system and offer to have the office look into it/);
 });
-test('transfer off: never transfers, offers message/callback', () => {
-  assert.match(transferText(config), /do not transfer/); assert.doesNotMatch(build(config), /transfer_to_office/);
+test('transfer off: never transfers, offers finish/message/callback', () => {
+  const t = transferText({ ...config, transfer: { enabled: false } });
+  assert.match(t, /do not transfer/); assert.match(t, /finish helping them now, take a message, or set up a callback/);
 });
-test('transfer on: uses the tool, limited to hours, falls back to a message, never for emergencies', () => {
-  const t = transferText({ ...config, transfer: { enabled: true, number: '+15551230000' } });
-  assert.match(t, /transfer_to_office/); assert.match(t, /Only try a transfer during/); assert.match(t, /take a message/); assert.match(t, /Never transfer an emergency/);
+test('transfer on: only when asked, in hours; stays on the line if nobody answers; closed -> three choices', () => {
+  const t = transferText(config);
+  assert.match(t, /Never offer a transfer yourself/); assert.match(t, /transfer_to_office/);
+  assert.match(t, /you are still on the line/); assert.match(t, /Outside office hours: Say the office is closed/);
+  assert.match(t, /finish helping them now \(booking a visit\), take a message, or set up a callback/);
+  assert.match(t, /Never transfer an emergency/); assert.match(build(config), /transfer_to_office/);
 });
 console.log(`\n${n} tests passed`);

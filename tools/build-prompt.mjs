@@ -51,9 +51,13 @@ export function cancellationPolicyText(config) {
 
 export function transferText(config) {
   const t = config.transfer;
-  const fallback = 'If the caller asks for a person, a manager, or a specific employee: do not transfer. Say plainly that nobody is available to take the call right now, and offer to take a message or set up a callback with the office (use the callback steps in the Pricing section).';
-  if (!t || !t.enabled) return fallback;
-  return `If the caller asks to speak to a person, a manager, or a specific employee (or you cannot help them and they want a human): say "Sure, let me try to connect you," then call the transfer tool \`transfer_to_office\`. Only try a transfer during these hours: ${bookingHours(t.hours || config.hours)}. Outside those hours, do not transfer. ${fallback.replace('If the caller asks for a person, a manager, or a specific employee: do not transfer. ', '')} If a transfer is attempted and nobody picks up or it fails, apologize briefly and take a message (name, number, what it is about) so the office can call back. Never transfer an emergency or safety call: handle it with the urgent steps instead.`;
+  const closed = 'Say the office is closed right now, and offer three choices: you can finish helping them now (booking a visit), take a message, or set up a callback with the office (use the callback steps in the Pricing section). Do not transfer.';
+  if (!t || !t.enabled) return `If the caller asks for a person, a manager, or a specific employee, do not transfer. Say nobody is available to take the call right now, and offer to finish helping them now, take a message, or set up a callback with the office (use the callback steps in the Pricing section).`;
+  return `Never offer a transfer yourself. You are the one answering, and you handle the call unless the caller asks for a person, a manager, or a specific employee. Only then:
+- Office hours are: ${bookingHours(t.hours || config.hours)}. Check the current time shown at the top of this prompt.
+- During office hours: say "Sure, let me try to connect you," then call the transfer tool \`transfer_to_office\`. If the transfer does not connect (nobody picks up, busy, or an error), you are still on the line: say something like "Looks like nobody is available right at the moment, but I can still take care of this for you," and carry on helping them (book the visit, take a message, or set up a callback) until the conversation is finished. Do not try to transfer again unless they insist, and then try only once more.
+- Outside office hours: ${closed}
+- Never transfer an emergency or safety call. Handle it with the urgent steps instead, unless the caller has been told someone was alerted and still asks for a person.`;
 }
 
 export function build(config) {
