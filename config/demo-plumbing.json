@@ -193,7 +193,7 @@
       "rescheduled"
     ]
   },
-  "callLogSheetId": "REPLACE_WITH_GOOGLE_SHEET_ID",
+  "callLogSheetId": "1xH58TB4wd6J3q44doG8L8Hyh-wNLPok0PZNvlqBBCb0",
   "serviceCallFee": 65,
   "cancellationPolicy": {
     "freeUntilHoursBefore": 24,
