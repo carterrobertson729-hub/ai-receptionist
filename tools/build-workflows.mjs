@@ -254,20 +254,17 @@ const summary = wf('Receptionist - Owner Call Summary', [
   code('c1000000-0000-4000-8000-000000000002', 'Build Summary', [240, 0], summaryCode),
   {
     id: 'c1000000-0000-4000-8000-000000000004', name: 'Log Call', type: 'n8n-nodes-base.googleSheets',
-    typeVersion: 4.5, position: [480, 200], onError: 'continueRegularOutput',
+    typeVersion: 4.5, position: [720, 200], onError: 'continueRegularOutput',
     parameters: {
       resource: 'sheet', operation: 'append',
-      documentId: { __rl: true, mode: 'id', value: '={{ $json.sheetId }}' },
+      documentId: { __rl: true, mode: 'id', value: "={{ $('Build Summary').first().json.sheetId }}" },
       sheetName: { __rl: true, mode: 'name', value: 'Calls' },
-      columns: { mappingMode: 'defineBelow', value: {
-        Date: '={{ $json.log.Date }}', Day: '={{ $json.log.Day }}', Time: '={{ $json.log.Time }}', Hours: '={{ $json.log.Hours }}',
-        Outcome: '={{ $json.log.Outcome }}', Urgent: '={{ $json.log.Urgent }}', Name: '={{ $json.log.Name }}', Phone: '={{ $json.log.Phone }}',
-        Problem: '={{ $json.log.Problem }}', Minutes: '={{ $json.log.Minutes }}', 'Call ID': '={{ $json.log["Call ID"] }}'
-      } },
+      columns: { mappingMode: 'autoMapInputData', value: null, matchingColumns: [], schema: [] },
       options: {}
     },
     credentials: { googleSheetsOAuth2Api: { id: 'REPLACE', name: 'Google Sheets account' } }
   },
+  code('c1000000-0000-4000-8000-000000000006', 'Prepare Log Row', [480, 200], `// One row per call; the keys here must match the column headers in row 1 of the Calls tab.\nreturn [{ json: $input.first().json.log }];`),
   code('c1000000-0000-4000-8000-000000000005', 'Only If Worth Emailing', [480, 0], emailFilterCode),
   {
     id: 'c1000000-0000-4000-8000-000000000003', name: 'Email Owner', type: 'n8n-nodes-base.gmail',
@@ -280,7 +277,8 @@ const summary = wf('Receptionist - Owner Call Summary', [
   }
 ], {
   ...link('Retell Call Webhook', 'Build Summary'),
-  'Build Summary': { main: [[{ node: 'Log Call', type: 'main', index: 0 }, { node: 'Only If Worth Emailing', type: 'main', index: 0 }]] },
+  'Build Summary': { main: [[{ node: 'Prepare Log Row', type: 'main', index: 0 }, { node: 'Only If Worth Emailing', type: 'main', index: 0 }]] },
+  ...link('Prepare Log Row', 'Log Call'),
   ...link('Only If Worth Emailing', 'Email Owner')
 });
 

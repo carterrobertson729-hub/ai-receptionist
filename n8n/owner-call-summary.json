@@ -36,7 +36,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        480,
+        720,
         200
       ],
       "onError": "continueRegularOutput",
@@ -46,7 +46,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $json.sheetId }}"
+          "value": "={{ $('Build Summary').first().json.sheetId }}"
         },
         "sheetName": {
           "__rl": true,
@@ -54,20 +54,10 @@
           "value": "Calls"
         },
         "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Date": "={{ $json.log.Date }}",
-            "Day": "={{ $json.log.Day }}",
-            "Time": "={{ $json.log.Time }}",
-            "Hours": "={{ $json.log.Hours }}",
-            "Outcome": "={{ $json.log.Outcome }}",
-            "Urgent": "={{ $json.log.Urgent }}",
-            "Name": "={{ $json.log.Name }}",
-            "Phone": "={{ $json.log.Phone }}",
-            "Problem": "={{ $json.log.Problem }}",
-            "Minutes": "={{ $json.log.Minutes }}",
-            "Call ID": "={{ $json.log[\"Call ID\"] }}"
-          }
+          "mappingMode": "autoMapInputData",
+          "value": null,
+          "matchingColumns": [],
+          "schema": []
         },
         "options": {}
       },
@@ -76,6 +66,19 @@
           "id": "REPLACE",
           "name": "Google Sheets account"
         }
+      }
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000006",
+      "name": "Prepare Log Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        200
+      ],
+      "parameters": {
+        "jsCode": "// One row per call; the keys here must match the column headers in row 1 of the Calls tab.\nreturn [{ json: $input.first().json.log }];"
       }
     },
     {
@@ -135,12 +138,23 @@
       "main": [
         [
           {
-            "node": "Log Call",
+            "node": "Prepare Log Row",
             "type": "main",
             "index": 0
           },
           {
             "node": "Only If Worth Emailing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Log Row": {
+      "main": [
+        [
+          {
+            "node": "Log Call",
             "type": "main",
             "index": 0
           }
