@@ -92,11 +92,12 @@ test('transfer off: never transfers, offers finish/message/callback', () => {
   assert.match(t, /do not transfer/); assert.match(t, /finish helping them now, take a message, or set up a callback/);
 });
 test('transfer on: only when asked, in hours; stays on the line if nobody answers; closed -> three choices', () => {
-  const t = transferText(config);
+  const on = { ...config, transfer: { enabled: true, number: '+15551230000' } };
+  const t = transferText(on);
   assert.match(t, /Never offer a transfer yourself/); assert.match(t, /transfer_to_office/);
   assert.match(t, /you are still on the line/); assert.match(t, /Outside office hours: Say the office is closed/);
   assert.match(t, /finish helping them now \(booking a visit\), take a message, or set up a callback/);
-  assert.match(t, /Never transfer an emergency/); assert.match(build(config), /transfer_to_office/);
+  assert.match(t, /Never transfer an emergency/); assert.match(build(on), /transfer_to_office/);
 });
 test('price/availability-only callers are not asked for personal details first', () => {
   const p = build(config);
