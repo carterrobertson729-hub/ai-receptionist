@@ -44,6 +44,8 @@ function buildSummary(config, payload) {
     cancelled: 'Appointment cancelled (a separate cancellation email was sent).',
     rescheduled: 'Appointment rescheduled (a separate email was sent).',
     urgent: 'URGENT - needs a human to follow up now. No technician has been contacted automatically.',
+    'other/nothing': 'No booking and no details left (a hang-up, a wrong number, or nothing needed).',
+    other: 'No booking and no details left (a hang-up, a wrong number, or nothing needed).',
     unknown: 'Outcome not recorded - see the summary below.'
   }[outcome] || outcome;
   if (urgent && outcome !== 'urgent') outcomeLine = 'URGENT - ' + outcomeLine + ' No technician has been contacted automatically.';

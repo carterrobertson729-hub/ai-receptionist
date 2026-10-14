@@ -84,4 +84,8 @@ test('info-only calls are logged but not emailed', () => {
   assert.equal(r.send, false); assert.equal(r.log.Outcome, 'info'); assert.match(r.body, /Information only/);
   assert.equal(buildSummary(config, mk({ outcome: 'info' })).send, false);
 });
+test('other/nothing outcome: no email unless the caller left name and number, logged as-is', () => {
+  const r = buildSummary(config, mk({ outcome: 'other/nothing', caller_name: '', caller_phone: '' }));
+  assert.equal(r.send, false); assert.equal(r.log.Outcome, 'other/nothing'); assert.match(r.body, /No booking and no details left/);
+});
 console.log(`\n${n} tests passed`);
