@@ -38,6 +38,7 @@ function buildSummary(config, payload) {
     booked: 'Appointment booked' + (appt ? ' for ' + appt : ''),
     message: 'No booking. A message was taken - please call back.',
     estimate: 'Free estimate visit booked' + (appt ? ' for ' + appt : ''),
+    info: 'Information only (price or open times). The caller did not book or leave details.',
     callback: 'Callback requested (a separate callback email was sent).',
     cancelled: 'Appointment cancelled (a separate cancellation email was sent).',
     rescheduled: 'Appointment rescheduled (a separate email was sent).',

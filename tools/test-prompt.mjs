@@ -98,4 +98,9 @@ test('transfer on: only when asked, in hours; stays on the line if nobody answer
   assert.match(t, /finish helping them now \(booking a visit\), take a message, or set up a callback/);
   assert.match(t, /Never transfer an emergency/); assert.match(build(config), /transfer_to_office/);
 });
+test('price/availability-only callers are not asked for personal details first', () => {
+  const p = build(config);
+  assert.match(p, /Information questions/); assert.match(p, /do NOT ask for their name, phone number or address/);
+  assert.match(p, /Would you like me to book one of those for you\?/);
+});
 console.log(`\n${n} tests passed`);

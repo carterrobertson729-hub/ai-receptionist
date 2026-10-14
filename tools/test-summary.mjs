@@ -79,4 +79,9 @@ test('call log: every call is logged even when no email is sent; urgent is marke
   assert.equal(buildSummary(config, mk({ urgent: true })).log.Outcome, 'urgent');
   assert.equal(buildSummary(config, {}).log.Hours, 'Unknown');
 });
+test('info-only calls are logged but not emailed', () => {
+  const r = buildSummary(config, mk({ outcome: 'info', caller_name: '', caller_phone: '' }));
+  assert.equal(r.send, false); assert.equal(r.log.Outcome, 'info'); assert.match(r.body, /Information only/);
+  assert.equal(buildSummary(config, mk({ outcome: 'info' })).send, false);
+});
 console.log(`\n${n} tests passed`);

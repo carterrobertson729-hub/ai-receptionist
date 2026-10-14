@@ -190,7 +190,8 @@
     "skipOutcomes": [
       "callback",
       "cancelled",
-      "rescheduled"
+      "rescheduled",
+      "info"
     ]
   },
   "callLogSheetId": "1xH58TB4wd6J3q44doG8L8Hyh-wNLPok0PZNvlqBBCb0",
