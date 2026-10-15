@@ -115,4 +115,9 @@ test('barbershop prompt: no address, no urgent flow, services with prices, staff
 test('barbershop prompt: only collects details when ready to book', () => {
   assert.match(build(shop), /Only ask for the caller's name and number when they are ready to book/);
 });
+test('barbershop prompt: age rules, bald fade for all ages, multiple people', () => {
+  const p = build(shop);
+  assert.match(p, /Boys Cut is for ages 12 and under/); assert.match(p, /Bald Fade is for all ages, including children, and costs \$30/);
+  assert.match(p, /Booking for more than one person/); assert.doesNotMatch(p, /\{\{service_guidance\}\}/);
+});
 console.log(`\n${n} tests passed`);

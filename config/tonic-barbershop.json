@@ -270,5 +270,14 @@
   "transfer": {
     "enabled": false,
     "number": "REPLACE_WITH_OFFICE_NUMBER_E164"
-  }
+  },
+  "serviceGuidance": [
+    "Haircuts are by age: Boys Cut is for ages 12 and under, Men's Haircut is for ages 13 to 64, and Senior Cut is for ages 65 and older. If the caller has not said who the haircut is for, ask the age.",
+    "Bald Fade is for all ages, including children, and costs $30 for everyone. A child who wants a bald fade is the Bald Fade at $30, not the Boys Cut price.",
+    "Buzz Cut is only for cuts where the guard numbers are within 2 of each other (for example a 1 on the sides and a 2 on top). If the caller describes something different, ask one short question about what they want.",
+    "Clean Up is a quick taper around the ears and neckline, usually between haircuts. It is not a full haircut.",
+    "Beard Trim (No Line-up) is the beard and mustache trim only, and it does not include a shave. Beard Trim with Cheek and Neck Shave includes the trim, the line-up and the shave. Line-up Shave (Cheek & Neck) is a line-up and a shave on the neck and cheek.",
+    "Hot Towel Shave is a beard trim and line-up with a hot towel neck shave, feather razor only. It is available with select barbers only, so the shop confirms who.",
+    "Gray Blend is men's color. Scalp Massage is a shampoo and scalp massage with a hot towel over the eyes. These and the waxes (eyebrow, ear, nose) are quick add-ons that can go with a haircut."
+  ]
 }

@@ -70,7 +70,8 @@ export function build(config) {
   const vars = {
     business_name: config.businessName, trade: config.trade, time_zone: config.timeZone,
     services_list: routine, booking_hours: bookingHours(config.hours),
-    extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config), cancellation_policy: cancellationPolicyText(config), transfer_policy: transferText(config), staff_list: staffList(config)
+    extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config), cancellation_policy: cancellationPolicyText(config), transfer_policy: transferText(config), staff_list: staffList(config),
+    service_guidance: (config.serviceGuidance || []).map((l) => '- ' + l).join('\n') || '- None.'
   };
   let out = (config.promptTemplate ? loadTemplate(config.promptTemplate) : template).replace(/\{\{current_time_<[^}]*>\}\}/, `{{current_time_${config.timeZone}}}`);
   for (const [k, v] of Object.entries(vars)) out = out.split(`{{${k}}}`).join(v);
