@@ -65,12 +65,32 @@ export function staffList(config) {
   return (config.staff || []).map((m) => m.name + (m.role ? ' (' + m.role + ')' : '')).join(', ') || 'Ask the shop for the team.';
 }
 
+const LANG_NAMES = { en: 'English', es: 'Spanish' };
+
+export function languagesText(config) {
+  const codes = config.languages && config.languages.length ? config.languages : ['en'];
+  const names = codes.map((c) => LANG_NAMES[c] || c);
+  const others = names.filter((n) => n !== 'English');
+  if (!others.length) return 'Speak only English. If a caller speaks another language, say in simple English that you can help in English, and offer to take a message so the business can call them back. Do not promise another language.';
+  const list = others.join(' and ');
+  return `You can help in English and ${list}. Always start the call in English with the opening above.
+- If the caller speaks ${list}, or asks for it (for example "habla español?" or "Spanish please"), switch fully to that language for the rest of the call and answer everything in it: questions, confirmations, prices, times, and the closing. Say the language is fine, for example "Claro, con gusto" in Spanish, then continue. Do not mix languages in one reply unless the caller does. If the caller switches back, switch back.
+- Speak naturally in that language, and say prices and times the way a native speaker would (for example "veintisiete dólares", "las cuatro de la tarde").
+- The response language is controlled by you, not by the system. Check your own last reply: if the caller is speaking ${list}, your reply must be in ${list}.
+- Tool calls stay in English no matter which language the call is in: dates as YYYY-MM-DD, times as HH:MM, and service names exactly as listed in this prompt. Pass the caller's name exactly as they say it. Set \`language\` to the language code in book_appointment (for example "es").
+- Read the tool results in English and explain them to the caller in their language.
+- If the caller speaks any other language, say in simple English (and ${list} if you can) that you can help in English or ${list}, and offer to take a message so the business can call back. Do not pretend to speak a language you are not set up for.
+- Safety messages, if any apply, must be said in the caller's language too, word for word in meaning, not shortened.
+- If you did not understand something, ask the caller to repeat it in their language.`;
+}
+
 export function build(config) {
   const routine = config.services.filter((s) => !s.emergency).map((s) => s.name).join(', ');
   const vars = {
     business_name: config.businessName, trade: config.trade, time_zone: config.timeZone,
     services_list: routine, booking_hours: bookingHours(config.hours),
     extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config), cancellation_policy: cancellationPolicyText(config), transfer_policy: transferText(config), staff_list: staffList(config),
+    languages_text: languagesText(config),
     shop_facts: (config.shopFacts || []).map((l) => '- ' + l).join('\n') || '- None.',
     service_guidance: (config.serviceGuidance || []).map((l) => '- ' + l).join('\n') || '- None.'
   };

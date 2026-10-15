@@ -125,4 +125,12 @@ test('barbershop prompt: walk-ins and card payment are stated, unknown shop ques
   assert.match(p, /Walk-ins are welcome/); assert.match(p, /accepts card payments/); assert.match(p, /not in this prompt/);
   assert.doesNotMatch(p, /\{\{shop_facts\}\}/);
 });
+test('languages section: English first, Spanish on request, tools stay English, English-only businesses stay English', () => {
+  const p = build(shop);
+  assert.match(p, /## Languages/); assert.match(p, /Always start the call in English/); assert.match(p, /Tool calls stay in English/);
+  assert.match(p, /veintisiete dólares/); assert.doesNotMatch(p, /\{\{languages_text\}\}/);
+  const en = build({ ...shop, languages: ['en'] });
+  assert.match(en, /Speak only English/); assert.doesNotMatch(en, /Always start the call in English/);
+  assert.match(build(config), /## Languages/);
+});
 console.log(`\n${n} tests passed`);
