@@ -104,4 +104,15 @@ test('price/availability-only callers are not asked for personal details first',
   assert.match(p, /Information questions/); assert.match(p, /do NOT ask for their name, phone number or address/);
   assert.match(p, /Would you like me to book one of those for you\?/);
 });
+const shop = JSON.parse(readFileSync(new URL('../config/tonic-barbershop.json', import.meta.url)));
+test('barbershop prompt: no address, no urgent flow, services with prices, staff listed, no unfilled placeholders', () => {
+  const p = build(shop);
+  assert.deepEqual(p.match(/\{\{[^}]*\}\}/g), ['{{current_time_America/Chicago}}']);
+  assert.match(p, /Men's Haircut: flat price of \$27/); assert.match(p, /Kayleen \(Stylist\)/);
+  assert.match(p, /Do not ask for an area code or an address/); assert.doesNotMatch(p, /report_urgent_call/);
+  assert.doesNotMatch(p, /technician/i);
+});
+test('barbershop prompt: only collects details when ready to book', () => {
+  assert.match(build(shop), /Only ask for the caller's name and number when they are ready to book/);
+});
 console.log(`\n${n} tests passed`);

@@ -99,6 +99,13 @@ function effectiveVisitType(config, service, visitType) {
 // Big jobs have two lengths: the short on-site ESTIMATE visit (durationMinutes, the default) and the whole
 // job (jobMinutes), used only when the caller books the job itself and it fits in one day.
 function durationFor(config, service, visitType) {
+  // Combos like "Men's Haircut + Beard Trim (No Line-up)": add up the lengths of the listed parts.
+  var parts = String(service || '').split('+').map(function (x) { return x.trim(); }).filter(Boolean);
+  if (parts.length > 1) {
+    var total = 0;
+    var ok = parts.every(function (p) { var f = serviceFor(config, p); if (f && f.durationMinutes) { total += f.durationMinutes; return true; } return false; });
+    if (ok) return total;
+  }
   var found = serviceFor(config, service);
   if (effectiveVisitType(config, service, visitType) === 'job' && found.jobMinutes) return found.jobMinutes;
   return found && found.durationMinutes ? found.durationMinutes : config.bookingRules.appointmentMinutes;
@@ -109,6 +116,20 @@ function isBigJob(config, service) {
   return !!(found && found.pricing && found.pricing.type === 'big_job');
 }
 
+// Most appointments running at the same moment anywhere inside [from, to). Capacity 1 reduces to "any overlap".
+function peakOverlap(busy, from, to) {
+  var hits = busy.filter(function (b) { return from < b.end && to > b.start; });
+  var peak = 0;
+  hits.forEach(function (a) {
+    // the busiest moment is always the start of some booking (or the window start)
+    [Math.max(a.start, from)].forEach(function (t) {
+      var n = hits.filter(function (b) { return b.start <= t && b.end > t; }).length;
+      if (n > peak) peak = n;
+    });
+  });
+  return peak;
+}
+
 // All bookable slots in the window, earliest first. No cap; callers cap.
 // durationMin is the visit length for this job type (defaults to the business default).
 function allSlots(config, busy, fromDate, nowMs, durationMin) {
@@ -117,6 +138,7 @@ function allSlots(config, busy, fromDate, nowMs, durationMin) {
   var dur = (durationMin || rules.appointmentMinutes) * 60000;
   var step = rules.slotStepMinutes * 60000;
   var buf = (rules.bufferMinutes || 0) * 60000;
+  var capacity = rules.capacity || 1;
   var earliest = nowMs + rules.minNoticeHours * 3600000;
   var today = localDateStr(nowMs, tz);
   var startDate = fromDate && fromDate > today ? fromDate : today;
@@ -129,8 +151,8 @@ function allSlots(config, busy, fromDate, nowMs, durationMin) {
     var close = localToUtcMs(date, hours[1], tz);
     for (var s = open; s + dur <= close; s += step) {
       if (s < earliest) continue;
-      var clash = busy.some(function (b) { return s < b.end + buf && s + dur > b.start - buf; });
-      if (clash) continue;
+      // capacity = how many appointments can run at once (1 technician, or one per barber/stylist on shift)
+      if (peakOverlap(busy, s - buf, s + dur + buf) >= capacity) continue;
       slots.push({ startMs: s, endMs: s + dur });
     }
   }
@@ -282,10 +304,12 @@ var phone = normalizePhone(a.phone);
 var name = String(a.name || '').trim();
 var address = String(a.address || '').trim();
 var problem = String(a.problem || '').trim();
+var noAddress = ctx.config.collectAddress === false;   // e.g. a barbershop: customers come to the shop
+if (noAddress && !problem) problem = String(a.service || 'Appointment').trim();
 var out = { status: 'invalid', reason: '' };
 if (!name) out.reason = 'missing_name';
 else if (!phone) out.reason = 'invalid_phone';
-else if (!address) out.reason = 'missing_address';
+else if (!address && !noAddress) out.reason = 'missing_address';
 else if (!problem) out.reason = 'missing_problem';
 else if (isNaN(Date.parse(a.start))) out.reason = 'invalid_start';
 else {
@@ -314,7 +338,8 @@ var big = isBigJob(ctx.config, a.service);
 var estimate = big && effectiveVisitType(ctx.config, a.service, a.visit_type) !== 'job';
 out.visitKind = estimate ? 'estimate' : (big ? 'big_job' : 'service');
 out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name;
-out.description = 'Booked by AI receptionist\nCaller: ' + name + '\nPhone: ' + phone + '\nAddress: ' + address +
+out.description = 'Booked by AI receptionist\nCaller: ' + name + '\nPhone: ' + phone + (address ? '\nAddress: ' + address : '') +
+  (a.barber ? '\nPreferred barber/stylist: ' + a.barber + ' (a request, not guaranteed)' : '') +
   '\nProblem: ' + problem + '\nJob type: ' + out.service + '\nVisit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : (big ? 'FULL JOB booked by the caller (exact price confirmed on site before work starts)' : 'Service visit')) + '\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
   '\nLanguage: ' + (a.language || 'en') + '\nCall: ' + ctx.callId;
 return [{ json: out }];

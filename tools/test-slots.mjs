@@ -248,4 +248,34 @@ test('four offers never repeat a time and respect the gap after an earlier job',
   assert.equal(new Set(t).size, t.length); assert.equal(t[0], '10:30');
 });
 
+// ---- barbershop: several barbers at once, and combo services ----
+const shop = {
+  timeZone: 'America/New_York',
+  hours: { mon: ['09:00', '17:00'], tue: ['09:00', '17:00'], wed: ['09:00', '17:00'], thu: ['09:00', '17:00'], fri: ['09:00', '17:00'], sat: null, sun: null },
+  bookingRules: { appointmentMinutes: 30, slotStepMinutes: 15, bufferMinutes: 0, minNoticeHours: 1, maxDaysAhead: 14, maxSlotsOffered: 4, offerSpacingMinutes: 30, capacity: 2 },
+  services: [{ name: "Men's Haircut", durationMinutes: 30 }, { name: 'Beard Trim (No Line-up)', durationMinutes: 15 }]
+};
+const cutAt = (h) => ({ start: { dateTime: `2026-10-07T${h}:00-04:00` }, end: { dateTime: `2026-10-07T${h}:30-04:00`.replace(/(\d\d):(\d\d):00-04:00/, '$1:$2:00-04:00') } });
+const ten = { start: { dateTime: '2026-10-07T10:00:00-04:00' }, end: { dateTime: '2026-10-07T10:30:00-04:00' } };
+const times = (cfg, ev, args) => S.offerSlots(cfg, ev, { preferred_date: '2026-10-07', ...args }, NOW).map((x) => x.label);
+test('capacity 2: one booking at 10:00 leaves 10:00 open for a second barber', () => {
+  assert.equal(S.requestedTimeStatus(shop, [ten], { preferred_date: '2026-10-07', preferred_time: '10:00', service: "Men's Haircut" }, NOW).available, true);
+});
+test('capacity 2: two bookings at 10:00 close that time', () => {
+  assert.equal(S.requestedTimeStatus(shop, [ten, ten], { preferred_date: '2026-10-07', preferred_time: '10:00', service: "Men's Haircut" }, NOW).available, false);
+});
+test('capacity defaults to 1 (single technician behaviour unchanged)', () => {
+  const one = { ...shop, bookingRules: { ...shop.bookingRules, capacity: undefined } };
+  assert.equal(S.requestedTimeStatus(one, [ten], { preferred_date: '2026-10-07', preferred_time: '10:00', service: "Men's Haircut" }, NOW).available, false);
+});
+test('combo service adds the lengths of its parts', () => {
+  assert.equal(S.durationFor(shop, "Men's Haircut + Beard Trim (No Line-up)"), 45);
+  assert.equal(S.durationFor(shop, "Men's Haircut + Mystery Thing"), 30);   // unknown part falls back to the single/default length
+  assert.equal(S.durationFor(shop, "Men's Haircut"), 30);
+});
+test('combo is checked as one 45 minute block against capacity', () => {
+  const two = [ten, { start: { dateTime: '2026-10-07T10:30:00-04:00' }, end: { dateTime: '2026-10-07T11:00:00-04:00' } }];
+  // 10:00-10:45 overlaps one booking in each half (never 2 at the same moment) so it is still open at capacity 2
+  assert.equal(S.requestedTimeStatus(shop, two, { preferred_date: '2026-10-07', preferred_time: '10:00', service: "Men's Haircut + Beard Trim (No Line-up)" }, NOW).available, true);
+});
 console.log(`\n${passed} tests passed`);

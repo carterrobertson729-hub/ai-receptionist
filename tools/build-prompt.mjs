@@ -4,7 +4,8 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), 'utf8');
-const template = read('retell/agent-prompt.md').split('\n---\n')[1].trim();
+const loadTemplate = (file) => read('retell/' + file).split('\n---\n')[1].trim();
+const template = loadTemplate('agent-prompt.md');
 
 const DAYS = [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'], ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']];
 const clock = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); const ap = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; return h12 + (m ? ':' + String(m).padStart(2, '0') : '') + ' ' + ap; };
@@ -60,14 +61,18 @@ export function transferText(config) {
 - Never transfer an emergency or safety call. Handle it with the urgent steps instead, unless the caller has been told someone was alerted and still asks for a person.`;
 }
 
+export function staffList(config) {
+  return (config.staff || []).map((m) => m.name + (m.role ? ' (' + m.role + ')' : '')).join(', ') || 'Ask the shop for the team.';
+}
+
 export function build(config) {
   const routine = config.services.filter((s) => !s.emergency).map((s) => s.name).join(', ');
   const vars = {
     business_name: config.businessName, trade: config.trade, time_zone: config.timeZone,
     services_list: routine, booking_hours: bookingHours(config.hours),
-    extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config), cancellation_policy: cancellationPolicyText(config), transfer_policy: transferText(config)
+    extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config), cancellation_policy: cancellationPolicyText(config), transfer_policy: transferText(config), staff_list: staffList(config)
   };
-  let out = template.replace(/\{\{current_time_<[^}]*>\}\}/, `{{current_time_${config.timeZone}}}`);
+  let out = (config.promptTemplate ? loadTemplate(config.promptTemplate) : template).replace(/\{\{current_time_<[^}]*>\}\}/, `{{current_time_${config.timeZone}}}`);
   for (const [k, v] of Object.entries(vars)) out = out.split(`{{${k}}}`).join(v);
   const left = out.match(/\{\{(?!current_time_)[^}]*\}\}/g);
   if (left) throw new Error('Unfilled placeholders: ' + left.join(', '));

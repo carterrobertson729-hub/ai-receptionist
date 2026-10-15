@@ -127,10 +127,12 @@ var phone = normalizePhone(a.phone);
 var name = String(a.name || '').trim();
 var address = String(a.address || '').trim();
 var problem = String(a.problem || '').trim();
+var noAddress = ctx.config.collectAddress === false;   // e.g. a barbershop: customers come to the shop
+if (noAddress && !problem) problem = String(a.service || 'Appointment').trim();
 var out = { status: 'invalid', reason: '' };
 if (!name) out.reason = 'missing_name';
 else if (!phone) out.reason = 'invalid_phone';
-else if (!address) out.reason = 'missing_address';
+else if (!address && !noAddress) out.reason = 'missing_address';
 else if (!problem) out.reason = 'missing_problem';
 else if (isNaN(Date.parse(a.start))) out.reason = 'invalid_start';
 else {
@@ -159,7 +161,8 @@ var big = isBigJob(ctx.config, a.service);
 var estimate = big && effectiveVisitType(ctx.config, a.service, a.visit_type) !== 'job';
 out.visitKind = estimate ? 'estimate' : (big ? 'big_job' : 'service');
 out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name;
-out.description = 'Booked by AI receptionist\\nCaller: ' + name + '\\nPhone: ' + phone + '\\nAddress: ' + address +
+out.description = 'Booked by AI receptionist\\nCaller: ' + name + '\\nPhone: ' + phone + (address ? '\\nAddress: ' + address : '') +
+  (a.barber ? '\\nPreferred barber/stylist: ' + a.barber + ' (a request, not guaranteed)' : '') +
   '\\nProblem: ' + problem + '\\nJob type: ' + out.service + '\\nVisit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : (big ? 'FULL JOB booked by the caller (exact price confirmed on site before work starts)' : 'Service visit')) + '\\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
   '\\nLanguage: ' + (a.language || 'en') + '\\nCall: ' + ctx.callId;
 return [{ json: out }];`;
