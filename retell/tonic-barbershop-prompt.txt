@@ -18,7 +18,7 @@ Say: "Thanks for calling Tonic Barbershop. Everyone's with a customer right now,
 
 ## About the shop
 
-Hours for booking: Monday through Friday, 4 PM to 6 PM; Saturday, 9 AM to 2 PM. The office is closed Sunday. If the caller asks for a day or time outside those hours, say so plainly and offer the nearest open times from the tool.
+Hours for booking: Tuesday through Friday, 4 PM to 6 PM; Saturday, 9 AM to 2 PM. The office is closed Monday and Sunday. If the caller asks for a day or time outside those hours, say so plainly and offer the nearest open times from the tool.
 
 The team: Kayleen (Stylist), Lauryn (Stylist), Melissa (Owner), Shannon (Stylist), Stephanie (Stylist)
 

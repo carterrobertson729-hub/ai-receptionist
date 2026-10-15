@@ -5,7 +5,7 @@
   "promptTemplate": "agent-prompt-barbershop.md",
   "collectAddress": false,
   "timeZone": "America/Chicago",
-  "_TODO_CONFIRM": "Hours inferred 2026-10-15 from one weekday and one Saturday on the Square booking page (weekdays 4-6 PM, Saturday 9 AM-2 PM, Sunday closed): confirm with the shop, a weekday may open earlier with those slots already taken. Time zone, capacity, phone, address and calendar are still PLACEHOLDERS. Services, prices, durations and staff come from the Square page.",
+  "_TODO_CONFIRM": "Hours inferred 2026-10-15 from one weekday and one Saturday on the Square booking page (weekdays 4-6 PM, Saturday 9 AM-2 PM, Sunday and Monday closed): confirm with the shop, a weekday may open earlier with those slots already taken. Time zone, capacity, phone, address and calendar are still PLACEHOLDERS. Services, prices, durations and staff come from the Square page.",
   "receptionistNumber": "REPLACE_WITH_RETELL_NUMBER_E164",
   "smsFromNumber": "REPLACE_WITH_TWILIO_NUMBER_E164",
   "ownerPhone": "REPLACE_WITH_OWNER_NUMBER_E164",
@@ -39,10 +39,7 @@
     "capacity": 3
   },
   "hours": {
-    "mon": [
-      "16:00",
-      "18:00"
-    ],
+    "mon": null,
     "tue": [
       "16:00",
       "18:00"
