@@ -120,4 +120,9 @@ test('barbershop prompt: age rules, bald fade for all ages, multiple people', ()
   assert.match(p, /Boys Cut is for ages 12 and under/); assert.match(p, /Bald Fade is for all ages, including children, and costs \$30/);
   assert.match(p, /Booking for more than one person/); assert.doesNotMatch(p, /\{\{service_guidance\}\}/);
 });
+test('barbershop prompt: walk-ins and card payment are stated, unknown shop questions go to a message', () => {
+  const p = build(shop);
+  assert.match(p, /Walk-ins are welcome/); assert.match(p, /accepts card payments/); assert.match(p, /not in this prompt/);
+  assert.doesNotMatch(p, /\{\{shop_facts\}\}/);
+});
 console.log(`\n${n} tests passed`);

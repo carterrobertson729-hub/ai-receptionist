@@ -279,5 +279,9 @@
     "Beard Trim (No Line-up) is the beard and mustache trim only, and it does not include a shave. Beard Trim with Cheek and Neck Shave includes the trim, the line-up and the shave. Line-up Shave (Cheek & Neck) is a line-up and a shave on the neck and cheek.",
     "Hot Towel Shave is a beard trim and line-up with a hot towel neck shave, feather razor only. It is available with select barbers only, so the shop confirms who.",
     "Gray Blend is men's color. Scalp Massage is a shampoo and scalp massage with a hot towel over the eyes. These and the waxes (eyebrow, ear, nose) are quick add-ons that can go with a haircut."
+  ],
+  "shopFacts": [
+    "Walk-ins are welcome. You can also book an appointment by phone with this assistant. Do not promise a wait time or that a barber is free right now for a walk-in; say the shop can tell them when they arrive.",
+    "The shop accepts card payments. Do not take card numbers over the phone."
   ]
 }
