@@ -20,18 +20,12 @@ for (const f of readdirSync(new URL('config/', root)).filter((f) => f.endsWith('
   configs[c.businessId] = c;
 }
 
-const loadConfigCode = `// Resolves which business this call is for, and reads the tool arguments.
-var CONFIGS = ${JSON.stringify(configs)};
+const loadConfigCode = `// The business settings come from the central "Business Config" workflow (previous step).
 var item = $input.first().json;
 var body = item.body || {};
 var args = body.args || {};
 var call = body.call || {};
-var id = (item.query && item.query.business) || '';
-var config = CONFIGS[id];
-if (!config) {
-  var toNumber = call.to_number || '';
-  config = Object.values(CONFIGS).find(function (c) { return c.receptionistNumber === toNumber; });
-}
+var config = item.config;
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');
 var now = Date.now();
 var windowEnd = now + (config.bookingRules.maxDaysAhead + 1) * 86400000;
@@ -239,8 +233,7 @@ const summaryCode = `${summaryLib}
 var item = $input.first().json;
 var body = item.body || {};
 if (body.event !== 'call_analyzed') return [];   // ignore call_started / call_ended
-var CONFIGS = ${JSON.stringify(configs)};
-var config = CONFIGS[(item.query && item.query.business) || ''];
+var config = item.config;   // from the central Business Config workflow
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the Retell webhook URL.');
 var s = buildSummary(config, body);
 return [{ json: { send: s.send, to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent, log: s.log, sheetId: config.callLogSheetId || '', plan: config.plan || null, businessName: config.businessName, alertEmail: config.usageAlertEmail || config.ownerEmail } }];`;
@@ -323,8 +316,7 @@ const urgentCode = `${slotsLib}
 ${oncallLib}
 var item = $input.first().json;
 var args = (item.body && item.body.args) || {};
-var CONFIGS = ${JSON.stringify(configs)};
-var config = CONFIGS[(item.query && item.query.business) || ''];
+var config = item.config;   // from the central Business Config workflow
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');
 var a = buildUrgentAlert(config, args, Date.now());
 return a.recipients.map(function (r) {
@@ -359,8 +351,7 @@ const callbackCode = `${slotsLib}
 ${callbackLib}
 var item = $input.first().json;
 var args = (item.body && item.body.args) || {};
-var CONFIGS = ${JSON.stringify(configs)};
-var config = CONFIGS[(item.query && item.query.business) || ''];
+var config = item.config;   // from the central Business Config workflow
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');
 var e = buildCallbackEmail(config, args, Date.now());
 return [{ json: e }];`;
@@ -530,6 +521,45 @@ const resched = wf('Receptionist - Reschedule Appointment', [
   ...link('Update Calendar Event', 'Email Office', 'Build Response', 'Respond to Retell')
 });
 
+// ---------- 0. central business config (one place for every business's settings) ----------
+const configLookupCode = `// ALL business settings live here. To add or change a business, replace the CONFIGS line below
+// (the generated file n8n/node-code/business-config__find-business.js has the current one) and save.
+var CONFIGS = ${JSON.stringify(configs)};
+var item = $input.first().json;
+var body = item.body || {};
+var call = body.call || {};
+var id = (item.query && item.query.business) || '';
+var config = CONFIGS[id];
+if (!config) {
+  var toNumber = call.to_number || '';
+  config = Object.values(CONFIGS).find(function (c) { return c.receptionistNumber === toNumber; });
+}
+if (!config) throw new Error('Unknown business "' + id + '". Add its settings to the Business Config workflow.');
+return [{ json: Object.assign({}, item, { config: config }) }];`;
+
+const bizConfig = wf('Receptionist - Business Config', [
+  {
+    id: 'z1000000-0000-4000-8000-000000000001', name: 'When Called By Another Workflow', type: 'n8n-nodes-base.executeWorkflowTrigger',
+    typeVersion: 1.1, position: [0, 0], parameters: { inputSource: 'passthrough' }
+  },
+  code('z1000000-0000-4000-8000-000000000002', 'Find Business', [240, 0], configLookupCode)
+], link('When Called By Another Workflow', 'Find Business'));
+
+// Every other workflow asks the central workflow for the business settings right after the webhook.
+function addConfigStep(w, webhookName) {
+  const next = w.connections[webhookName].main[0][0].node;
+  w.nodes.push({
+    id: 'y1000000-0000-4000-8000-' + String(w.nodes.length).padStart(12, '0'), name: 'Get Business Config', type: 'n8n-nodes-base.executeWorkflow',
+    typeVersion: 1.1, position: [120, -200],
+    parameters: { source: 'database', workflowId: { __rl: true, mode: 'list', value: '', cachedResultName: 'Receptionist - Business Config' }, mode: 'once', options: {} }
+  });
+  w.connections[webhookName] = { main: [[{ node: 'Get Business Config', type: 'main', index: 0 }]] };
+  w.connections['Get Business Config'] = { main: [[{ node: next, type: 'main', index: 0 }]] };
+}
+for (const w of [check, book, urgent, callback, lookup, cancel, resched]) addConfigStep(w, 'Retell Tool Call');
+addConfigStep(summary, 'Retell Call Webhook');
+
+writeFileSync(new URL('n8n/business-config.json', root), JSON.stringify(bizConfig, null, 2) + '\n');
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
 writeFileSync(new URL('n8n/book-appointment.json', root), JSON.stringify(book, null, 2) + '\n');
 writeFileSync(new URL('n8n/owner-call-summary.json', root), JSON.stringify(summary, null, 2) + '\n');
@@ -538,7 +568,7 @@ writeFileSync(new URL('n8n/callback-request.json', root), JSON.stringify(callbac
 writeFileSync(new URL('n8n/find-appointment.json', root), JSON.stringify(lookup, null, 2) + '\n');
 writeFileSync(new URL('n8n/cancel-appointment.json', root), JSON.stringify(cancel, null, 2) + '\n');
 writeFileSync(new URL('n8n/reschedule-appointment.json', root), JSON.stringify(resched, null, 2) + '\n');
-console.log('Wrote 8 workflows');
+console.log('Wrote 9 workflows');
 
 // ---------- per-node code files: paste these into an existing n8n workflow instead of re-importing ----------
 import { mkdirSync, rmSync } from 'node:fs';
@@ -546,7 +576,7 @@ const nodeCodeDir = new URL('n8n/node-code/', root);
 rmSync(nodeCodeDir, { recursive: true, force: true });
 mkdirSync(nodeCodeDir, { recursive: true });
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-for (const w of [check, book, summary, urgent, callback, lookup, cancel, resched]) {
+for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched]) {
   for (const n of w.nodes.filter((n) => n.type === 'n8n-nodes-base.code')) {
     const header = `// PASTE INTO n8n: workflow "${w.name}" > node "${n.name}" > Code tab (select all, replace, Save).\n`;
     writeFileSync(new URL(`${slug(w.name.replace('Receptionist - ', ''))}__${slug(n.name)}.js`, nodeCodeDir), header + n.parameters.jsCode + '\n');

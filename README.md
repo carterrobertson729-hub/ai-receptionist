@@ -41,3 +41,15 @@ Add a second tab named `Report` with these formulas for the counts:
 - Calls during business hours: `=COUNTIF(Calls!D:D,"Business hours")`; after hours: `=COUNTIF(Calls!D:D,"After hours")`
 - Booked after hours: `=COUNTIFS(Calls!D:D,"After hours",Calls!E:E,"booked")` (swap `booked` for `estimate`, `callback`, `message`, `urgent`, `cancelled`, `rescheduled`)
 - Calls today: `=COUNTIF(Calls!A:A,TEXT(TODAY(),"yyyy-mm-dd"))`
+
+## Adding a new business (central settings)
+
+All business settings live in ONE n8n workflow, "Receptionist - Business Config" (node "Find Business"). Every other workflow asks it for the settings through a "Get Business Config" node, using the `?business=<id>` ending on the address. So a new business needs NO new workflows:
+
+1. Get their answers (docs/customer-setup-questionnaire.md) and ask Claude to create `config/<id>.json` and generate their prompt (`node tools/build-prompt.mjs`) and Retell function list (`node tools/build-tools.mjs`).
+2. Run `node tools/build-workflows.mjs`. Open `n8n/node-code/business-config__find-business.js`, copy all of it.
+3. In n8n open "Receptionist - Business Config" > node "Find Business" > replace the code > Save. (The other 8 workflows do not change.)
+4. In Retell: duplicate an agent, paste the new prompt, add the tools from `retell/<id>-tools.json` (addresses end in `?business=<id>`), set the call-finished webhook to end in `?business=<id>`, attach the phone number.
+5. Create their Google Calendar (shared with your Google account) and a call-log sheet (tab `Calls`, 11 headings), and put the IDs in their config before step 2.
+
+First-time setup: import "Receptionist - Business Config" first, then import the others and, in each, open "Get Business Config" and pick "Receptionist - Business Config" as the workflow to run.
