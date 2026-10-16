@@ -41,12 +41,21 @@ Everything marked [ASK] must come from the owner. Do not quote numbers in this p
 - Example for illustration only: 10 missed calls a week, half would book, at $27 = about $540 a month. This is a made-up example. Use the owner's numbers.
 - A barbershop ticket is small, so the price must be small too. The product should pay for itself with a handful of extra cuts a month.
 
-## 6. Draft price (suggestion, not decided)
-My cost: calls are short (2 to 3 minutes); at about $0.20 per minute, 150 calls a month is about 300 minutes, about $60, plus about $2 for the phone number and a few dollars of n8n.
-- Pilot: free or very low for 2 weeks on a number she can forward to, so she can see real calls booked.
-- Monthly: about $99 to $199, including about 300 minutes; overage per minute above that.
-- Setup: about $149 to $299 one time (or waived for the first shop in exchange for a testimonial).
-These are starting ideas. Test them with the owner and adjust.
+## 6. Pricing (tiers chosen with Carter 2026-10-16; still suggestions until tested with real owners)
+My measured Retell cost is about $0.166 per minute ($10.21 for 61.52 minutes), plus about $2 per phone number, a share of n8n and Claude, and card processing. Overage at about $0.50 a minute is three times cost.
+
+| Plan | Included minutes | Price per month | Rough cost if fully used | Rough profit |
+|---|---|---|---|---|
+| Starter | 300 | $179 | ~$80 | ~$99 |
+| Standard | 500 | $249 | ~$115 | ~$134 |
+| Plus | 750 | $339 | ~$150 | ~$189 |
+| High volume | 1,200 | $499 | ~$235 | ~$265 |
+
+- Spanish add-on: $25 to $35 a month (Carter is testing willingness to pay), almost all profit.
+- One-time setup fee: about $149 to $299 (can be waived for the first shop in exchange for a testimonial).
+- Pilot: 2 weeks free or cheap, on a forwarded number, so the owner sees real bookings in the call log.
+- Barbershop tickets are small ($27 haircut, $39 haircut plus beard trim): $179 needs about 6 to 7 extra bookings a month to pay for itself. Start the first shop on Starter or Standard.
+- Raise prices for new customers after the first 3 customers and once the call log shows results.
 
 ## 7. What to say to objections
 - "I already have someone answering": "This only catches the calls nobody picks up, evenings and when everyone is busy."
