@@ -269,7 +269,9 @@
   "callLogSheetId": "1yp0NSYBSyeT9cY3MnThkv-aFcXp52OZr8sXpkZhdNqI",
   "transfer": {
     "enabled": false,
-    "number": "REPLACE_WITH_OFFICE_NUMBER_E164"
+    "number": "REPLACE_WITH_OFFICE_NUMBER_E164",
+    "type": "warm",
+    "ringSeconds": 20
   },
   "serviceGuidance": [
     "Haircuts are by age: Boys Cut is for ages 12 and under, Men's Haircut is for ages 13 to 64, and Senior Cut is for ages 65 and older. If the caller has not said who the haircut is for, ask the age.",

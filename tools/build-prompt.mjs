@@ -56,7 +56,7 @@ export function transferText(config) {
   if (!t || !t.enabled) return `If the caller asks for a person, a manager, or a specific employee, do not transfer. Say nobody is available to take the call right now, and offer to finish helping them now, take a message, or set up a callback with the office (use the callback steps in the Pricing section).`;
   return `Never offer a transfer yourself. You are the one answering, and you handle the call unless the caller asks for a person, a manager, or a specific employee. Only then:
 - Office hours are: ${bookingHours(t.hours || config.hours)}. Check the current time shown at the top of this prompt.
-- During office hours: say "Sure, let me try to connect you," then call the transfer tool \`transfer_to_office\`. If the transfer does not connect (nobody picks up, busy, or an error), you are still on the line: say something like "Looks like nobody is available right at the moment, but I can still take care of this for you," and carry on helping them (book the visit, take a message, or set up a callback) until the conversation is finished. Do not try to transfer again unless they insist, and then try only once more.
+- During office hours: say "Sure, let me try to connect you," then call the transfer tool \`transfer_to_office\`. Do not say the caller is connected until the transfer actually happens. If the transfer does not connect (nobody picks up, busy, or an error), you are still on the line: say something like "Looks like nobody is available right at the moment, but I can still take care of this for you," and carry on helping them (book the visit, take a message, or set up a callback) until the conversation is finished. Do not try to transfer again unless they insist, and then try only once more.
 - Outside office hours: ${closed}
 - Never transfer an emergency or safety call. Handle it with the urgent steps instead, unless the caller has been told someone was alerted and still asks for a person.`;
 }
@@ -102,11 +102,20 @@ export function build(config) {
 }
 
 if (process.argv[1] && process.argv[1].endsWith('build-prompt.mjs')) {
-  const only = process.argv[2];
+  // Usage: node tools/build-prompt.mjs [businessId] [--with-transfer]
+  // --with-transfer also writes retell/<id>-prompt-transfer.txt: the same prompt with transfer-to-human switched ON,
+  // for testing once the Retell phone number and the transfer_to_office tool exist.
+  const args = process.argv.slice(2);
+  const withTransfer = args.includes('--with-transfer');
+  const only = args.find((a) => !a.startsWith('--'));
   for (const f of readdirSync(new URL('config/', root)).filter((f) => f.endsWith('.json'))) {
     const c = JSON.parse(read('config/' + f));
     if (only && c.businessId !== only) continue;
     writeFileSync(new URL(`retell/${c.businessId}-prompt.txt`, root), build(c));
     console.log(`Wrote retell/${c.businessId}-prompt.txt`);
+    if (withTransfer) {
+      writeFileSync(new URL(`retell/${c.businessId}-prompt-transfer.txt`, root), build({ ...c, transfer: { ...(c.transfer || {}), enabled: true } }));
+      console.log(`Wrote retell/${c.businessId}-prompt-transfer.txt (transfer ON, for testing)`);
+    }
   }
 }

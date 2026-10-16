@@ -197,7 +197,9 @@
   "callLogSheetId": "1xH58TB4wd6J3q44doG8L8Hyh-wNLPok0PZNvlqBBCb0",
   "transfer": {
     "enabled": false,
-    "number": "REPLACE_WITH_OFFICE_NUMBER_E164"
+    "number": "REPLACE_WITH_OFFICE_NUMBER_E164",
+    "type": "warm",
+    "ringSeconds": 20
   },
   "serviceCallFee": 65,
   "cancellationPolicy": {
