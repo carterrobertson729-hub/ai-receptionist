@@ -10,6 +10,7 @@ const summaryLib = stripExports(read('n8n/code/summary.js'));
 const oncallLib = stripExports(read('n8n/code/oncall.js'));
 const callbackLib = stripExports(read('n8n/code/callback.js'));
 const apptLib = stripExports(read('n8n/code/appointments.js'));
+const usageLib = stripExports(read('n8n/code/usage.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -242,7 +243,16 @@ var CONFIGS = ${JSON.stringify(configs)};
 var config = CONFIGS[(item.query && item.query.business) || ''];
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the Retell webhook URL.');
 var s = buildSummary(config, body);
-return [{ json: { send: s.send, to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent, log: s.log, sheetId: config.callLogSheetId || '' } }];`;
+return [{ json: { send: s.send, to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent, log: s.log, sheetId: config.callLogSheetId || '', plan: config.plan || null, businessName: config.businessName, alertEmail: config.usageAlertEmail || config.ownerEmail } }];`;
+
+const usageCode = `${usageLib}
+// Adds this month's minutes from the call log and emails the seller once when a plan line (80% or 100%) is crossed.
+var ctx = $('Build Summary').first().json;
+if (!ctx.plan) return [];
+var rows = $input.all().map(function (i) { return i.json; });
+var r = usageCheck({ businessName: ctx.businessName, ownerEmail: ctx.alertEmail, plan: ctx.plan }, rows, ctx.log);
+if (!r.alert) return [];
+return [{ json: { to: r.alert.to, subject: r.alert.subject, body: r.alert.body } }];`;
 
 const emailFilterCode = `// Only calls worth an email go on to the email step (the call log above gets every call).
 var j = $input.first().json;
@@ -268,6 +278,27 @@ const summary = wf('Receptionist - Owner Call Summary', [
     credentials: { googleSheetsOAuth2Api: { id: 'REPLACE', name: 'Google Sheets account' } }
   },
   code('c1000000-0000-4000-8000-000000000006', 'Prepare Log Row', [480, 200], `// One row per call; the keys here must match the column headers in row 1 of the Calls tab.\nreturn [{ json: $input.first().json.log }];`),
+  {
+    id: 'c1000000-0000-4000-8000-000000000007', name: 'Get Call Rows', type: 'n8n-nodes-base.googleSheets',
+    typeVersion: 4.5, position: [960, 200], onError: 'continueRegularOutput', alwaysOutputData: true,
+    parameters: {
+      resource: 'sheet', operation: 'read',
+      documentId: { __rl: true, mode: 'id', value: "={{ $('Build Summary').first().json.sheetId }}" },
+      sheetName: { __rl: true, mode: 'name', value: 'Calls' },
+      options: {}
+    },
+    credentials: { googleSheetsOAuth2Api: { id: 'REPLACE', name: 'Google Sheets account' } }
+  },
+  code('c1000000-0000-4000-8000-000000000008', 'Check Usage', [1200, 200], usageCode),
+  {
+    id: 'c1000000-0000-4000-8000-000000000009', name: 'Email Usage Alert', type: 'n8n-nodes-base.gmail',
+    typeVersion: 2.1, position: [1440, 200],
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  },
   code('c1000000-0000-4000-8000-000000000005', 'Only If Worth Emailing', [480, 0], emailFilterCode),
   {
     id: 'c1000000-0000-4000-8000-000000000003', name: 'Email Owner', type: 'n8n-nodes-base.gmail',
@@ -282,7 +313,8 @@ const summary = wf('Receptionist - Owner Call Summary', [
   ...link('Retell Call Webhook', 'Build Summary'),
   'Build Summary': { main: [[{ node: 'Prepare Log Row', type: 'main', index: 0 }, { node: 'Only If Worth Emailing', type: 'main', index: 0 }]] },
   ...link('Prepare Log Row', 'Log Call'),
-  ...link('Only If Worth Emailing', 'Email Owner')
+  ...link('Only If Worth Emailing', 'Email Owner'),
+  ...link('Log Call', 'Get Call Rows', 'Check Usage', 'Email Usage Alert')
 });
 
 

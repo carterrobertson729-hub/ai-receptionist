@@ -283,5 +283,12 @@
   "shopFacts": [
     "Walk-ins are welcome. You can also book an appointment by phone with this assistant. Do not promise a wait time or that a barber is free right now for a walk-in; say the shop can tell them when they arrive.",
     "The shop accepts card payments. Do not take card numbers over the phone."
-  ]
+  ],
+  "plan": {
+    "name": "Starter",
+    "includedMinutes": 300,
+    "warnAtPercent": 80,
+    "overagePerMinute": 0.5
+  },
+  "usageAlertEmail": "carter.robertson729@gmail.com"
 }
