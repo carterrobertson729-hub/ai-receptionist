@@ -133,4 +133,8 @@ test('languages section: English first, Spanish on request, tools stay English, 
   assert.match(en, /Speak only English/); assert.doesNotMatch(en, /Always start the call in English/);
   assert.match(build(config), /## Languages/);
 });
+test('barbershop prompt: no weekday mornings, closed Sunday and Monday, back-to-back allowed', () => {
+  const p = build(shop);
+  assert.match(p, /no weekday morning appointments/); assert.match(p, /closed on Sunday and Monday/); assert.match(p, /one right after another/);
+});
 console.log(`\n${n} tests passed`);
