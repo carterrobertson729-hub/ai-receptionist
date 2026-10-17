@@ -7,9 +7,10 @@ var body = item.body || {};
 var call = body.call || {};
 var id = (item.query && item.query.business) || '';
 var config = CONFIGS[id];
-if (!config) {
+if (!config && !id) {
+  // No ?business= on the address: only fall back to the number that was called, and never to a placeholder number.
   var toNumber = call.to_number || '';
-  config = Object.values(CONFIGS).find(function (c) { return c.receptionistNumber === toNumber; });
+  config = Object.values(CONFIGS).find(function (c) { return toNumber && c.receptionistNumber === toNumber && !/^REPLACE/.test(c.receptionistNumber); });
 }
-if (!config) throw new Error('Unknown business "' + id + '". Add its settings to the Business Config workflow.');
+if (!config) throw new Error(id ? 'Unknown business "' + id + '". Add its settings to the Business Config workflow.' : 'No ?business=<id> on the address and the called number matched no business. Add ?business=<id> to the Retell function or webhook address.');
 return [{ json: Object.assign({}, item, { config: config }) }];
