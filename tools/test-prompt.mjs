@@ -137,4 +137,8 @@ test('barbershop prompt: no weekday mornings, closed Sunday and Monday, back-to-
   const p = build(shop);
   assert.match(p, /no weekday morning appointments/); assert.match(p, /closed on Sunday and Monday/); assert.match(p, /one right after another/);
 });
+test('barbershop prompt: books right after the caller picks a time, never asks if someone will be there', () => {
+  const p = build(shop);
+  assert.match(p, /Do NOT ask for permission to book/); assert.match(p, /Never ask whether someone will be there/);
+});
 console.log(`\n${n} tests passed`);

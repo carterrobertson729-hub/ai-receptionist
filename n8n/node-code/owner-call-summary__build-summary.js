@@ -59,14 +59,14 @@ function buildSummary(config, payload) {
     'Result: ' + outcomeLine,
     'Caller: ' + name,
     'Phone: ' + phone,
-    'Address: ' + address,
-    'Problem: ' + problem,
+  ].concat(config.collectAddress === false ? [] : ['Address: ' + address]).concat([
+    (config.collectAddress === false ? 'Request: ' : 'Problem: ') + problem,
     '',
     'Summary: ' + summary,
     '',
     'Call time: ' + (when || 'unknown') + ' (' + tz + ')   Length: ' + length,
     'Call ID: ' + pick(call.call_id, 'unknown')
-  ];
+  ]);
   if (transcript) lines.push('', '--- Transcript ---', transcript);
 
   // Only email calls that matter. Urgent calls always send. Otherwise send if the outcome is one the business

@@ -88,4 +88,10 @@ test('other/nothing outcome: no email unless the caller left name and number, lo
   const r = buildSummary(config, mk({ outcome: 'other/nothing', caller_name: '', caller_phone: '' }));
   assert.equal(r.send, false); assert.equal(r.log.Outcome, 'other/nothing'); assert.match(r.body, /No booking and no details left/);
 });
+test('businesses without addresses (barbershop) get no Address line and a Request label', () => {
+  const shop = { ...config, collectAddress: false };
+  const r = buildSummary(shop, base);
+  assert.doesNotMatch(r.body, /Address:/); assert.match(r.body, /Request: Leaking sink/);
+  assert.match(buildSummary(config, base).body, /Address: 12 Oak St/);
+});
 console.log(`\n${n} tests passed`);

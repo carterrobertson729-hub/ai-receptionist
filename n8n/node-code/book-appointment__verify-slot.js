@@ -338,8 +338,15 @@ var big = isBigJob(ctx.config, a.service);
 var estimate = big && effectiveVisitType(ctx.config, a.service, a.visit_type) !== 'job';
 out.visitKind = estimate ? 'estimate' : (big ? 'big_job' : 'service');
 out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name;
-out.description = 'Booked by AI receptionist\nCaller: ' + name + '\nPhone: ' + phone + (address ? '\nAddress: ' + address : '') +
-  (a.barber ? '\nPreferred barber/stylist: ' + a.barber + ' (a request, not guaranteed)' : '') +
-  '\nProblem: ' + problem + '\nJob type: ' + out.service + '\nVisit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : (big ? 'FULL JOB booked by the caller (exact price confirmed on site before work starts)' : 'Service visit')) + '\nSomeone on site: ' + (a.someone_on_site || 'not asked') +
-  '\nLanguage: ' + (a.language || 'en') + '\nCall: ' + ctx.callId;
+var lines = ['Booked by AI receptionist', 'Caller: ' + name, 'Phone: ' + phone];
+if (address) lines.push('Address: ' + address);
+if (a.barber) lines.push('Preferred barber/stylist: ' + a.barber + ' (a request, not guaranteed)');
+if (!noAddress) lines.push('Problem: ' + problem);
+lines.push('Job type: ' + out.service);
+if (!noAddress) {
+  lines.push('Visit type: ' + (estimate ? 'On-site estimate visit (big job: give an exact quote after seeing it)' : (big ? 'FULL JOB booked by the caller (exact price confirmed on site before work starts)' : 'Service visit')));
+  lines.push('Someone on site: ' + (a.someone_on_site || 'not asked'));
+}
+lines.push('Language: ' + (a.language || 'en'), 'Call: ' + ctx.callId);
+out.description = lines.join('\n');
 return [{ json: out }];

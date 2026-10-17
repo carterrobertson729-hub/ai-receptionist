@@ -2,7 +2,13 @@
 var v = $('Verify Slot').first().json;
 var res;
 if (v.status === 'open' || v.status === 'duplicate') {
-  res = { booked: true, when: v.label, visitKind: v.visitKind, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + (v.visitKind === 'estimate' ? ' as an on-site ESTIMATE visit; the technician gives an exact price after seeing the job' : (v.visitKind === 'big_job' ? ' as the full job; the technician confirms the exact price on site before any work starts' : '')) + ' (estimated visit about ' + v.durationMinutes + ' minutes, an estimate only). Confirm this back to the caller. Say a confirmation text is on its way. Do not promise an exact arrival time.' };
+  var cfg = $('Load Business Config').first().json.config;
+  var textNote = cfg.smsEnabled === true ? 'Say a confirmation text is on its way.' : 'Do not say a text is coming; say it is on the calendar.';
+  if (cfg.collectAddress === false) {
+    res = { booked: true, when: v.label, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + ' (about ' + v.durationMinutes + ' minutes). Confirm this back to the caller and tell them to arrive a few minutes early. ' + textNote };
+  } else {
+    res = { booked: true, when: v.label, visitKind: v.visitKind, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + (v.visitKind === 'estimate' ? ' as an on-site ESTIMATE visit; the technician gives an exact price after seeing the job' : (v.visitKind === 'big_job' ? ' as the full job; the technician confirms the exact price on site before any work starts' : '')) + ' (estimated visit about ' + v.durationMinutes + ' minutes, an estimate only). Confirm this back to the caller. ' + textNote + ' Do not promise an exact arrival time.' };
+  }
 } else if (v.status === 'taken') {
   res = { booked: false, reason: 'slot_taken', alternatives: v.alternatives, message: 'That time was just taken. Apologize briefly and offer these alternatives.' };
 } else {

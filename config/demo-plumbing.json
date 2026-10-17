@@ -215,5 +215,6 @@
     "warnAtPercent": 80,
     "overagePerMinute": 0.5
   },
-  "usageAlertEmail": "carter.robertson729@gmail.com"
+  "usageAlertEmail": "carter.robertson729@gmail.com",
+  "calendarReminders": true
 }
