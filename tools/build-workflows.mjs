@@ -95,7 +95,7 @@ else if (isCallback) message = 'No callback times in the booking window. Take th
 else if (req && req.available) message = 'The exact time the caller asked for (' + req.label + ') IS open. Offer it first, using its label. The other slots are nearby alternatives.';
 else if (req) message = 'The exact time the caller asked for (' + req.label + ') is NOT available because ' + req.reason + '. Tell them that plainly and briefly, then offer the nearby times below.';
 else message = slots.length
-  ? 'Offer these times to the caller. Use the label to speak them. Each slot has an estimated visit length in minutes. Pass the start value of the one they pick to book_appointment.'
+  ? 'Offer these times to the caller. Use the label to speak them. Each slot has the appointment length in minutes. Pass the start value of the one they pick to book_appointment.'
   : 'No openings in the booking window. Offer to take a message so the office can call back.';
 return [{ json: { requestedTime: req, slots: slots, message: message } }];`;
 

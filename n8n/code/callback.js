@@ -10,6 +10,7 @@ function buildCallbackEmail(config, args, nowMs) {
   var name = clean(args.name, 'Unknown caller');
   var phone = clean(args.phone, 'not given');
   var address = clean(args.address, 'not given');
+  var noAddr = config.collectAddress === false;
   var service = clean(args.service, 'Job');
   var problem = clean(args.problem, 'not given');
   var when = clean(args.preferred_callback_time, 'as soon as possible');
@@ -21,16 +22,16 @@ function buildCallbackEmail(config, args, nowMs) {
     'CALLBACK REQUESTED - ' + service,
     '',
     'Caller: ' + name,
-    'Phone: ' + phone,
-    'Address: ' + address,
-    'Job: ' + service,
+    'Phone: ' + phone
+  ].concat(noAddr ? [] : ['Address: ' + address]).concat([
+    (noAddr ? 'Service: ' : 'Job: ') + service,
     'Details: ' + problem,
     'Best time to call back: ' + when,
     'Price information the caller was given: ' + priceInfo,
     'Requested: ' + called + ' (' + config.timeZone + ')',
     '',
-    'The caller was told the office will call them back. No appointment has been booked.'
-  ].join('\n');
+    'The caller was told ' + (noAddr ? 'the shop' : 'the office') + ' will call them back. No appointment has been booked.'
+  ]).join('\n');
   // Calendar entry: at the day/time the caller asked for, else at the next time the office is open.
   var tz = config.timeZone;
   var startMs = NaN;
@@ -46,16 +47,16 @@ function buildCallbackEmail(config, args, nowMs) {
   var calendarWhen = friendlyLabel(startMs, tz);
   body += '\n\nOn the calendar as a callback for: ' + calendarWhen + (asap ? ' (next time the office is open)' : '');
   var eventDescription = [
-    'CALLBACK REQUEST (not a job visit)',
+    noAddr ? 'CALLBACK REQUEST (not an appointment)' : 'CALLBACK REQUEST (not a job visit)',
     'Caller: ' + name,
-    'Phone: ' + phone,
-    'Address: ' + address,
-    'Job: ' + service,
-    'Details: ' + problem,
-    'Wants to talk about: price / details before booking',
+    'Phone: ' + phone
+  ].concat(noAddr ? [] : ['Address: ' + address]).concat([
+    (noAddr ? 'Service: ' : 'Job: ') + service,
+    'Details: ' + problem
+  ]).concat(noAddr ? [] : ['Wants to talk about: price / details before booking']).concat([
     'Price information given: ' + priceInfo,
     'Preferred time said by caller: ' + when
-  ].join('\n');
+  ]).join('\n');
   var to = config.callbackEmail || config.ownerEmail;
   return {
     to: to, subject: config.businessName + ': Callback requested - ' + service + ' - ' + name, body: body,

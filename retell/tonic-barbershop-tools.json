@@ -3,7 +3,7 @@
   "tools": [
     {
       "name": "check_availability",
-      "description": "Get the next open appointment times for routine visits. Call this after you know the caller's problem and job type, and before offering times.",
+      "description": "Get the next open appointment times for a service. Call this after you know which service the caller wants, and before offering times.",
       "url": "https://icrob.app.n8n.cloud/webhook/receptionist/check-availability?business=tonic-barbershop",
       "method": "POST",
       "speak_during_execution": true,
@@ -33,21 +33,13 @@
             "type": "string",
             "description": "If the caller named a specific time, that time in 24-hour HH:MM local time (for example 11:00 or 14:00). Omit otherwise. When you use this, also set preferred_date."
           },
-          "visit_type": {
-            "type": "string",
-            "enum": [
-              "job",
-              "estimate"
-            ],
-            "description": "Only for big jobs (such as a water heater replacement): 'job' if the caller wants to book the whole job now, 'estimate' if they want the free on-site estimate visit first. Omit for ordinary jobs."
-          },
           "purpose": {
             "type": "string",
             "enum": [
               "booking",
               "callback"
             ],
-            "description": "'booking' (default) to find technician appointment times. 'callback' to find times the office can phone the caller back, used when the caller chose a callback."
+            "description": "'booking' (default) to find appointment times. 'callback' to find times the shop can phone the caller back, used when the caller chose a callback."
           }
         },
         "required": []
@@ -55,7 +47,7 @@
     },
     {
       "name": "book_appointment",
-      "description": "Book the visit the caller chose and send them a confirmation text. Only call after the caller picks one of the offered times and you have all details.",
+      "description": "Book the appointment the caller chose. Call it as soon as the caller has picked one of the offered times and you have their name and phone number. Do not ask permission first.",
       "url": "https://icrob.app.n8n.cloud/webhook/receptionist/book-appointment?business=tonic-barbershop",
       "method": "POST",
       "speak_during_execution": true,
@@ -76,10 +68,6 @@
             "type": "string",
             "description": "Callback phone number, exactly as the caller said it."
           },
-          "address": {
-            "type": "string",
-            "description": "Not needed for this business. Leave out."
-          },
           "problem": {
             "type": "string",
             "description": "The service(s) booked, for example the same text as service."
@@ -91,14 +79,6 @@
           "language": {
             "type": "string",
             "description": "Language code the call was held in, e.g. 'en' or 'es'."
-          },
-          "visit_type": {
-            "type": "string",
-            "enum": [
-              "job",
-              "estimate"
-            ],
-            "description": "The same visit_type you used in check_availability. Only for big jobs; omit for ordinary jobs."
           },
           "barber": {
             "type": "string",
@@ -115,7 +95,7 @@
     },
     {
       "name": "request_callback",
-      "description": "Email the office a callback request for a caller who wants to talk about price or details before booking (usually a big job). Use only after the caller agrees to a callback. Never use it for emergencies.",
+      "description": "Email the shop a callback request for a caller who wants something the assistant cannot handle (a question it cannot answer, a complaint, a business inquiry). Use only after the caller agrees to a callback.",
       "url": "https://icrob.app.n8n.cloud/webhook/receptionist/callback-request?business=tonic-barbershop",
       "method": "POST",
       "speak_during_execution": true,
@@ -132,13 +112,9 @@
             "type": "string",
             "description": "Callback phone number, exactly as the caller said it."
           },
-          "address": {
-            "type": "string",
-            "description": "Service address, if given."
-          },
           "service": {
             "type": "string",
-            "description": "The job type, exactly as written in the list."
+            "description": "The service the call is about, or what it is about in a few words."
           },
           "problem": {
             "type": "string",
@@ -147,10 +123,6 @@
           "preferred_callback_time": {
             "type": "string",
             "description": "When the caller would like the call back, in their words (for example 'tomorrow afternoon')."
-          },
-          "price_discussed": {
-            "type": "string",
-            "description": "Any price information you gave the caller on this call, or 'none'."
           },
           "callback_date": {
             "type": "string",
@@ -171,7 +143,7 @@
     },
     {
       "name": "check_appointment",
-      "description": "Look up the caller's upcoming appointments by name and phone number. Use when a caller wants to check, cancel, or reschedule an appointment they already have. Returns each appointment's eventId, time, job type and visit type.",
+      "description": "Look up the caller's upcoming appointments by name and phone number. Use when a caller wants to check, cancel, or reschedule an appointment they already have. Returns each appointment's eventId, time and service.",
       "url": "https://icrob.app.n8n.cloud/webhook/receptionist/find-appointment?business=tonic-barbershop",
       "method": "POST",
       "speak_during_execution": true,

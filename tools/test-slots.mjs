@@ -157,7 +157,7 @@ test('a requested time that is not open says why: booked/gap, closing time, too 
   assert.match(st('11:30', ev).reason, /overlaps another appointment or the travel time/);
   assert.match(st('16:45', []).reason, /outside booking hours|past closing/);
   assert.match(st('09:00', [], full, {}, Date.parse('2026-10-11T12:30:00Z')).reason, /too soon/);
-  assert.match(st('10:00', [], { ...full, hours: { ...full.hours, sun: null } }).reason, /no visits that day/);
+  assert.match(st('10:00', [], { ...full, hours: { ...full.hours, sun: null } }).reason, /no appointments are taken that day/);
 });
 test('big job: default and "estimate" book the short visit, "job" books the whole job', () => {
   assert.equal(S.durationFor(full, 'Water heater replacement'), 60);
@@ -277,5 +277,13 @@ test('combo is checked as one 45 minute block against capacity', () => {
   const two = [ten, { start: { dateTime: '2026-10-07T10:30:00-04:00' }, end: { dateTime: '2026-10-07T11:00:00-04:00' } }];
   // 10:00-10:45 overlaps one booking in each half (never 2 at the same moment) so it is still open at capacity 2
   assert.equal(S.requestedTimeStatus(shop, two, { preferred_date: '2026-10-07', preferred_time: '10:00', service: "Men's Haircut + Beard Trim (No Line-up)" }, NOW).available, true);
+});
+test('barbershop wording: no travel-time reason; says every chair is booked when capacity is full', () => {
+  const full = [ten, ten];
+  const r = S.requestedTimeStatus(shop, full, { preferred_date: '2026-10-07', preferred_time: '10:00', service: "Men's Haircut" }, NOW);
+  assert.equal(r.available, false); assert.match(r.reason, /every chair is already booked/); assert.doesNotMatch(r.reason, /travel/);
+  const one = { ...shop, bookingRules: { ...shop.bookingRules, capacity: 1 } };
+  const r1 = S.requestedTimeStatus(one, [ten], { preferred_date: '2026-10-07', preferred_time: '10:00', service: "Men's Haircut" }, NOW);
+  assert.equal(r1.reason, 'it overlaps another appointment');
 });
 console.log(`\n${passed} tests passed`);

@@ -245,10 +245,12 @@ function requestedTimeStatus(config, events, args, nowMs) {
   var open = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, dur / 60000);
   if (open.some(function (s) { return s.startMs === startMs; })) { status.available = true; return status; }
   var hours = config.hours[weekdayKey(args.preferred_date)];
-  if (!hours) status.reason = 'the office takes no visits that day';
-  else if (startMs < localToUtcMs(args.preferred_date, hours[0], tz) || startMs + dur > localToUtcMs(args.preferred_date, hours[1], tz)) status.reason = 'that time falls outside booking hours, or the visit would run past closing';
+  if (!hours) status.reason = 'no appointments are taken that day';
+  else if (startMs < localToUtcMs(args.preferred_date, hours[0], tz) || startMs + dur > localToUtcMs(args.preferred_date, hours[1], tz)) status.reason = 'that time falls outside booking hours, or the appointment would run past closing';
   else if (startMs < nowMs + config.bookingRules.minNoticeHours * 3600000) status.reason = 'that is too soon, the office needs about ' + config.bookingRules.minNoticeHours + ' hours notice';
-  else status.reason = 'it overlaps another appointment or the travel time needed between jobs';
+  else if ((config.bookingRules.bufferMinutes || 0) > 0) status.reason = 'it overlaps another appointment or the travel time needed between jobs';
+  else if ((config.bookingRules.capacity || 1) > 1) status.reason = 'every chair is already booked at that time';
+  else status.reason = 'it overlaps another appointment';
   return status;
 }
 
@@ -303,6 +305,7 @@ function buildCallbackEmail(config, args, nowMs) {
   var name = clean(args.name, 'Unknown caller');
   var phone = clean(args.phone, 'not given');
   var address = clean(args.address, 'not given');
+  var noAddr = config.collectAddress === false;
   var service = clean(args.service, 'Job');
   var problem = clean(args.problem, 'not given');
   var when = clean(args.preferred_callback_time, 'as soon as possible');
@@ -314,16 +317,16 @@ function buildCallbackEmail(config, args, nowMs) {
     'CALLBACK REQUESTED - ' + service,
     '',
     'Caller: ' + name,
-    'Phone: ' + phone,
-    'Address: ' + address,
-    'Job: ' + service,
+    'Phone: ' + phone
+  ].concat(noAddr ? [] : ['Address: ' + address]).concat([
+    (noAddr ? 'Service: ' : 'Job: ') + service,
     'Details: ' + problem,
     'Best time to call back: ' + when,
     'Price information the caller was given: ' + priceInfo,
     'Requested: ' + called + ' (' + config.timeZone + ')',
     '',
-    'The caller was told the office will call them back. No appointment has been booked.'
-  ].join('\n');
+    'The caller was told ' + (noAddr ? 'the shop' : 'the office') + ' will call them back. No appointment has been booked.'
+  ]).join('\n');
   // Calendar entry: at the day/time the caller asked for, else at the next time the office is open.
   var tz = config.timeZone;
   var startMs = NaN;
@@ -339,16 +342,16 @@ function buildCallbackEmail(config, args, nowMs) {
   var calendarWhen = friendlyLabel(startMs, tz);
   body += '\n\nOn the calendar as a callback for: ' + calendarWhen + (asap ? ' (next time the office is open)' : '');
   var eventDescription = [
-    'CALLBACK REQUEST (not a job visit)',
+    noAddr ? 'CALLBACK REQUEST (not an appointment)' : 'CALLBACK REQUEST (not a job visit)',
     'Caller: ' + name,
-    'Phone: ' + phone,
-    'Address: ' + address,
-    'Job: ' + service,
-    'Details: ' + problem,
-    'Wants to talk about: price / details before booking',
+    'Phone: ' + phone
+  ].concat(noAddr ? [] : ['Address: ' + address]).concat([
+    (noAddr ? 'Service: ' : 'Job: ') + service,
+    'Details: ' + problem
+  ]).concat(noAddr ? [] : ['Wants to talk about: price / details before booking']).concat([
     'Price information given: ' + priceInfo,
     'Preferred time said by caller: ' + when
-  ].join('\n');
+  ]).join('\n');
   var to = config.callbackEmail || config.ownerEmail;
   return {
     to: to, subject: config.businessName + ': Callback requested - ' + service + ' - ' + name, body: body,

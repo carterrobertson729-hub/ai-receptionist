@@ -245,10 +245,12 @@ function requestedTimeStatus(config, events, args, nowMs) {
   var open = allSlots(config, busyFromEvents(events, tz), args.preferred_date, nowMs, dur / 60000);
   if (open.some(function (s) { return s.startMs === startMs; })) { status.available = true; return status; }
   var hours = config.hours[weekdayKey(args.preferred_date)];
-  if (!hours) status.reason = 'the office takes no visits that day';
-  else if (startMs < localToUtcMs(args.preferred_date, hours[0], tz) || startMs + dur > localToUtcMs(args.preferred_date, hours[1], tz)) status.reason = 'that time falls outside booking hours, or the visit would run past closing';
+  if (!hours) status.reason = 'no appointments are taken that day';
+  else if (startMs < localToUtcMs(args.preferred_date, hours[0], tz) || startMs + dur > localToUtcMs(args.preferred_date, hours[1], tz)) status.reason = 'that time falls outside booking hours, or the appointment would run past closing';
   else if (startMs < nowMs + config.bookingRules.minNoticeHours * 3600000) status.reason = 'that is too soon, the office needs about ' + config.bookingRules.minNoticeHours + ' hours notice';
-  else status.reason = 'it overlaps another appointment or the travel time needed between jobs';
+  else if ((config.bookingRules.bufferMinutes || 0) > 0) status.reason = 'it overlaps another appointment or the travel time needed between jobs';
+  else if ((config.bookingRules.capacity || 1) > 1) status.reason = 'every chair is already booked at that time';
+  else status.reason = 'it overlaps another appointment';
   return status;
 }
 
@@ -302,6 +304,6 @@ else if (isCallback) message = 'No callback times in the booking window. Take th
 else if (req && req.available) message = 'The exact time the caller asked for (' + req.label + ') IS open. Offer it first, using its label. The other slots are nearby alternatives.';
 else if (req) message = 'The exact time the caller asked for (' + req.label + ') is NOT available because ' + req.reason + '. Tell them that plainly and briefly, then offer the nearby times below.';
 else message = slots.length
-  ? 'Offer these times to the caller. Use the label to speak them. Each slot has an estimated visit length in minutes. Pass the start value of the one they pick to book_appointment.'
+  ? 'Offer these times to the caller. Use the label to speak them. Each slot has the appointment length in minutes. Pass the start value of the one they pick to book_appointment.'
   : 'No openings in the booking window. Offer to take a message so the office can call back.';
 return [{ json: { requestedTime: req, slots: slots, message: message } }];

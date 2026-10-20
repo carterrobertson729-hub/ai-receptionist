@@ -54,4 +54,10 @@ test('big job books a short ESTIMATE visit, not the whole job', async () => {
   assert.equal(S.durationFor(config, 'Water heater replacement'), 60);
 });
 await new Promise((r) => setTimeout(r, 50));
+test('barbershop callback email: no Address line, no job-visit wording', () => {
+  const shop = JSON.parse(readFileSync(new URL('../config/tonic-barbershop.json', import.meta.url)));
+  const e = build(shop, { name: 'Sam', phone: '5551234567', service: 'Question', problem: 'Wants to ask about a gift card' }, Date.parse('2026-10-20T20:00:00Z'));
+  assert.doesNotMatch(e.body, /Address:/); assert.match(e.body, /Service: Question/); assert.match(e.body, /the shop will call them back/);
+  assert.doesNotMatch(e.eventDescription, /job visit|Address:|price \/ details before booking/);
+});
 console.log(`\n${n} tests passed`);
