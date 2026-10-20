@@ -56,7 +56,7 @@ export function transferText(config) {
   if (!t || !t.enabled) return `If the caller asks for a person, a manager, or a specific employee, do not transfer. Say nobody is available to take the call right now, and offer to finish helping them now, take a message, or set up a callback with the office (use the callback steps in the Pricing section).`;
   return `Never offer a transfer yourself. You are the one answering, and you handle the call unless the caller asks for a person, a manager, or a specific employee. Only then:
 - Office hours are: ${bookingHours(t.hours || config.hours)}. Check the current time shown at the top of this prompt.
-- During office hours: say "Sure, let me try to connect you," then call the transfer tool \`transfer_to_office\`. Do not say the caller is connected until the transfer actually happens. If the transfer does not connect (nobody picks up, busy, or an error), you are still on the line: say something like "Looks like nobody is available right at the moment, but I can still take care of this for you," and carry on helping them (book the visit, take a message, or set up a callback) until the conversation is finished. Do not try to transfer again unless they insist, and then try only once more.
+- During office hours: say "Sure, let me try to connect you," then call the transfer tool \`transfer_to_office\`. Do not say the caller is connected until the transfer actually happens. If the transfer does not connect (nobody picks up, busy, or an error), you are still on the line: say something like "Looks like nobody is available right at the moment, but I can still take care of this for you." Then offer to book them in (and, if the \"Things you know about the shop\" list says so, mention that they can also book on the website and that walk-ins are welcome), take a message, or set up a callback, and carry on helping them until the conversation is finished. Do not try to transfer again unless they insist, and then try only once more.
 - Outside office hours: ${closed}
 - Never transfer an emergency or safety call. Handle it with the urgent steps instead, unless the caller has been told someone was alerted and still asks for a person.`;
 }
@@ -84,6 +84,13 @@ export function languagesText(config) {
 - If you did not understand something, ask the caller to repeat it in their language.`;
 }
 
+export function openingLine(config) {
+  const name = config.businessName;
+  if (config.answerMode === 'main_line') return `Thanks for calling ${name}. How can I help you today?`;
+  if (config.trade === 'barbershop') return `Thanks for calling ${name}. Everyone's with a customer right now, but I can get you booked or answer questions. What can I do for you?`;
+  return `Thanks for calling ${name}. The office can't take your call right now, but I can help you get scheduled. What's going on?`;
+}
+
 export function build(config) {
   const routine = config.services.filter((s) => !s.emergency).map((s) => s.name).join(', ');
   const vars = {
@@ -91,6 +98,7 @@ export function build(config) {
     services_list: routine, booking_hours: bookingHours(config.hours),
     extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config), cancellation_policy: cancellationPolicyText(config), transfer_policy: transferText(config), staff_list: staffList(config),
     languages_text: languagesText(config),
+    opening_line: openingLine(config),
     shop_facts: (config.shopFacts || []).map((l) => '- ' + l).join('\n') || '- None.',
     service_guidance: (config.serviceGuidance || []).map((l) => '- ' + l).join('\n') || '- None.'
   };

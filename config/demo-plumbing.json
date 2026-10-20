@@ -216,5 +216,6 @@
     "overagePerMinute": 0.5
   },
   "usageAlertEmail": "carter.robertson729@gmail.com",
-  "calendarReminders": true
+  "calendarReminders": true,
+  "answerMode": "backup"
 }

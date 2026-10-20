@@ -16,7 +16,7 @@ Right now it is {{current_time_<IANA time zone, e.g. America/Chicago>}} in {{tim
 
 ## Opening
 
-Say: "Thanks for calling {{business_name}}. The office can't take your call right now, but I can help you get scheduled. What's going on?"
+Say: "{{opening_line}}"
 
 ## Style
 

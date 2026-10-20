@@ -283,7 +283,7 @@
     "Gray Blend is men's color. Scalp Massage is a shampoo and scalp massage with a hot towel over the eyes. These and the waxes (eyebrow, ear, nose) are quick add-ons that can go with a haircut."
   ],
   "shopFacts": [
-    "Walk-ins are welcome. You can also book an appointment by phone with this assistant. Do not promise a wait time or that a barber is free right now for a walk-in; say the shop can tell them when they arrive.",
+    "Walk-ins are welcome. Appointments can also be booked on the shop's website, and by phone with this assistant. A walk-in's wait time can vary and the shop cannot predict how long it will be, so do not promise a wait time or that a barber is free right now; say the shop can tell them when they arrive. A caller who wants a set time can book an appointment (by phone with you, or on the website).",
     "The shop accepts card payments. Do not take card numbers over the phone.",
     "Appointment hours: Tuesday to Friday afternoons and early evenings only (4 PM to 6 PM), and Saturday from 9 AM to 2 PM. There are no weekday morning appointments, and the shop is closed on Sunday and Monday. If a caller asks for a weekday morning, say so plainly and offer Saturday morning or a weekday afternoon. Appointments can be booked one right after another (there are no required gaps), so a time like 12:30 can be open right after a 12:00 appointment."
   ],
@@ -293,5 +293,6 @@
     "warnAtPercent": 80,
     "overagePerMinute": 0.5
   },
-  "usageAlertEmail": "carter.robertson729@gmail.com"
+  "usageAlertEmail": "carter.robertson729@gmail.com",
+  "answerMode": "backup"
 }

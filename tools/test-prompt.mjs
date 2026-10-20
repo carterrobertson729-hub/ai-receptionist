@@ -141,4 +141,13 @@ test('barbershop prompt: books right after the caller picks a time, never asks i
   const p = build(shop);
   assert.match(p, /Do NOT ask for permission to book/); assert.match(p, /Never ask whether someone will be there/);
 });
+test('answer modes: backup says the shop cannot answer, main_line just greets; transfer failure offers booking, website and walk-ins', () => {
+  assert.match(build(shop), /Everyone's with a customer right now/);
+  const main = build({ ...shop, answerMode: 'main_line' });
+  assert.match(main, /Thanks for calling Tonic Barbershop\. How can I help you today\?/); assert.doesNotMatch(main, /Everyone's with a customer/);
+  assert.match(build({ ...config, answerMode: 'main_line' }), /How can I help you today\?/);
+  const on = build({ ...shop, transfer: { enabled: true, number: '+15551230000' } });
+  assert.match(on, /nobody is available right at the moment/); assert.match(on, /book on the website and that walk-ins are welcome/);
+  assert.match(build(shop), /shop's website/); assert.match(build(shop), /cannot predict how long/);
+});
 console.log(`\n${n} tests passed`);

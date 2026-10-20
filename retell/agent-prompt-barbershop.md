@@ -12,7 +12,7 @@ Right now it is {{current_time_<IANA time zone, e.g. America/Chicago>}} in {{tim
 
 ## Opening
 
-Say: "Thanks for calling {{business_name}}. Everyone's with a customer right now, but I can get you booked or answer questions. What can I do for you?"
+Say: "{{opening_line}}"
 
 ## Style
 

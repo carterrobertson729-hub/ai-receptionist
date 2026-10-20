@@ -78,6 +78,13 @@ For each kind of job you want the AI to book, fill in a row:
 36. Do you want confirmation texts sent to customers after they book? (Needs texting approval, which takes some weeks.)
 37. Do you want to take payments by text link? (Never by voice.)
 
+## 9b. How calls reach the assistant
+41. Who should answer first: your staff (the assistant only catches missed and after-hours calls), or the assistant on every call (with a transfer to staff on request during open hours)?
+42. If staff answer first, after how many rings should the call move to the assistant (4 rings is a common start)?
+43. If a caller asks for a person, which number should ring? It must be a number that does NOT forward to the assistant (a direct line, a cell, or a group of staff phones).
+44. What phone service do you have (cell plan, landline, a business phone system)? Who is the provider?
+45. Do you take bookings on your website or another app? What is it called, and should the assistant mention it? Do you take walk-ins, and can you tell how long a wait usually is?
+
 ## 10. Rules and permissions
 
 38. Do you agree that calls may be recorded and summarized, and that callers are told they are talking to an automated assistant?
