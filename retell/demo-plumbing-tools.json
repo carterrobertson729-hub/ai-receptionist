@@ -1,0 +1,311 @@
+{
+  "note": "Reference definitions for the two Retell custom functions. Create them in Retell (Functions > Add > Custom Function) using these values. Replace YOUR_N8N with your n8n Cloud domain. Keep 'Payload: args only' OFF so the body is { name, call, args }. Add the header X-Receptionist-Secret with the same value as the n8n 'Retell tool secret' credential.",
+  "tools": [
+    {
+      "name": "check_availability",
+      "description": "Get the next open appointment times for routine visits. Call this after you know the caller's problem and job type, and before offering times.",
+      "url": "https://icrob.app.n8n.cloud/webhook/receptionist/check-availability?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "Let me check the schedule.",
+      "timeout_ms": 15000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "preferred_date": {
+            "type": "string",
+            "description": "Earliest date the caller wants, as YYYY-MM-DD (convert words like 'tomorrow' using the current date). Omit if they have no preference."
+          },
+          "part_of_day": {
+            "type": "string",
+            "enum": [
+              "morning",
+              "afternoon",
+              "any"
+            ],
+            "description": "Morning or afternoon preference, if the caller gave one."
+          },
+          "service": {
+            "type": "string",
+            "description": "The job type that best matches the caller's problem, exactly as written in the business's list of routine job types. Use 'Other or not sure' if nothing fits."
+          },
+          "preferred_time": {
+            "type": "string",
+            "description": "If the caller named a specific time, that time in 24-hour HH:MM local time (for example 11:00 or 14:00). Omit otherwise. When you use this, also set preferred_date."
+          },
+          "visit_type": {
+            "type": "string",
+            "enum": [
+              "job",
+              "estimate"
+            ],
+            "description": "Only for big jobs (such as a water heater replacement): 'job' if the caller wants to book the whole job now, 'estimate' if they want the free on-site estimate visit first. Omit for ordinary jobs."
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "booking",
+              "callback"
+            ],
+            "description": "'booking' (default) to find technician appointment times. 'callback' to find times the office can phone the caller back, used when the caller chose a callback."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "book_appointment",
+      "description": "Book the visit the caller chose and send them a confirmation text. Only call after the caller picks one of the offered times and you have all details.",
+      "url": "https://icrob.app.n8n.cloud/webhook/receptionist/book-appointment?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "One moment while I book that.",
+      "timeout_ms": 20000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "description": "The exact 'start' value from check_availability for the time the caller chose."
+          },
+          "name": {
+            "type": "string",
+            "description": "Caller's full name."
+          },
+          "phone": {
+            "type": "string",
+            "description": "Callback phone number, exactly as the caller said it."
+          },
+          "address": {
+            "type": "string",
+            "description": "Full service address including city."
+          },
+          "problem": {
+            "type": "string",
+            "description": "Short description of the problem in the caller's words."
+          },
+          "service": {
+            "type": "string",
+            "description": "The same job type you passed to check_availability, exactly as written in the list."
+          },
+          "someone_on_site": {
+            "type": "string",
+            "description": "Whether someone will be at the property, e.g. 'yes' or 'no, key under mat'."
+          },
+          "language": {
+            "type": "string",
+            "description": "Language code the call was held in, e.g. 'en' or 'es'."
+          },
+          "visit_type": {
+            "type": "string",
+            "enum": [
+              "job",
+              "estimate"
+            ],
+            "description": "The same visit_type you used in check_availability. Only for big jobs; omit for ordinary jobs."
+          }
+        },
+        "required": [
+          "start",
+          "name",
+          "phone",
+          "address",
+          "problem"
+        ]
+      }
+    },
+    {
+      "name": "report_urgent_call",
+      "description": "Alert the on-call technician and the owner right now about an emergency (burst pipe, active flooding, no water, sewage backup, or any safety issue). Call this once you have the caller's details. Never use it for routine bookings.",
+      "url": "https://icrob.app.n8n.cloud/webhook/receptionist/urgent-alert?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "I'm sending this to the on-call technician now.",
+      "timeout_ms": 20000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Caller's full name."
+          },
+          "phone": {
+            "type": "string",
+            "description": "Callback phone number, exactly as the caller said it."
+          },
+          "address": {
+            "type": "string",
+            "description": "Full address of the emergency, including city."
+          },
+          "problem": {
+            "type": "string",
+            "description": "What is happening, in the caller's words."
+          },
+          "someone_on_site": {
+            "type": "string",
+            "description": "Whether someone is at the property right now."
+          },
+          "safety_issue": {
+            "type": "boolean",
+            "description": "True if there is any gas smell, smoke, fire, sparks, flooding near electrics, or danger to people."
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "address",
+          "problem"
+        ]
+      }
+    },
+    {
+      "name": "request_callback",
+      "description": "Email the office a callback request for a caller who wants to talk about price or details before booking (usually a big job). Use only after the caller agrees to a callback. Never use it for emergencies.",
+      "url": "https://icrob.app.n8n.cloud/webhook/receptionist/callback-request?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "Let me send that to the office.",
+      "timeout_ms": 15000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Caller's full name."
+          },
+          "phone": {
+            "type": "string",
+            "description": "Callback phone number, exactly as the caller said it."
+          },
+          "address": {
+            "type": "string",
+            "description": "Service address, if given."
+          },
+          "service": {
+            "type": "string",
+            "description": "The job type, exactly as written in the list."
+          },
+          "problem": {
+            "type": "string",
+            "description": "Short description of what the caller needs, in their words."
+          },
+          "preferred_callback_time": {
+            "type": "string",
+            "description": "When the caller would like the call back, in their words (for example 'tomorrow afternoon')."
+          },
+          "price_discussed": {
+            "type": "string",
+            "description": "Any price information you gave the caller on this call, or 'none'."
+          },
+          "callback_date": {
+            "type": "string",
+            "description": "The day the caller wants the call back, as YYYY-MM-DD (convert 'tomorrow' etc. using the current date). Omit if they have no preference or want it as soon as possible."
+          },
+          "callback_time": {
+            "type": "string",
+            "description": "The time of day for the call back in 24-hour HH:MM, in the business's local time (for example 14:00). Omit if they have no preference."
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "service",
+          "problem"
+        ]
+      }
+    },
+    {
+      "name": "check_appointment",
+      "description": "Look up the caller's upcoming appointments by name and phone number. Use when a caller wants to check, cancel, or reschedule an appointment they already have. Returns each appointment's eventId, time, job type and visit type.",
+      "url": "https://icrob.app.n8n.cloud/webhook/receptionist/find-appointment?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "Let me look that up.",
+      "timeout_ms": 15000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The caller's full name as the appointment was booked."
+          },
+          "phone": {
+            "type": "string",
+            "description": "The phone number the appointment was booked under, exactly as the caller said it."
+          }
+        },
+        "required": [
+          "name",
+          "phone"
+        ]
+      }
+    },
+    {
+      "name": "cancel_appointment",
+      "description": "Cancel one of the caller's appointments. Only call after check_appointment found it AND the caller clearly confirmed they want it cancelled.",
+      "url": "https://icrob.app.n8n.cloud/webhook/receptionist/cancel-appointment?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "One moment while I cancel that.",
+      "timeout_ms": 20000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "description": "The eventId of the appointment, exactly as returned by check_appointment."
+          },
+          "name": {
+            "type": "string",
+            "description": "The caller's full name as the appointment was booked."
+          },
+          "phone": {
+            "type": "string",
+            "description": "The phone number the appointment was booked under, exactly as the caller said it."
+          }
+        },
+        "required": [
+          "event_id",
+          "name",
+          "phone"
+        ]
+      }
+    },
+    {
+      "name": "reschedule_appointment",
+      "description": "Move one of the caller's appointments to a new time. Only call after check_appointment found it and the caller picked a new time that check_availability offered.",
+      "url": "https://icrob.app.n8n.cloud/webhook/receptionist/reschedule-appointment?business=demo-plumbing",
+      "method": "POST",
+      "speak_during_execution": true,
+      "execution_message": "One moment while I move that.",
+      "timeout_ms": 20000,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "description": "The eventId of the appointment, exactly as returned by check_appointment."
+          },
+          "name": {
+            "type": "string",
+            "description": "The caller's full name as the appointment was booked."
+          },
+          "phone": {
+            "type": "string",
+            "description": "The phone number the appointment was booked under, exactly as the caller said it."
+          },
+          "new_start": {
+            "type": "string",
+            "description": "The exact 'start' value from check_availability for the new time the caller chose."
+          }
+        },
+        "required": [
+          "event_id",
+          "name",
+          "phone",
+          "new_start"
+        ]
+      }
+    }
+  ]
+}

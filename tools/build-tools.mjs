@@ -5,8 +5,14 @@ const root = new URL('../', import.meta.url);
 const base = JSON.parse(readFileSync(new URL('retell/tools.json', root), 'utf8'));
 for (const f of readdirSync(new URL('config/', root)).filter((f) => f.endsWith('.json'))) {
   const c = JSON.parse(readFileSync(new URL('config/' + f, root), 'utf8'));
-  if (c.collectAddress !== false) continue;   // default set already fits
   const tools = JSON.parse(JSON.stringify(base));
+  if (c.collectAddress !== false) {
+    // Default (trades) function set: same functions, addresses pointed at this business.
+    for (const t of tools.tools) t.url = t.url.replace(/business=[^&]+/, 'business=' + c.businessId).replace('YOUR_N8N.app.n8n.cloud', 'icrob.app.n8n.cloud');
+    writeFileSync(new URL(`retell/${c.businessId}-tools.json`, root), JSON.stringify(tools, null, 2) + '\n');
+    console.log('Wrote retell/' + c.businessId + '-tools.json');
+    continue;
+  }
   tools.tools = tools.tools.filter((t) => t.name !== 'report_urgent_call');
   for (const t of tools.tools) {
     t.url = t.url.replace(/business=[^&]+/, 'business=' + c.businessId).replace('YOUR_N8N.app.n8n.cloud', 'icrob.app.n8n.cloud');
