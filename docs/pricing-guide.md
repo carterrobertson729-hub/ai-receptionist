@@ -64,3 +64,15 @@ So: start barbershops on Starter or Standard and sell on "a few extra cuts a mon
 - Phone-line cost for real phone calls versus web calls (your measured rate came from tests).
 - n8n execution limits and active-workflow limits on your plan.
 - Whether card-processing is really about 3% on your payment tool.
+
+---
+
+## FINAL LAUNCH PRICE LIST (2026-10-20, built from Grok, ChatGPT, Gemini, Claude suggestions; Carter to confirm)
+
+Monthly, month to month: Starter 300 min $149 | Standard 500 min $229 | Plus 750 min $309 | High volume 1,200 min $449.
+Cost at full use (0.17/min + $2 number): about $53 / $87 / $130 / $206.
+Add-ons per month: Spanish +$30 | AI answers every call with transfer +$40 | extra number +$15. Overage $0.60/min.
+Setup one time: standard $199 | Spanish +$99 | main line with transfer +$99 | complicated systems quoted from $349.
+First 3 customers: setup waived for a testimonial; monthly price locked 12 months. Raise prices for new customers after 3-5 customers and a month of real data.
+Example (Plus + Spanish + main line): $379/month, setup $397, first month $776.
+Unverified: transfer billing, phone vs web call cost, competitor prices, n8n limits at volume.
