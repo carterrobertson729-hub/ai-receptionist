@@ -155,7 +155,7 @@ out.service = String(a.service || 'Service visit').trim();
 var big = isBigJob(ctx.config, a.service);
 var estimate = big && effectiveVisitType(ctx.config, a.service, a.visit_type) !== 'job';
 out.visitKind = estimate ? 'estimate' : (big ? 'big_job' : 'service');
-out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name;
+out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name + (a.barber ? ' (' + String(a.barber).trim() + ')' : '');
 var lines = ['Booked by AI receptionist', (noAddress ? 'Client: ' : 'Caller: ') + name, 'Phone: ' + phone];
 if (address) lines.push('Address: ' + address);
 if (a.barber) lines.push('Preferred barber/stylist: ' + a.barber + ' (a request, not guaranteed)');
