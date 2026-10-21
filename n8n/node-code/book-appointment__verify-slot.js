@@ -340,7 +340,7 @@ var big = isBigJob(ctx.config, a.service);
 var estimate = big && effectiveVisitType(ctx.config, a.service, a.visit_type) !== 'job';
 out.visitKind = estimate ? 'estimate' : (big ? 'big_job' : 'service');
 out.summary = (estimate ? 'ESTIMATE VISIT: ' : '') + out.service + ' - ' + name;
-var lines = ['Booked by AI receptionist', 'Caller: ' + name, 'Phone: ' + phone];
+var lines = ['Booked by AI receptionist', (noAddress ? 'Client: ' : 'Caller: ') + name, 'Phone: ' + phone];
 if (address) lines.push('Address: ' + address);
 if (a.barber) lines.push('Preferred barber/stylist: ' + a.barber + ' (a request, not guaranteed)');
 if (!noAddress) lines.push('Problem: ' + problem);

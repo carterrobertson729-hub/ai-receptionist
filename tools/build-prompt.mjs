@@ -99,7 +99,7 @@ export function build(config) {
     extra_never_say: (config.neverSay || []).join(' '), price_list: priceList(config), cancellation_policy: cancellationPolicyText(config), transfer_policy: transferText(config), staff_list: staffList(config),
     languages_text: languagesText(config),
     opening_line: openingLine(config),
-    shop_facts: (config.shopFacts || []).map((l) => '- ' + l).join('\n') || '- None.',
+    shop_facts: (config.shopAddress ? [`The shop's address is ${config.shopAddress}. Give it if a caller asks where the shop is; read it slowly and offer to repeat it.`] : []).concat(config.shopFacts || []).map((l) => '- ' + l).join('\n') || '- None.',
     service_guidance: (config.serviceGuidance || []).map((l) => '- ' + l).join('\n') || '- None.'
   };
   let out = (config.promptTemplate ? loadTemplate(config.promptTemplate) : template).replace(/\{\{current_time_<[^}]*>\}\}/, `{{current_time_${config.timeZone}}}`);

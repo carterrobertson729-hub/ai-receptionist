@@ -109,7 +109,7 @@ function locateOwned(events, args) {
 }
 
 // Who to show in the office email: the name on the booking if it has one, else the name the caller gave.
-function apptWho(e, args) { return apptField(e.description, 'Caller') || String(args.name || '').trim() || 'the caller'; }
+function apptWho(e, args) { return apptField(e.description, 'Client') || apptField(e.description, 'Caller') || String(args.name || '').trim() || 'the caller'; }
 function apptPhoneText(e, args) { return apptField(e.description, 'Phone') || (apptPhone(args.phone) || String(args.phone || '')); }
 
 function checkCancel(config, events, args, nowMs) {
