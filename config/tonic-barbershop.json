@@ -4,6 +4,7 @@
   "trade": "barbershop",
   "promptTemplate": "agent-prompt-barbershop.md",
   "collectAddress": false,
+  "shopAddress": "2169 US-41, Schererville, Indiana 46375",
   "timeZone": "America/Chicago",
   "_TODO_CONFIRM": "Hours inferred 2026-10-15 from one weekday and one Saturday on the Square booking page (weekdays 4-6 PM, Saturday 9 AM-2 PM, Sunday and Monday closed): confirm with the shop, a weekday may open earlier with those slots already taken. Capacity is 3 barbers at once (confirmed by Carter). Time zone, phone and address are still unconfirmed. Calendar and call log sheet are set. Services, prices, durations and staff come from the Square page.",
   "receptionistNumber": "REPLACE_WITH_RETELL_NUMBER_E164",
