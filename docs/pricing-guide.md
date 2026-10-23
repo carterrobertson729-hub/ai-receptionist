@@ -89,3 +89,23 @@ Unverified: transfer billing, phone vs web call cost, competitor prices, n8n lim
 - Prepaid packs are optional, never expire, and are tracked by hand for the first customers (automatic use needs a payment tool such as Stripe, not set up).
 - Open: shop-facing 80% and 100% email is not built yet (today only Carter is emailed).
 - Unverified: whether the competitor's AI is missed-calls-only; Carter is checking.
+
+---
+
+## CURRENT PRICE LIST (saved 2026-10-23; Carter: a good base point until more research)
+
+Four plans only (five was too many), month to month. Margins can be lower than first planned.
+
+| Plan | Included minutes | Price | Cost at full use | Profit at full use | Profit at 60% use |
+|---|---|---|---|---|---|
+| Starter | 300 | $99 | ~$53 | ~$46 | ~$66 |
+| Standard | 500 | $159 | ~$87 | ~$72 | ~$106 |
+| Plus | 750 | $219 | ~$130 | ~$90 | ~$141 |
+| High volume | 1,200 | $329 | ~$206 | ~$123 | ~$205 |
+
+- Cost = $0.17 per minute used + $2 phone number. Card fees (about 3% + 30 cents) come off the profit. Your own time is not counted.
+- Add-ons per month: Spanish +$15, main line with transfer +$25, extra number +$10.
+- Setup (one time): $99 standard, free for the first 3 founding customers (testimonial; price locked 12 months). Spanish setup +$49, main line setup +$49, complicated systems quoted from $199.
+- Overage: $0.40 per minute (cheapest upgrade step is about $0.30 per minute, so staying small and paying overage never wins). Replaces the $0.45 figure above. Optional prepaid packs use the same rate.
+- Pilot: 14 days, money back.
+- This supersedes the $149/$229/$309/$449 list above. Review after real call data and the first real Retell bills.

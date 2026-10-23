@@ -41,20 +41,20 @@ Everything marked [ASK] must come from the owner. Do not quote numbers in this p
 - Example for illustration only: 10 missed calls a week, half would book, at $27 = about $540 a month. This is a made-up example. Use the owner's numbers.
 - A barbershop ticket is small, so the price must be small too. The product should pay for itself with a handful of extra cuts a month.
 
-## 6. Pricing (tiers chosen with Carter 2026-10-16; still suggestions until tested with real owners)
-My measured Retell cost is about $0.166 per minute ($10.21 for 61.52 minutes), plus about $2 per phone number, a share of n8n and Claude, and card processing. Overage at about $0.50 a minute is three times cost.
+## 6. Pricing (saved with Carter 2026-10-23; a base point until more research and real owners)
+My measured Retell cost is about $0.166 per minute ($10.21 for 61.52 minutes), plus about $2 per phone number, a share of n8n and Claude, and card processing.
 
 | Plan | Included minutes | Price per month | Rough cost if fully used | Rough profit |
 |---|---|---|---|---|
-| Starter | 300 | $179 | ~$80 | ~$99 |
-| Standard | 500 | $249 | ~$115 | ~$134 |
-| Plus | 750 | $339 | ~$150 | ~$189 |
-| High volume | 1,200 | $499 | ~$235 | ~$265 |
+| Starter | 300 | $99 | ~$53 | ~$46 |
+| Standard | 500 | $159 | ~$87 | ~$72 |
+| Plus | 750 | $219 | ~$130 | ~$90 |
+| High volume | 1,200 | $329 | ~$206 | ~$123 |
 
-- Spanish add-on: $25 to $35 a month (Carter is testing willingness to pay), almost all profit.
-- One-time setup fee: about $149 to $299 (can be waived for the first shop in exchange for a testimonial).
-- Pilot: 2 weeks free or cheap, on a forwarded number, so the owner sees real bookings in the call log.
-- Barbershop tickets are small ($27 haircut, $39 haircut plus beard trim): $179 needs about 6 to 7 extra bookings a month to pay for itself. Start the first shop on Starter or Standard.
+- Add-ons: Spanish +$15 a month, main line with transfer +$25, extra number +$10. Extra minutes: $0.40 each (upgrading is always cheaper if they go over often).
+- One-time setup: $99 (free for the first 3 founding customers in exchange for a testimonial, price locked 12 months). Spanish setup +$49, main line setup +$49.
+- Pilot: 14 days, money back, on a forwarded number, so the owner sees real bookings in the call log.
+- Barbershop tickets are small ($27 haircut, $39 haircut plus beard trim): $99 needs about 3 extra bookings a month to pay for itself. A one-chair shop fits Starter; a shop with several barbers may want Standard.
 - Raise prices for new customers after the first 3 customers and once the call log shows results.
 
 ## 7. What to say to objections

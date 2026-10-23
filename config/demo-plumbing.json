@@ -213,7 +213,7 @@
     "name": "Standard",
     "includedMinutes": 500,
     "warnAtPercent": 80,
-    "overagePerMinute": 0.45
+    "overagePerMinute": 0.4
   },
   "usageAlertEmail": "carter.robertson729@gmail.com",
   "calendarReminders": true,

@@ -292,7 +292,7 @@
     "name": "Starter",
     "includedMinutes": 300,
     "warnAtPercent": 80,
-    "overagePerMinute": 0.45
+    "overagePerMinute": 0.4
   },
   "usageAlertEmail": "carter.robertson729@gmail.com",
   "answerMode": "backup",
