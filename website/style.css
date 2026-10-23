@@ -285,3 +285,7 @@ footer{padding:50px 0 60px;border-top:1px solid var(--line);background:rgba(255,
 @media(max-width:700px){.svc-cards{grid-template-columns:1fr}}
 .svc-card{display:flex;flex-direction:column;gap:10px}
 .svc-card p{flex:1}
+
+a.plan-link{text-decoration:none;color:inherit;cursor:pointer}
+a.plan-link:focus-visible{outline:3px solid rgba(106,92,255,.55);outline-offset:4px}
+a.plan-link .more-link{margin-top:auto}

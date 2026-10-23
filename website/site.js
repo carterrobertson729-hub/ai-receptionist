@@ -64,10 +64,11 @@ if ($('plans')) {
 if ($('fit') && window.FIT) {
   $('fit').innerHTML = window.FIT.map(function(f){
     var p = planById(f.id);
-    return '<article class="plan' + (f.pop ? ' pop' : '') + '">' + (f.pop ? '<div class="pop-badge">' + (f.badge || 'Good fit') + '</div>' : '') +
+    // the whole card is one link to the pricing page
+    return '<a class="plan plan-link' + (f.pop ? ' pop' : '') + '" href="pricing.html#plans" aria-label="' + p.name + ' plan, ' + money(p.monthly) + ' a month. See the pricing page">' + (f.pop ? '<div class="pop-badge">' + (f.badge || 'Good fit') + '</div>' : '') +
       '<h3>' + p.name + '</h3><div class="price"><b>' + money(p.monthly) + '</b><span>/ month</span></div>' +
       '<div class="mins"><b>' + p.minutes.toLocaleString('en-US') + ' minutes</b><small>About ' + p.calls + ' calls a month</small></div>' +
-      '<p class="fit-note">' + f.note + '</p></article>';
+      '<p class="fit-note">' + f.note + '</p><span class="more-link" aria-hidden="true">See pricing &rarr;</span></a>';
   }).join('');
 }
 
