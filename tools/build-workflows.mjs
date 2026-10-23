@@ -256,9 +256,11 @@ const usageCode = `${usageLib}
 var ctx = $('Build Summary').first().json;
 if (!ctx.plan) return [];
 var rows = $input.all().map(function (i) { return i.json; });
-var r = usageCheck({ businessName: ctx.businessName, ownerEmail: ctx.alertEmail, plan: ctx.plan }, rows, ctx.log);
+var r = usageCheck({ businessName: ctx.businessName, ownerEmail: ctx.alertEmail, shopEmail: ctx.to, plan: ctx.plan }, rows, ctx.log);
 if (!r.alert) return [];
-return [{ json: { to: r.alert.to, subject: r.alert.subject, body: r.alert.body } }];`;
+var out = [{ json: { to: r.alert.to, subject: r.alert.subject, body: r.alert.body } }];
+if (r.shopAlert) out.push({ json: { to: r.shopAlert.to, subject: r.shopAlert.subject, body: r.shopAlert.body } });
+return out;`;
 
 const emailFilterCode = `// Only calls worth an email go on to the email step (the call log above gets every call).
 var j = $input.first().json;

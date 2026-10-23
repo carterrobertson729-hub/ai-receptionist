@@ -40,4 +40,21 @@ test('no plan on file or junk values: no alert, no crash', () => {
   assert.equal(usageCheck(cfg, [{ Date: 'junk', Minutes: 'abc' }, {}], row('2026-10-09', 'x', 'b')).alert, null);
   assert.equal(usageCheck(cfg, null, {}).alert, null);
 });
+const cfgShop = { ...cfg, shopEmail: 'shop@x.com', plan: { ...cfg.plan, name: 'Standard', overagePerMinute: 0.45 } };
+test('shop gets a friendly 80% email with the plan name and no technical wording', () => {
+  const r = usageCheck(cfgShop, [row('2026-10-01', 398, 'a')], row('2026-10-09', 5, 'b'));
+  assert.equal(r.shopAlert.to, 'shop@x.com'); assert.match(r.shopAlert.subject, /403 of 500 minutes used/);
+  assert.match(r.shopAlert.body, /Standard plan/); assert.match(r.shopAlert.body, /\$0\.45 each/); assert.match(r.shopAlert.body, /keep being answered/);
+});
+test('shop gets a 100% email that says calls keep being answered and suggests upgrading', () => {
+  const r = usageCheck(cfgShop, [row('2026-10-01', 497, 'a')], row('2026-10-09', 5, 'b'));
+  assert.match(r.shopAlert.body, /all 500 minutes/); assert.match(r.shopAlert.body, /keeps answering every call/); assert.match(r.shopAlert.body, /next plan up/);
+});
+test('no shop email when shopEmail is missing or plan.emailShop is false; seller alert still sent', () => {
+  const a = usageCheck(cfg, [row('2026-10-01', 497, 'a')], row('2026-10-09', 5, 'b'));
+  assert.equal(a.shopAlert, null); assert.ok(a.alert);
+  const off = { ...cfgShop, plan: { ...cfgShop.plan, emailShop: false } };
+  assert.equal(usageCheck(off, [row('2026-10-01', 497, 'a')], row('2026-10-09', 5, 'b')).shopAlert, null);
+});
+
 console.log(`\n${n} tests passed`);

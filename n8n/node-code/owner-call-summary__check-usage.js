@@ -42,8 +42,23 @@ function usageCheck(config, rows, thisCall) {
     : [config.businessName + ' has used ' + round1(total) + ' of ' + limit + ' included minutes for ' + month + ' (' + Math.round(total / limit * 100) + '%).',
        '',
        'At this pace they may hit the limit before the month ends. Good time to talk about a bigger plan.'];
+  // The friendly version for the shop owner (sent when config.shopEmail is set and plan.emailShop is not false).
+  var shopAlert = null;
+  if (config.shopEmail && plan.emailShop !== false) {
+    var rateText = rate ? ' Extra minutes are $' + rate.toFixed(2) + ' each and are added to your next bill.' : '';
+    var shopLines = level === 'limit'
+      ? ['Hi,', '',
+         'Your AI receptionist has now used all ' + limit + ' minutes included in your ' + (plan.name ? plan.name + ' ' : '') + 'plan this month (' + round1(total) + ' used).', '',
+         'Nothing changes for your callers: the receptionist keeps answering every call.' + rateText,
+         'If you are going over most months, moving to the next plan up is usually cheaper. Just reply to this email and we will set it up.']
+      : ['Hi,', '',
+         'A quick heads-up: your AI receptionist has used ' + round1(total) + ' of the ' + limit + ' minutes in your ' + (plan.name ? plan.name + ' ' : '') + 'plan this month (' + Math.round(total / limit * 100) + '%).', '',
+         'Nothing to do right now. Calls keep being answered either way.' + rateText,
+         'If you expect a busy rest of the month, reply to this email and we can look at the next plan up.'];
+    shopAlert = { level: level, to: config.shopEmail, subject: 'Your AI receptionist: ' + round1(total) + ' of ' + limit + ' minutes used this month', body: shopLines.join('\n') };
+  }
   return {
-    total: round1(total), month: month,
+    total: round1(total), month: month, shopAlert: shopAlert,
     alert: { level: level, to: config.ownerEmail, subject: (level === 'limit' ? '[LIMIT REACHED] ' : '[Usage warning] ') + config.businessName + ': ' + round1(total) + ' of ' + limit + ' minutes', body: lines.join('\n') }
   };
 }
@@ -53,6 +68,8 @@ function usageCheck(config, rows, thisCall) {
 var ctx = $('Build Summary').first().json;
 if (!ctx.plan) return [];
 var rows = $input.all().map(function (i) { return i.json; });
-var r = usageCheck({ businessName: ctx.businessName, ownerEmail: ctx.alertEmail, plan: ctx.plan }, rows, ctx.log);
+var r = usageCheck({ businessName: ctx.businessName, ownerEmail: ctx.alertEmail, shopEmail: ctx.to, plan: ctx.plan }, rows, ctx.log);
 if (!r.alert) return [];
-return [{ json: { to: r.alert.to, subject: r.alert.subject, body: r.alert.body } }];
+var out = [{ json: { to: r.alert.to, subject: r.alert.subject, body: r.alert.body } }];
+if (r.shopAlert) out.push({ json: { to: r.shopAlert.to, subject: r.shopAlert.subject, body: r.shopAlert.body } });
+return out;
