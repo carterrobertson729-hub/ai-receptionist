@@ -109,4 +109,4 @@ if (body.event !== 'call_analyzed') return [];   // ignore call_started / call_e
 var config = item.config;   // from the central Business Config workflow
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the Retell webhook URL.');
 var s = buildSummary(config, body);
-return [{ json: { send: s.send, to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent, log: s.log, sheetId: config.callLogSheetId || '', plan: config.plan || null, businessName: config.businessName, alertEmail: config.usageAlertEmail || config.ownerEmail } }];
+return [{ json: { send: s.send, to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent, log: s.log, sheetId: config.callLogSheetId || '', plan: config.plan || null, businessName: config.businessName, alertEmail: config.usageAlertEmail || config.ownerEmail, billingEmail: config.billingEmail || '' } }];

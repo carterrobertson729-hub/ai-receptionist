@@ -249,14 +249,14 @@ if (body.event !== 'call_analyzed') return [];   // ignore call_started / call_e
 var config = item.config;   // from the central Business Config workflow
 if (!config) throw new Error('Unknown business. Add ?business=<businessId> to the Retell webhook URL.');
 var s = buildSummary(config, body);
-return [{ json: { send: s.send, to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent, log: s.log, sheetId: config.callLogSheetId || '', plan: config.plan || null, businessName: config.businessName, alertEmail: config.usageAlertEmail || config.ownerEmail } }];`;
+return [{ json: { send: s.send, to: config.ownerEmail, subject: s.subject, body: s.body, urgent: s.urgent, log: s.log, sheetId: config.callLogSheetId || '', plan: config.plan || null, businessName: config.businessName, alertEmail: config.usageAlertEmail || config.ownerEmail, billingEmail: config.billingEmail || '' } }];`;
 
 const usageCode = `${usageLib}
 // Adds this month's minutes from the call log and emails the seller once when a plan line (80% or 100%) is crossed.
 var ctx = $('Build Summary').first().json;
 if (!ctx.plan) return [];
 var rows = $input.all().map(function (i) { return i.json; });
-var r = usageCheck({ businessName: ctx.businessName, ownerEmail: ctx.alertEmail, shopEmail: ctx.to, plan: ctx.plan }, rows, ctx.log);
+var r = usageCheck({ businessName: ctx.businessName, ownerEmail: ctx.alertEmail, shopEmail: ctx.billingEmail || ctx.to, plan: ctx.plan }, rows, ctx.log);
 if (!r.alert) return [];
 var out = [{ json: { to: r.alert.to, subject: r.alert.subject, body: r.alert.body } }];
 if (r.shopAlert) out.push({ json: { to: r.shopAlert.to, subject: r.shopAlert.subject, body: r.shopAlert.body } });

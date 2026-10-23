@@ -68,7 +68,7 @@ function usageCheck(config, rows, thisCall) {
 var ctx = $('Build Summary').first().json;
 if (!ctx.plan) return [];
 var rows = $input.all().map(function (i) { return i.json; });
-var r = usageCheck({ businessName: ctx.businessName, ownerEmail: ctx.alertEmail, shopEmail: ctx.to, plan: ctx.plan }, rows, ctx.log);
+var r = usageCheck({ businessName: ctx.businessName, ownerEmail: ctx.alertEmail, shopEmail: ctx.billingEmail || ctx.to, plan: ctx.plan }, rows, ctx.log);
 if (!r.alert) return [];
 var out = [{ json: { to: r.alert.to, subject: r.alert.subject, body: r.alert.body } }];
 if (r.shopAlert) out.push({ json: { to: r.shopAlert.to, subject: r.shopAlert.subject, body: r.shopAlert.body } });

@@ -67,6 +67,7 @@ For each kind of job you want the AI to book, fill in a row:
 ## 8. After the call
 
 30. Where should call summaries go (email, text, both)?
+30b. Who should get the usage and billing emails (when you reach 80% and 100% of your monthly minutes)? This should be the person who pays and can approve a plan change; it can be the same as the call summaries address.
 31. Which calls do you want an email for? (booked, free estimate, messages, urgent, every call with a name and number)
 32. Who handles callback requests, and what email or number should they go to?
 33. Do you want a weekly count of calls (business hours vs after hours, booked vs callback)?
