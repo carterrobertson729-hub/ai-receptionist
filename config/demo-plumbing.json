@@ -217,5 +217,8 @@
   },
   "usageAlertEmail": "carter.robertson729@gmail.com",
   "calendarReminders": true,
-  "answerMode": "backup"
+  "answerMode": "backup",
+  "weeklyReport": {
+    "enabled": true
+  }
 }

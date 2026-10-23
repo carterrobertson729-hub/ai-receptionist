@@ -1,0 +1,232 @@
+{
+  "name": "Receptionist - Weekly Owner Report",
+  "nodes": [
+    {
+      "id": "w1000000-0000-4000-8000-000000000001",
+      "name": "Every Monday Morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "w1000000-0000-4000-8000-000000000002",
+      "name": "Ask For All Businesses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Asks the Business Config workflow for every business that has the weekly report switched on.\nreturn [{ json: { query: { business: '__all__' } } }];"
+      }
+    },
+    {
+      "id": "w1000000-0000-4000-8000-000000000003",
+      "name": "Get Business Config",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Receptionist - Business Config"
+        },
+        "mode": "once",
+        "options": {}
+      }
+    },
+    {
+      "id": "w1000000-0000-4000-8000-000000000004",
+      "name": "Loop Over Businesses",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "w1000000-0000-4000-8000-000000000005",
+      "name": "Get Call Rows",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        100
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.config.callLogSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Calls"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "w1000000-0000-4000-8000-000000000006",
+      "name": "Build Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        100
+      ],
+      "parameters": {
+        "jsCode": "// Builds the weekly owner report email from the call log rows (the Calls tab). Inlined into the n8n Code node by\n// tools/build-workflows.mjs; unit-tested by tools/test-report.mjs.\n\nvar REPORT_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];\n\nfunction reportToday(nowMs, tz) {\n  var parts = {};\n  new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' })\n    .formatToParts(new Date(nowMs)).forEach(function (p) { parts[p.type] = p.value; });\n  return parts.year + '-' + parts.month + '-' + parts.day;\n}\n\nfunction reportAddDays(str, n) {\n  var p = str.split('-');\n  var d = new Date(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2]) + n));\n  return d.getUTCFullYear() + '-' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + d.getUTCDate()).slice(-2);\n}\n\n// Sheets may hand back 2026-10-09 or 10/9/2026; both become 2026-10-09.\nfunction reportDate(v) {\n  var s = String(v === undefined || v === null ? '' : v).trim();\n  var m = s.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})/);\n  if (m) return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);\n  m = s.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})/);\n  if (m) return m[3] + '-' + ('0' + m[1]).slice(-2) + '-' + ('0' + m[2]).slice(-2);\n  return '';\n}\n\nfunction reportLabel(str) { var p = str.split('-'); return REPORT_MONTHS[Number(p[1]) - 1].slice(0, 3) + ' ' + Number(p[2]); }\nfunction reportRound(n) { return Math.round(n * 10) / 10; }\n\nfunction reportStats(rows) {\n  var s = { calls: 0, business: 0, after: 0, minutes: 0, outcomes: {}, afterOutcomes: {}, days: {}, requests: {} };\n  rows.forEach(function (r) {\n    s.calls++;\n    var after = String(r.Hours) === 'After hours';\n    if (after) s.after++; else if (String(r.Hours) === 'Business hours') s.business++;\n    s.minutes += Number(r.Minutes) || 0;\n    var o = String(r.Outcome || 'other').toLowerCase().trim() || 'other';\n    s.outcomes[o] = (s.outcomes[o] || 0) + 1;\n    if (after) s.afterOutcomes[o] = (s.afterOutcomes[o] || 0) + 1;\n    if (r.Day) s.days[r.Day] = (s.days[r.Day] || 0) + 1;\n    var p = String(r.Problem || '').trim();\n    if (p) s.requests[p] = (s.requests[p] || 0) + 1;\n  });\n  s.booked = (s.outcomes.booked || 0) + (s.outcomes.estimate || 0);\n  s.afterBooked = (s.afterOutcomes.booked || 0) + (s.afterOutcomes.estimate || 0);\n  return s;\n}\n\nfunction plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }\n\nfunction buildWeeklyReport(config, rows, nowMs) {\n  var tz = config.timeZone;\n  var today = reportToday(nowMs, tz);\n  var end = reportAddDays(today, -1), start = reportAddDays(end, -6);\n  var prevEnd = reportAddDays(start, -1), prevStart = reportAddDays(prevEnd, -6);\n  var clean = (rows || []).filter(function (r) { return r && reportDate(r.Date); });\n  function inRange(a, b) { return clean.filter(function (r) { var d = reportDate(r.Date); return d >= a && d <= b; }); }\n  var week = reportStats(inRange(start, end));\n  var prev = reportStats(inRange(prevStart, prevEnd));\n  var monthKey = end.slice(0, 7);\n  var monthMinutes = reportRound(reportStats(clean.filter(function (r) { var d = reportDate(r.Date); return d.slice(0, 7) === monthKey && d <= end; })).minutes);\n\n  var range = reportLabel(start) + ' - ' + reportLabel(end);\n  var lines = [config.businessName + ' - your week with the AI receptionist', range, ''];\n\n  if (week.calls === 0) {\n    lines.push('No calls reached the AI receptionist this week.', '',\n      'If you expected calls, check that call forwarding to the receptionist is still turned on. Reply to this email and we will help.');\n  } else {\n    lines.push('CALLS', '  ' + plural(week.calls, 'call', 'calls') + ' answered');\n    lines.push('  ' + week.business + ' during business hours, ' + week.after + ' after hours');\n    if (prev.calls > 0) {\n      var diff = week.calls - prev.calls;\n      lines.push('  ' + (diff === 0 ? 'Same as' : (diff > 0 ? 'Up ' + diff + ' from' : 'Down ' + Math.abs(diff) + ' from')) + ' last week (' + prev.calls + ')');\n    }\n    lines.push('', 'WHAT HAPPENED');\n    lines.push('  ' + plural(week.booked, 'appointment booked', 'appointments booked'));\n    var labels = [['message', 'message taken'], ['callback', 'callback requested'], ['cancelled', 'cancelled'], ['rescheduled', 'rescheduled'], ['info', 'price or hours question only'], ['urgent', 'urgent']];\n    labels.forEach(function (l) { if (week.outcomes[l[0]]) lines.push('  ' + week.outcomes[l[0]] + ' ' + l[1]); });\n    var rest = week.calls - week.booked - labels.reduce(function (t, l) { return t + (week.outcomes[l[0]] || 0); }, 0);\n    if (rest > 0) lines.push('  ' + rest + ' hang-up or nothing needed');\n    if (week.after > 0) {\n      lines.push('', 'AFTER HOURS', '  ' + plural(week.after, 'call', 'calls') + ' came in when the shop was closed, and ' + week.afterBooked + ' turned into a booking.',\n        '  These are customers who would otherwise have reached voicemail.');\n    }\n    var top = Object.keys(week.requests).sort(function (a, b) { return week.requests[b] - week.requests[a]; }).slice(0, 3);\n    if (top.length) lines.push('', 'MOST REQUESTED', '  ' + top.map(function (k) { return k + ' (' + week.requests[k] + ')'; }).join(', '));\n    var busiest = Object.keys(week.days).sort(function (a, b) { return week.days[b] - week.days[a]; })[0];\n    if (busiest) lines.push('', 'BUSIEST DAY', '  ' + busiest + ' (' + week.days[busiest] + ' calls)');\n    if (config.averageTicket && week.booked > 0) lines.push('', 'ROUGH VALUE', '  ' + week.booked + ' bookings at about $' + config.averageTicket + ' each is roughly $' + Math.round(week.booked * config.averageTicket) + ' of business.');\n  }\n\n  lines.push('', 'MINUTES', '  ' + reportRound(week.minutes) + ' minutes of calls this week');\n  var plan = config.plan;\n  if (plan && plan.includedMinutes) {\n    lines.push('  ' + monthMinutes + ' of ' + plan.includedMinutes + ' included minutes used so far in ' + REPORT_MONTHS[Number(monthKey.slice(5)) - 1] + ' (' + Math.round(monthMinutes / plan.includedMinutes * 100) + '%)');\n  }\n  lines.push('', 'Questions, or want something changed? Just reply to this email.');\n\n  return { to: config.reportEmail || config.ownerEmail, copyTo: (config.usageAlertEmail && config.usageAlertEmail !== (config.reportEmail || config.ownerEmail)) ? config.usageAlertEmail : '',\n    subject: config.businessName + ': your week with the AI receptionist (' + range + ')', body: lines.join('\\n'), stats: week };\n}\n\n\n// One business per loop. The call log rows come from \"Get Call Rows\"; the settings from \"Loop Over Businesses\".\nvar cfg = $('Loop Over Businesses').first().json.config;\nvar rows = $input.all().map(function (i) { return i.json; });\nvar r = buildWeeklyReport(cfg, rows, Date.now());\nvar out = [{ json: { send: true, to: r.to, subject: r.subject, body: r.body } }];\nif (r.copyTo) out.push({ json: { send: true, to: r.copyTo, subject: '[Copy] ' + r.subject, body: r.body } });\nreturn out;"
+      }
+    },
+    {
+      "id": "w1000000-0000-4000-8000-000000000007",
+      "name": "Email Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1320,
+        100
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Monday Morning": {
+      "main": [
+        [
+          {
+            "node": "Ask For All Businesses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask For All Businesses": {
+      "main": [
+        [
+          {
+            "node": "Get Business Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Business Config": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Businesses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Businesses": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get Call Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Call Rows": {
+      "main": [
+        [
+          {
+            "node": "Build Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Report": {
+      "main": [
+        [
+          {
+            "node": "Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Report": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Businesses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

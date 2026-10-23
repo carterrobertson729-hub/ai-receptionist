@@ -53,3 +53,7 @@ All business settings live in ONE n8n workflow, "Receptionist - Business Config"
 5. Create their Google Calendar (shared with your Google account) and a call-log sheet (tab `Calls`, 11 headings), and put the IDs in their config before step 2.
 
 First-time setup: import "Receptionist - Business Config" first, then import the others and, in each, open "Get Business Config" and pick "Receptionist - Business Config" as the workflow to run.
+
+## Weekly owner report
+
+Import `n8n/weekly-owner-report.json`, pick the Google Sheets and Gmail credentials, open `Get Business Config` and choose `Receptionist - Business Config`, set the workflow timezone (Workflow Settings > Timezone) to the shop's, then activate. It emails each business with `weeklyReport.enabled` every Monday 8:00 about the previous Monday-Sunday. To test now, click Execute workflow (it sends real emails). The Business Config workflow's Find Business code must be the latest version (it understands `__all__`).

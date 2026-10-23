@@ -11,6 +11,7 @@ const oncallLib = stripExports(read('n8n/code/oncall.js'));
 const callbackLib = stripExports(read('n8n/code/callback.js'));
 const apptLib = stripExports(read('n8n/code/appointments.js'));
 const usageLib = stripExports(read('n8n/code/usage.js'));
+const reportLib = stripExports(read('n8n/code/report.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -544,6 +545,10 @@ var item = $input.first().json;
 var body = item.body || {};
 var call = body.call || {};
 var id = (item.query && item.query.business) || '';
+if (id === '__all__') {   // used by the weekly report: one item per business that has the report switched on
+  return Object.keys(CONFIGS).filter(function (k) { return CONFIGS[k].weeklyReport && CONFIGS[k].weeklyReport.enabled; })
+    .map(function (k) { return { json: { config: CONFIGS[k] } }; });
+}
 var config = CONFIGS[id];
 if (!config && !id) {
   // No ?business= on the address: only fall back to the number that was called, and never to a placeholder number.
@@ -575,6 +580,65 @@ function addConfigStep(w, webhookName) {
 for (const w of [check, book, urgent, callback, lookup, cancel, resched]) addConfigStep(w, 'Retell Tool Call');
 addConfigStep(summary, 'Retell Call Webhook');
 
+
+// ---------- weekly owner report ----------
+const reportCode = `${reportLib}
+// One business per loop. The call log rows come from "Get Call Rows"; the settings from "Loop Over Businesses".
+var cfg = $('Loop Over Businesses').first().json.config;
+var rows = $input.all().map(function (i) { return i.json; });
+var r = buildWeeklyReport(cfg, rows, Date.now());
+var out = [{ json: { send: true, to: r.to, subject: r.subject, body: r.body } }];
+if (r.copyTo) out.push({ json: { send: true, to: r.copyTo, subject: '[Copy] ' + r.subject, body: r.body } });
+return out;`;
+
+const weekly = wf('Receptionist - Weekly Owner Report', [
+  {
+    id: 'w1000000-0000-4000-8000-000000000001', name: 'Every Monday Morning', type: 'n8n-nodes-base.scheduleTrigger',
+    typeVersion: 1.2, position: [0, 0],
+    parameters: { rule: { interval: [{ field: 'cronExpression', expression: '0 8 * * 1' }] } }
+  },
+  code('w1000000-0000-4000-8000-000000000002', 'Ask For All Businesses', [220, 0], `// Asks the Business Config workflow for every business that has the weekly report switched on.\nreturn [{ json: { query: { business: '__all__' } } }];`),
+  {
+    id: 'w1000000-0000-4000-8000-000000000003', name: 'Get Business Config', type: 'n8n-nodes-base.executeWorkflow',
+    typeVersion: 1.1, position: [440, 0],
+    parameters: { source: 'database', workflowId: { __rl: true, mode: 'list', value: '', cachedResultName: 'Receptionist - Business Config' }, mode: 'once', options: {} }
+  },
+  {
+    id: 'w1000000-0000-4000-8000-000000000004', name: 'Loop Over Businesses', type: 'n8n-nodes-base.splitInBatches',
+    typeVersion: 3, position: [660, 0], parameters: { batchSize: 1, options: {} }
+  },
+  {
+    id: 'w1000000-0000-4000-8000-000000000005', name: 'Get Call Rows', type: 'n8n-nodes-base.googleSheets',
+    typeVersion: 4.5, position: [880, 100], onError: 'continueRegularOutput', alwaysOutputData: true,
+    parameters: {
+      resource: 'sheet', operation: 'read',
+      documentId: { __rl: true, mode: 'id', value: '={{ $json.config.callLogSheetId }}' },
+      sheetName: { __rl: true, mode: 'name', value: 'Calls' },
+      options: {}
+    },
+    credentials: { googleSheetsOAuth2Api: { id: 'REPLACE', name: 'Google Sheets account' } }
+  },
+  code('w1000000-0000-4000-8000-000000000006', 'Build Report', [1100, 100], reportCode),
+  {
+    id: 'w1000000-0000-4000-8000-000000000007', name: 'Email Report', type: 'n8n-nodes-base.gmail',
+    typeVersion: 2.1, position: [1320, 100],
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  }
+], {
+  'Every Monday Morning': { main: [[{ node: 'Ask For All Businesses', type: 'main', index: 0 }]] },
+  'Ask For All Businesses': { main: [[{ node: 'Get Business Config', type: 'main', index: 0 }]] },
+  'Get Business Config': { main: [[{ node: 'Loop Over Businesses', type: 'main', index: 0 }]] },
+  'Loop Over Businesses': { main: [[], [{ node: 'Get Call Rows', type: 'main', index: 0 }]] },
+  'Get Call Rows': { main: [[{ node: 'Build Report', type: 'main', index: 0 }]] },
+  'Build Report': { main: [[{ node: 'Email Report', type: 'main', index: 0 }]] },
+  'Email Report': { main: [[{ node: 'Loop Over Businesses', type: 'main', index: 0 }]] }
+});
+writeFileSync(new URL('n8n/weekly-owner-report.json', root), JSON.stringify(weekly, null, 2) + '\n');
+
 writeFileSync(new URL('n8n/business-config.json', root), JSON.stringify(bizConfig, null, 2) + '\n');
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
 writeFileSync(new URL('n8n/book-appointment.json', root), JSON.stringify(book, null, 2) + '\n');
@@ -584,7 +648,7 @@ writeFileSync(new URL('n8n/callback-request.json', root), JSON.stringify(callbac
 writeFileSync(new URL('n8n/find-appointment.json', root), JSON.stringify(lookup, null, 2) + '\n');
 writeFileSync(new URL('n8n/cancel-appointment.json', root), JSON.stringify(cancel, null, 2) + '\n');
 writeFileSync(new URL('n8n/reschedule-appointment.json', root), JSON.stringify(resched, null, 2) + '\n');
-console.log('Wrote 9 workflows');
+console.log('Wrote 10 workflows');
 
 // ---------- per-node code files: paste these into an existing n8n workflow instead of re-importing ----------
 import { mkdirSync, rmSync } from 'node:fs';
@@ -592,7 +656,7 @@ const nodeCodeDir = new URL('n8n/node-code/', root);
 rmSync(nodeCodeDir, { recursive: true, force: true });
 mkdirSync(nodeCodeDir, { recursive: true });
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched]) {
+for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly]) {
   for (const n of w.nodes.filter((n) => n.type === 'n8n-nodes-base.code')) {
     const header = `// PASTE INTO n8n: workflow "${w.name}" > node "${n.name}" > Code tab (select all, replace, Save).\n`;
     writeFileSync(new URL(`${slug(w.name.replace('Receptionist - ', ''))}__${slug(n.name)}.js`, nodeCodeDir), header + n.parameters.jsCode + '\n');
