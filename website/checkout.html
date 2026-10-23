@@ -20,10 +20,17 @@
     </a>
     <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navList">&#9776;</button>
     <ul id="navList">
-      <li><a href="index.html#how">How it works</a></li>
-      <li><a href="index.html#services">Services</a></li>
-      <li><a href="index.html#pricing">Pricing</a></li>
-      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="how-it-works.html">How it works</a></li>
+      <li class="has-sub"><a href="services.html">Services</a><button type="button" class="sub-toggle" aria-label="Show services" aria-expanded="false">&#9662;</button>
+        <ul class="sub">
+          <li><a href="barbershops.html">Barbershops &amp; salons</a></li>
+          <li><a href="trades.html">Plumbing &amp; trades</a></li>
+          <li><a href="repair.html">Repair shops <span class="soon">Soon</span></a></li>
+          <li><a href="landscaping.html">Landscaping <span class="soon">Soon</span></a></li>
+        </ul>
+      </li>
+      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="faq.html">FAQ</a></li>
       <li><a href="contact.html">Contact</a></li>
       <li class="only-mobile"><a href="demo.html">Book a demo</a></li>
     </ul>
@@ -96,6 +103,7 @@
 
 <footer>
   <div class="wrap terms" id="terms">
+    <nav class="foot-links" aria-label="Site pages"><a href="index.html">Home</a><a href="how-it-works.html">How it works</a><a href="services.html">Services</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="demo.html">Book a demo</a><a href="trial.html">Free trial</a></nav>
     <h3>Terms and policies</h3>
     <details><summary>Free trial</summary><p>After setup, the first 50 minutes of calls on your receptionist are free. No payment is needed to start the trial. When the trial minutes are used, you choose a paid plan to continue. The one-time setup fee applies when you choose a plan, unless you are one of the first 3 founding customers.</p></details>
     <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>

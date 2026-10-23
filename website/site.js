@@ -84,8 +84,24 @@ tabs.forEach(function(t){
 var menuBtn = $('menuBtn'), navList = $('navList');
 if (menuBtn && navList) {
   menuBtn.onclick = function(){ var o = navList.classList.toggle('open'); menuBtn.setAttribute('aria-expanded', o); };
-  navList.addEventListener('click', function(){ navList.classList.remove('open'); menuBtn.setAttribute('aria-expanded', false); });
+  navList.addEventListener('click', function(e){
+    if (e.target.closest('.sub-toggle')) return;   // the little arrow only opens the Services list
+    navList.classList.remove('open'); menuBtn.setAttribute('aria-expanded', false);
+  });
 }
+// Services dropdown: the arrow opens the list (on phones and for keyboard users); hover also opens it on a computer
+document.querySelectorAll('.sub-toggle').forEach(function(b){
+  b.addEventListener('click', function(){ var li = b.parentNode, o = li.classList.toggle('open'); b.setAttribute('aria-expanded', o); });
+});
+// mark the page you are on in the menu
+(function(){
+  var here = window.location.pathname.split('/').pop() || 'index.html';
+  var inServices = ['barbershops.html','trades.html','repair.html','landscaping.html'].indexOf(here) !== -1;
+  document.querySelectorAll('#navList > li > a').forEach(function(a){
+    var h = a.getAttribute('href');
+    if (h === here || (inServices && h === 'services.html')) a.setAttribute('aria-current', 'page');
+  });
+})();
 
 // pre-select the business type: from the page (data-industry) or the link (?for=barbershop)
 var query = new URLSearchParams(window.location.search);

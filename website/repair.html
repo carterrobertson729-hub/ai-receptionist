@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repair shops | AnswerBay</title>
+<meta name="description" content="AnswerBay for repair shops is coming soon. Join the list to hear when it is ready.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a class="logo" href="index.html" aria-label="AnswerBay home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a5cff"/><stop offset=".6" stop-color="#00b8ff"/><stop offset="1" stop-color="#00d9a6"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lg)"/><path d="M9 21h3M15 14v14M21 10v22M27 15v12M33 19v4" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+      <span>AnswerBay</span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navList">&#9776;</button>
+    <ul id="navList">
+      <li><a href="how-it-works.html">How it works</a></li>
+      <li class="has-sub"><a href="services.html">Services</a><button type="button" class="sub-toggle" aria-label="Show services" aria-expanded="false">&#9662;</button>
+        <ul class="sub">
+          <li><a href="barbershops.html">Barbershops &amp; salons</a></li>
+          <li><a href="trades.html">Plumbing &amp; trades</a></li>
+          <li><a href="repair.html">Repair shops <span class="soon">Soon</span></a></li>
+          <li><a href="landscaping.html">Landscaping <span class="soon">Soon</span></a></li>
+        </ul>
+      </li>
+      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li class="only-mobile"><a href="demo.html">Book a demo</a></li>
+    </ul>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="demo.html">Book a demo</a><a class="btn btn-primary" href="trial.html">Start free trial</a></div>
+  </div>
+</header>
+
+<main id="top">
+<section class="page-hero">
+  <div class="wrap">
+    <p class="crumbs"><a href="index.html">AnswerBay</a> / <a href="services.html">Services</a> / Repair shops</p>
+    
+    <h1 style="margin-top:14px">Repair shops: <span class="grad-text">coming soon</span></h1>
+    <p class="lead">Drop-offs, estimates and the details a repair shop needs, handled by an AI receptionist. We are building this now.</p>
+  </div>
+</section>
+<section style="padding-top:20px">
+  <div class="wrap contact-grid">
+    <div class="card"><h3>What we are planning</h3><ul class="ticks"><li>Takes drop-off and pickup appointments</li><li>Collects the device or vehicle details</li><li>Shares prices only when you set them</li><li>Takes a message when a caller asks if their repair is ready, because it cannot see your repair system yet</li><li>Emails you a summary of every call</li></ul><p class="note-box" style="margin-top:18px">We only list what we have built and tested. Join the list and we will email you when this is ready.</p></div>
+    <div>
+      <form class="card" name="waitlist" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+        <input type="hidden" name="form-name" value="waitlist">
+        <p class="hp"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+        <input type="hidden" name="interest" value="Repair shops">
+        <h3>Get notified</h3>
+        <div class="row"><label for="cName">Your name</label><input id="cName" name="name" autocomplete="name" required></div>
+        <div class="row"><label for="cEmail">Your email</label><input id="cEmail" name="email" type="email" autocomplete="email" required></div>
+        <div class="row"><label for="cBiz">Business name</label><input id="cBiz" name="business" autocomplete="organization"></div>
+        <div class="row"><label for="cMsg">What do you do, and how do you take calls today?</label><textarea id="cMsg" name="notes"></textarea></div>
+        <button class="btn btn-primary btn-block" type="submit">Notify me</button>
+        <p class="fine" data-note style="margin-top:10px">We will only email you about this.</p>
+      </form>
+      <div class="success" data-success hidden><h3>You are on the list</h3><p>Thanks. We will email you when repair shops is ready.</p><p><a class="btn btn-ghost" href="services.html">Back to services</a></p></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap terms" id="terms">
+    <nav class="foot-links" aria-label="Site pages"><a href="index.html">Home</a><a href="how-it-works.html">How it works</a><a href="services.html">Services</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="demo.html">Book a demo</a><a href="trial.html">Free trial</a></nav>
+    <h3>Terms and policies</h3>
+    <details><summary>Free trial</summary><p>After setup, the first 50 minutes of calls on your receptionist are free. No payment is needed to start the trial. When the trial minutes are used, you choose a paid plan to continue. The one-time setup fee applies when you choose a plan, unless you are one of the first 3 founding customers.</p></details>
+    <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>
+    <details><summary>Cancellation and refunds</summary><p>You can cancel anytime. Your plan stays active until the end of the period you have already paid for, then it does not renew. We do not refund payments for time you have already been billed for. Yearly plans are paid up front for twelve months, and cancelling stops the renewal.</p></details>
+    <details><summary>Works-or-refund guarantee</summary><p>If we cannot get your receptionist working with your phone line and calendar after setup, we refund what you paid. This guarantee covers the service not working. It does not cover a change of mind.</p></details>
+    <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
+    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span></div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

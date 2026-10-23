@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing | AnswerBay</title>
+<meta name="description" content="AnswerBay plans start at $99 a month for 300 minutes. Yearly plans save 10%. The first 50 minutes are free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a class="logo" href="index.html" aria-label="AnswerBay home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a5cff"/><stop offset=".6" stop-color="#00b8ff"/><stop offset="1" stop-color="#00d9a6"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lg)"/><path d="M9 21h3M15 14v14M21 10v22M27 15v12M33 19v4" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+      <span>AnswerBay</span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navList">&#9776;</button>
+    <ul id="navList">
+      <li><a href="how-it-works.html">How it works</a></li>
+      <li class="has-sub"><a href="services.html">Services</a><button type="button" class="sub-toggle" aria-label="Show services" aria-expanded="false">&#9662;</button>
+        <ul class="sub">
+          <li><a href="barbershops.html">Barbershops &amp; salons</a></li>
+          <li><a href="trades.html">Plumbing &amp; trades</a></li>
+          <li><a href="repair.html">Repair shops <span class="soon">Soon</span></a></li>
+          <li><a href="landscaping.html">Landscaping <span class="soon">Soon</span></a></li>
+        </ul>
+      </li>
+      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li class="only-mobile"><a href="demo.html">Book a demo</a></li>
+    </ul>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="demo.html">Book a demo</a><a class="btn btn-primary" href="trial.html">Start free trial</a></div>
+  </div>
+</header>
+
+<main id="top">
+<section class="page-hero" style="padding-bottom:0">
+  <div class="wrap">
+    <p class="crumbs"><a href="index.html">AnswerBay</a> / Pricing</p>
+    
+    <h1 style="margin-top:14px">Simple plans. <span class="grad-text">Pick your minutes.</span></h1>
+    <p class="lead">Every plan covers one location and includes setup help. Go over your minutes and the receptionist keeps answering. You are never cut off.</p>
+  </div>
+</section><section id="pricing" style="padding-top:10px;padding-bottom:40px">
+  <div class="wrap center" style="text-align:center">
+    
+    <div class="billing" role="group" aria-label="Billing period">
+      <button id="bMonthly" aria-pressed="true">Monthly</button>
+      <button id="bYearly" aria-pressed="false">Yearly <span class="save">Save 10%</span></button>
+    </div>
+  </div>
+
+  <div class="marquee" aria-hidden="true"><div class="track" data-dup>
+    <span class="tag hot">First 50 minutes free</span><span class="tag">Cancel anytime</span><span class="tag">No long contract</span><span class="tag hot">Yearly saves 10%</span><span class="tag">Setup help included</span><span class="tag">Keep your number</span><span class="tag">Works-or-refund guarantee</span>
+  </div></div>
+
+  <div class="wrap">
+    <div class="plans" id="plans"></div>
+
+    <p class="fine" style="text-align:center;margin-top:18px">Minutes count time on the phone with the receptionist. A typical call is about 2 to 3 minutes, so the call counts are estimates. Extra minutes cost $0.40 each, billed the next month.</p>
+
+    <div class="founding">
+      <p><strong>Founding customer offer:</strong> the first 3 businesses get setup free and keep their monthly price for 12 months.</p>
+      <a class="btn btn-primary" href="trial.html">Claim a spot</a>
+    </div>
+
+    <h3 style="margin:46px 0 16px">Add-ons</h3>
+    <div class="grid g3 addons">
+      <div class="card"><h3>Spanish <span>+$15/mo</span></h3><p>The receptionist switches to Spanish when the caller speaks it. One-time setup +$49.</p></div>
+      <div class="card"><h3>Main line + transfer <span>+$25/mo</span></h3><p>The receptionist answers every call, and passes calls to your staff when a caller asks for a person during open hours. One-time setup +$49. <span class="badge-soon">Launching soon</span></p></div>
+      <div class="card"><h3>Extra number <span>+$10/mo</span></h3><p>A second line for another location or a separate phone number for an ad.</p></div>
+    </div>
+    <p class="fine" style="margin-top:14px">One-time setup is $99 and covers building your receptionist, testing and walking you through call forwarding. Unusual phone systems are quoted separately.</p>
+  </div>
+
+  <div class="marquee rev" aria-hidden="true" style="margin-top:46px"><div class="track" data-dup>
+    <span class="tag">Barbershops</span><span class="tag hot">Plumbing &amp; trades</span><span class="tag">Calendar booking</span><span class="tag">Emergency alerts</span><span class="tag hot">Call log &amp; weekly report</span><span class="tag">Usage alerts</span><span class="tag">Spanish add-on</span>
+  </div></div>
+</section><section style="padding-top:30px" class="trust">
+  <div class="wrap">
+    <div class="grid g3">
+      <div class="card"><h3><span class="ico">&#9201;</span> Free trial: 50 minutes</h3><p>After we set up your receptionist, the first 50 minutes of calls are free. No payment needed to start. When your trial minutes are used, choose a plan to keep going.</p></div>
+      <div class="card"><h3><span class="ico">&#10003;</span> Works-or-refund</h3><p>If we cannot get your receptionist working with your phone line and calendar, we refund what you paid. This covers the service not working, not changing your mind.</p></div>
+      <div class="card"><h3><span class="ico">&#8635;</span> Cancel anytime</h3><p>Cancel whenever you like. Your plan stays active until the end of the period you have already paid for. Payments for time already paid are not refunded.</p></div>
+    </div>
+  </div>
+</section><section style="padding:30px 0 70px"><div class="wrap"><div class="cta-band"><div><h3>Ready to try it?</h3><p>Book a 20-minute demo or start the free trial. The first 50 minutes are free.</p></div><div class="cta-row"><a class="btn btn-primary" href="demo.html">Book a demo</a><a class="btn btn-ghost" href="trial.html">Start free trial</a></div></div></div></section>
+</main>
+
+<footer>
+  <div class="wrap terms" id="terms">
+    <nav class="foot-links" aria-label="Site pages"><a href="index.html">Home</a><a href="how-it-works.html">How it works</a><a href="services.html">Services</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="demo.html">Book a demo</a><a href="trial.html">Free trial</a></nav>
+    <h3>Terms and policies</h3>
+    <details><summary>Free trial</summary><p>After setup, the first 50 minutes of calls on your receptionist are free. No payment is needed to start the trial. When the trial minutes are used, you choose a paid plan to continue. The one-time setup fee applies when you choose a plan, unless you are one of the first 3 founding customers.</p></details>
+    <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>
+    <details><summary>Cancellation and refunds</summary><p>You can cancel anytime. Your plan stays active until the end of the period you have already paid for, then it does not renew. We do not refund payments for time you have already been billed for. Yearly plans are paid up front for twelve months, and cancelling stops the renewal.</p></details>
+    <details><summary>Works-or-refund guarantee</summary><p>If we cannot get your receptionist working with your phone line and calendar after setup, we refund what you paid. This guarantee covers the service not working. It does not cover a change of mind.</p></details>
+    <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
+    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span></div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>
