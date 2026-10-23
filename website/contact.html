@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact | AnswerBay</title>
+<meta name="description" content="Contact AnswerBay with questions about pricing, setup or whether the AI receptionist fits your business.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a class="logo" href="index.html" aria-label="AnswerBay home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a5cff"/><stop offset=".6" stop-color="#00b8ff"/><stop offset="1" stop-color="#00d9a6"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lg)"/><path d="M9 21h3M15 14v14M21 10v22M27 15v12M33 19v4" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+      <span>AnswerBay</span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navList">&#9776;</button>
+    <ul id="navList">
+      <li><a href="index.html#how">How it works</a></li>
+      <li><a href="index.html#services">Services</a></li>
+      <li><a href="index.html#pricing">Pricing</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li class="only-mobile"><a href="demo.html">Book a demo</a></li>
+    </ul>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="demo.html">Book a demo</a><a class="btn btn-primary" href="trial.html">Start free trial</a></div>
+  </div>
+</header>
+
+<main id="top">
+
+<section class="page-hero">
+  <div class="wrap">
+    <p class="crumbs"><a href="index.html">AnswerBay</a> / Contact</p>
+    <h1 style="margin-top:6px">Contact <span class="grad-text">us</span></h1>
+    <p class="lead">Questions about pricing, how it works, or whether it fits your business? Send us a message and we will reply by email, usually within one business day.</p>
+  </div>
+</section>
+<section style="padding-top:20px">
+  <div class="wrap contact-grid">
+    <div class="card">
+      <h3>Other ways to reach us</h3>
+      <p><strong>Email:</strong> <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></p>
+      <p><strong>Hear a demo:</strong> <span class="demo-line">Demo line coming soon</span></p>
+      <p style="margin-top:18px"><a class="btn btn-primary" href="demo.html">Book a demo</a></p>
+      <p style="margin-top:10px"><a class="btn btn-ghost" href="trial.html">Start free trial</a></p>
+    </div>
+    <div>
+      <form class="card" id="contactForm" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+        <input type="hidden" name="form-name" value="contact">
+      <p class="hp"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+        <div class="row"><label for="cName">Your name</label><input id="cName" name="name" autocomplete="name" required></div>
+        <div class="row"><label for="cEmail">Your email</label><input id="cEmail" name="email" type="email" autocomplete="email" required></div>
+        <div class="row"><label for="cTopic">What is it about?</label><select id="cTopic" name="topic"><option>A general question</option><option>Pricing</option><option>Repair shops</option><option>Landscaping</option><option>Help with my account</option><option>Something else</option></select></div>
+        <div class="row"><label for="cMsg">Your message</label><textarea id="cMsg" name="message" required></textarea></div>
+        <button class="btn btn-primary btn-block" type="submit">Send message</button>
+        <p class="fine" data-note style="margin-top:10px">We will reply by email.</p>
+      </form>
+      <div class="success" data-success hidden><h3>Message sent</h3><p>Thanks. We will reply by email, usually within one business day.</p><p><a class="btn btn-ghost" href="index.html">Back to the home page</a></p></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap terms" id="terms">
+    <h3>Terms and policies</h3>
+    <details><summary>Free trial</summary><p>After setup, the first 50 minutes of calls on your receptionist are free. No payment is needed to start the trial. When the trial minutes are used, you choose a paid plan to continue. The one-time setup fee applies when you choose a plan, unless you are one of the first 3 founding customers.</p></details>
+    <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>
+    <details><summary>Cancellation and refunds</summary><p>You can cancel anytime. Your plan stays active until the end of the period you have already paid for, then it does not renew. We do not refund payments for time you have already been billed for. Yearly plans are paid up front for twelve months, and cancelling stops the renewal.</p></details>
+    <details><summary>Works-or-refund guarantee</summary><p>If we cannot get your receptionist working with your phone line and calendar after setup, we refund what you paid. This guarantee covers the service not working. It does not cover a change of mind.</p></details>
+    <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
+    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span></div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

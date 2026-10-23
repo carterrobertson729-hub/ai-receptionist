@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book a demo | AnswerBay</title>
+<meta name="description" content="Pick a day and time for a free 20-minute demo of the AnswerBay AI receptionist, by phone or video.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a class="logo" href="index.html" aria-label="AnswerBay home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a5cff"/><stop offset=".6" stop-color="#00b8ff"/><stop offset="1" stop-color="#00d9a6"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lg)"/><path d="M9 21h3M15 14v14M21 10v22M27 15v12M33 19v4" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+      <span>AnswerBay</span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navList">&#9776;</button>
+    <ul id="navList">
+      <li><a href="index.html#how">How it works</a></li>
+      <li><a href="index.html#services">Services</a></li>
+      <li><a href="index.html#pricing">Pricing</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li class="only-mobile"><a href="demo.html">Book a demo</a></li>
+    </ul>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="demo.html">Book a demo</a><a class="btn btn-primary" href="trial.html">Start free trial</a></div>
+  </div>
+</header>
+
+<main id="top">
+
+<section class="page-hero">
+  <div class="wrap">
+    <p class="crumbs"><a href="index.html">AnswerBay</a> / Book a demo</p>
+    <span class="eyebrow"><i></i> Free and no obligation</span>
+    <h1 style="margin-top:18px">Book a <span class="grad-text">demo</span></h1>
+    <p class="lead">See the receptionist work on a business like yours. Pick a day and time below, tell us a little about your business, and we will confirm by email.</p>
+    <div class="facts">
+      <div class="fact"><small>How long</small><b>20 minutes</b></div>
+      <div class="fact"><small>How</small><b>Phone or video</b></div>
+      <div class="fact"><small>Cost</small><b>Free</b></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:30px">
+  <div class="wrap">
+    <div class="section-head"><span class="eyebrow">What the call is like</span><h2 style="margin-top:14px">A relaxed 20 minutes, not a sales pitch</h2><p>You will hear the receptionist handle a call, see how it fits your business, and leave knowing exactly what it would take to get started.</p></div>
+    <ol class="timeline">
+      <li><div class="when">Minutes 0 to 3</div><div><h3>About your business</h3><p>A few quick questions: what you do, how your phones work today and how many calls you miss.</p></div></li>
+      <li><div class="when">Minutes 3 to 10</div><div><h3>Hear the receptionist</h3><p>We run a live example for a business like yours. You play the caller: ask for a price, book a time, ask for a person.</p></div></li>
+      <li><div class="when">Minutes 10 to 16</div><div><h3>Setup, pricing and the free trial</h3><p>How call forwarding works, what we set up for you, which plan fits, and how the 50 free minutes work.</p></div></li>
+      <li><div class="when">Minutes 16 to 20</div><div><h3>Your questions</h3><p>Anything you want to know. If it is not a fit, we will tell you honestly.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<section id="book" style="padding-top:30px">
+  <div class="wrap">
+    <div class="section-head"><span class="eyebrow">Pick a time</span><h2 style="margin-top:14px">Choose a day and a start time</h2></div>
+    <div class="book-grid">
+      <div class="card">
+        <div id="calendar" aria-label="Calendar"></div>
+        <div id="slots" style="margin-top:22px"></div>
+      </div>
+      <div>
+        <form class="card" id="demoForm" name="demo" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+          <input type="hidden" name="form-name" value="demo">
+      <p class="hp"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+          <input type="hidden" name="date" id="dDate"><input type="hidden" name="time" id="dTime"><input type="hidden" name="local_time" id="dLocal">
+          <h3>Your details</h3>
+          <div class="pick" id="pickSummary" aria-live="polite">No time picked yet.</div>
+          <div class="row"><label for="cName">Your name</label><input id="cName" name="name" autocomplete="name" required></div>
+          <div class="row"><label for="cEmail">Your email</label><input id="cEmail" name="email" type="email" autocomplete="email" required></div>
+          <div class="row"><label for="cPhone">Phone number</label><input id="cPhone" name="phone" type="tel" autocomplete="tel"></div>
+          <div class="row"><label for="cBiz">Business name</label><input id="cBiz" name="business" autocomplete="organization"></div>
+          <div class="row"><label for="cType">What type of business?</label><select id="cType" name="business_type"><option>Barbershop or salon</option><option>Plumbing or trades</option><option>Repair shop</option><option>Landscaping</option><option>Something else</option></select></div>
+          <div class="row"><label for="cFormat">How would you like to meet?</label><select id="cFormat" name="format"><option>Phone call</option><option>Video call</option></select></div>
+          <div class="row"><label for="cMsg">Anything we should know?</label><textarea id="cMsg" name="notes"></textarea></div>
+          <button class="btn btn-primary btn-block" id="demoSubmit" type="submit" disabled>Request this time</button>
+          <p class="fine" data-note style="margin-top:10px">Your request is not final until we confirm it by email, usually within one business day.</p>
+        </form>
+        <div class="success" id="demoDone" hidden>
+          <h3>Request sent</h3>
+          <p data-when></p>
+          <p>We will email you within one business day to confirm the time and send the call details. If that time does not work, we will suggest another.</p>
+          <p><a class="btn btn-ghost" href="index.html">Back to the home page</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:30px">
+  <div class="wrap">
+    <div class="prep">
+      <div class="card"><h3>Helpful to have ready</h3><ul class="ticks"><li>Your hours and the services you offer</li><li>Your prices, if you want the receptionist to share them</li><li>Which booking tool or calendar you use today</li><li>Who your phone company is, and who has the login</li></ul></div>
+      <div class="card"><h3>After the call</h3><ul class="ticks"><li>You get a short email with what we covered</li><li>You decide: start the free trial, pick a plan, or walk away</li><li>No pressure and no contract</li><li>The first 50 minutes of calls are free after setup</li></ul></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap terms" id="terms">
+    <h3>Terms and policies</h3>
+    <details><summary>Free trial</summary><p>After setup, the first 50 minutes of calls on your receptionist are free. No payment is needed to start the trial. When the trial minutes are used, you choose a paid plan to continue. The one-time setup fee applies when you choose a plan, unless you are one of the first 3 founding customers.</p></details>
+    <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>
+    <details><summary>Cancellation and refunds</summary><p>You can cancel anytime. Your plan stays active until the end of the period you have already paid for, then it does not renew. We do not refund payments for time you have already been billed for. Yearly plans are paid up front for twelve months, and cancelling stops the renewal.</p></details>
+    <details><summary>Works-or-refund guarantee</summary><p>If we cannot get your receptionist working with your phone line and calendar after setup, we refund what you paid. This guarantee covers the service not working. It does not cover a change of mind.</p></details>
+    <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
+    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span></div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+<script src="demo.js"></script>
+</body>
+</html>

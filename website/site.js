@@ -1,6 +1,7 @@
 /* ===== Settings you edit ===== */
 var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
-// Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the button emails you instead.
+// Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
+// visitor reserve the plan and you send them a payment link.
 var CHECKOUT_LINKS = {
   starter:  { monthly: '', yearly: '' },
   standard: { monthly: '', yearly: '' },
@@ -17,14 +18,20 @@ var PLANS = [
   { id:'high',     name:'High volume', monthly:329, minutes:1200, calls:480, who:'High call volume or main-line answering',
     feats:['1,200 minutes a month','Everything in Plus','Built for answering every call'] }
 ];
+var ADDONS = [
+  { id:'spanish', name:'Spanish', monthly:15, setup:49, text:'Switches to Spanish when the caller speaks it.' },
+  { id:'main',    name:'Main line + transfer', monthly:25, setup:49, soon:true, text:'Answers every call and passes calls to your staff when asked.' },
+  { id:'number',  name:'Extra number', monthly:10, setup:0, text:'A second line for another location or an ad.' }
+];
+var SETUP_FEE = 99;
 var DISCOUNT = 0.10; // yearly plans are 10% off, rounded down to a whole dollar
+var INDUSTRIES = { barbershop: 'Barbershop or salon', trades: 'Plumbing or trades', repair: 'Repair shop', landscaping: 'Landscaping' };
 
 /* ===== Page logic ===== */
 function $(id){ return document.getElementById(id); }
 function money(n){ return '$' + (Math.round(n*100)%100===0 ? Math.round(n).toLocaleString('en-US') : n.toFixed(2)); }
-var cycle = 'monthly';
-
 function planById(id){ return PLANS.filter(function(p){ return p.id === id; })[0]; }
+var cycle = 'monthly';
 
 function renderPlans(){
   var html = '';
@@ -37,18 +44,9 @@ function renderPlans(){
       '<div class="billed">' + (cycle === 'yearly' ? 'Billed ' + money(yearTotal) + ' per year (you save ' + money(p.monthly*12 - yearTotal) + ')' : 'Billed monthly') + '</div>' +
       '<div class="mins"><b>' + p.minutes.toLocaleString('en-US') + ' minutes</b><small>About ' + p.calls + ' calls a month</small></div>' +
       '<ul class="ticks">' + p.feats.map(function(f){ return '<li>' + f + '</li>'; }).join('') + '</ul>' +
-      '<a class="btn ' + (p.pop ? 'btn-primary' : 'btn-ghost') + ' btn-block" data-plan="' + p.id + '" href="#">Choose ' + p.name + '</a></article>';
+      '<a class="btn ' + (p.pop ? 'btn-primary' : 'btn-ghost') + ' btn-block" href="checkout.html?plan=' + p.id + '&cycle=' + cycle + '">Choose ' + p.name + '</a></article>';
   });
   $('plans').innerHTML = html;
-  document.querySelectorAll('[data-plan]').forEach(function(a){
-    var id = a.getAttribute('data-plan'), link = CHECKOUT_LINKS[id] && CHECKOUT_LINKS[id][cycle];
-    if (link) { a.href = link; a.rel = 'noopener'; }
-    else {
-      var plan = planById(id);
-      a.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent('AnswerBay ' + plan.name + ' (' + cycle + ')') +
-        '&body=' + encodeURIComponent('Hi, I would like to start the ' + plan.name + ' plan, billed ' + cycle + '.\n\nBusiness name:\nType of business:\nPhone number to forward:\n');
-    }
-  });
 }
 function setCycle(c){
   cycle = c;
@@ -89,28 +87,37 @@ if (menuBtn && navList) {
   navList.addEventListener('click', function(){ navList.classList.remove('open'); menuBtn.setAttribute('aria-expanded', false); });
 }
 
-// trial and demo buttons pre-select the matching choice in the contact form
-var want = $('cWant');
-if (want) {
-  document.querySelectorAll('[data-trial]').forEach(function(a){ a.addEventListener('click', function(){ want.value = 'trial'; }); });
-  document.querySelectorAll('[data-demo]').forEach(function(a){ a.addEventListener('click', function(){ want.value = 'demo'; }); });
-}
-// an industry page pre-selects its business type
-var industry = document.body.getAttribute('data-industry');
+// pre-select the business type: from the page (data-industry) or the link (?for=barbershop)
+var query = new URLSearchParams(window.location.search);
+var industry = document.body.getAttribute('data-industry') || INDUSTRIES[query.get('for')] || '';
 if (industry && $('cType')) { $('cType').value = industry; }
+if (query.get('topic') && $('cTopic')) {
+  var topics = { repair: 'Repair shops', landscaping: 'Landscaping' };
+  if (topics[query.get('topic')]) $('cTopic').value = topics[query.get('topic')];
+}
 
 // duplicate the moving banners so they loop smoothly
 document.querySelectorAll('.track[data-dup]').forEach(function(t){ t.innerHTML += t.innerHTML; });
 
-// contact form opens the visitor's email app
-var form = $('contactForm');
-if (form) form.addEventListener('submit', function(e){
-  e.preventDefault();
-  var f = function(id){ return $(id).value.trim(); };
-  if (!f('cName') || !/.+@.+\..+/.test(f('cEmail'))) { $('formNote').textContent = 'Please enter your name and a valid email.'; return; }
-  var wantText = $('cWant').selectedOptions[0].text;
-  var page = industry ? '\nSent from the ' + industry + ' page' : '';
-  var body = 'Name: ' + f('cName') + '\nBusiness: ' + f('cBiz') + '\nEmail: ' + f('cEmail') + '\nType: ' + f('cType') + '\nWould like: ' + wantText + page + '\n\n' + f('cMsg');
-  window.location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent('AnswerBay: ' + wantText + (industry ? ' (' + industry + ')' : '')) + '&body=' + encodeURIComponent(body);
+// Forms are collected by Netlify Forms (data-netlify). Nothing opens an email app.
+function sendForm(form, onDone){
+  var note = form.querySelector('[data-note]');
+  function fail(){ if (note) note.innerHTML = 'Sorry, that did not send. Please email us at <a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a> and we will help right away.'; }
+  var body = new URLSearchParams(new FormData(form)).toString();
+  var btn = form.querySelector('button[type="submit"]'); if (btn) btn.disabled = true;
+  fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body })
+    .then(function(r){ if (!r.ok) throw new Error('bad'); onDone(); })
+    .catch(function(){ fail(); if (btn) btn.disabled = false; });
+}
+document.querySelectorAll('form[data-netlify]').forEach(function(form){
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if (form.hasAttribute('data-custom')) return;   // the page script (demo, checkout) handles these
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    sendForm(form, function(){
+      form.hidden = true;
+      var ok = document.querySelector('[data-success]'); if (ok) { ok.hidden = false; ok.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    });
+  });
 });
 if ($('yr')) $('yr').textContent = new Date().getFullYear();

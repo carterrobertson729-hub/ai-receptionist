@@ -24,10 +24,10 @@
       <li><a href="index.html#services">Services</a></li>
       <li><a href="index.html#pricing">Pricing</a></li>
       <li><a href="index.html#faq">FAQ</a></li>
-      <li><a href="#contact">Contact</a></li>
-      <li class="only-mobile"><a href="#contact" data-demo>Book a demo</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li class="only-mobile"><a href="demo.html">Book a demo</a></li>
     </ul>
-    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="#contact" data-demo>Book a demo</a><a class="btn btn-primary" href="#contact" data-trial>Start free trial</a></div>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="demo.html">Book a demo</a><a class="btn btn-primary" href="trial.html">Start free trial</a></div>
   </div>
 </header>
 
@@ -41,8 +41,8 @@
       <h1 style="margin-top:18px">Never miss the call that <span class="grad-text">pays the bill.</span></h1>
       <p class="lead">You are under a sink or asleep, and a customer is calling the next plumber. AnswerBay answers, sorts emergencies from routine jobs, books visits by job type, and tells you what you need to know.</p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="#demo" data-demo>Book a demo</a>
-        <a class="btn btn-ghost" href="#contact" data-trial>Start free trial</a>
+        <a class="btn btn-primary" href="demo.html?for=trades">Book a demo</a>
+        <a class="btn btn-ghost" href="trial.html?for=trades">Start free trial</a>
         <a class="btn btn-ghost" href="index.html#pricing">See pricing</a>
       </div>
       <p class="hero-note">Keep your current number. Forward only the calls you miss, or all of them.</p>
@@ -134,39 +134,16 @@
   <div class="wrap">
     <div class="cta-band">
       <div><h3>Hear the plumbing receptionist</h3><p>Call the demo line and describe a problem, or book a short call and we will show you.</p></div>
-      <div class="cta-row"><span class="demo-line">Plumbing demo line: coming soon</span><a class="btn btn-primary" href="#contact" data-demo>Book a demo</a></div>
+      <div class="cta-row"><span class="demo-line">Plumbing demo line: coming soon</span><a class="btn btn-primary" href="demo.html?for=trades">Book a demo</a><a class="btn btn-ghost" href="trial.html?for=trades">Start free trial</a></div>
     </div>
   </div>
 </section>
 
-<section id="contact" style="padding-top:40px">
-  <div class="wrap contact-grid">
-    <div>
-      <span class="eyebrow">Contact</span>
-      <h2 style="margin-top:14px">Book a demo or start your free trial</h2>
-      <p style="color:var(--muted)">Tell us about your business and we will reply by email, usually within one business day.</p>
-      <p><strong>Email:</strong> <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></p>
-      <p><strong>Hear a demo:</strong> <span class="demo-line">Demo line coming soon</span></p>
-    </div>
-    <form class="card" id="contactForm" novalidate>
-      <div class="row"><label for="cName">Your name</label><input id="cName" autocomplete="name" required></div>
-      <div class="row"><label for="cBiz">Business name</label><input id="cBiz" autocomplete="organization"></div>
-      <div class="row"><label for="cEmail">Your email</label><input id="cEmail" type="email" autocomplete="email" required></div>
-      <div class="row"><label for="cType">What type of business?</label>
-        <select id="cType"><option>Barbershop or salon</option><option>Plumbing or trades</option><option>Repair shop</option><option>Landscaping</option><option>Something else</option></select></div>
-      <div class="row"><label for="cWant">What would you like?</label>
-        <select id="cWant"><option value="trial">Start the free trial</option><option value="question">Ask a question</option><option value="demo" selected>See a demo</option></select></div>
-      <div class="row"><label for="cMsg">Anything else?</label><textarea id="cMsg"></textarea></div>
-      <button class="btn btn-primary btn-block" type="submit">Send</button>
-      <p class="fine" id="formNote" style="margin-top:10px">This opens your email app with your message ready to send.</p>
-    </form>
-  </div>
-</section>
 
 </main>
 
 <footer>
-  <div class="wrap terms">
+  <div class="wrap terms" id="terms">
     <h3>Terms and policies</h3>
     <details><summary>Free trial</summary><p>After setup, the first 50 minutes of calls on your receptionist are free. No payment is needed to start the trial. When the trial minutes are used, you choose a paid plan to continue. The one-time setup fee applies when you choose a plan, unless you are one of the first 3 founding customers.</p></details>
     <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>

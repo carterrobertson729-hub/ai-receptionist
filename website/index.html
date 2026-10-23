@@ -24,10 +24,10 @@
       <li><a href="#services">Services</a></li>
       <li><a href="#pricing">Pricing</a></li>
       <li><a href="#faq">FAQ</a></li>
-      <li><a href="#contact">Contact</a></li>
-      <li class="only-mobile"><a href="#contact" data-demo>Book a demo</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li class="only-mobile"><a href="demo.html">Book a demo</a></li>
     </ul>
-    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="#contact" data-demo>Book a demo</a><a class="btn btn-primary" href="#contact" data-trial>Start free trial</a></div>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="demo.html">Book a demo</a><a class="btn btn-primary" href="trial.html">Start free trial</a></div>
   </div>
 </header>
 
@@ -41,8 +41,8 @@
       <h1 style="margin-top:18px">Never miss a call.<br><span class="grad-text">Never lose a booking.</span></h1>
       <p class="lead">AnswerBay is an AI receptionist for local businesses. It answers your calls day and night, books appointments into your calendar, and sends you a summary of every call. We set everything up for you.</p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="#contact" data-trial>Start free trial</a>
-        <a class="btn btn-ghost" href="#contact" data-demo>Book a demo</a>
+        <a class="btn btn-primary" href="trial.html">Start free trial</a>
+        <a class="btn btn-ghost" href="demo.html">Book a demo</a>
         <a class="btn btn-ghost" href="#pricing">See pricing</a>
       </div>
       <p class="hero-note">Keep your current phone number. Cancel anytime.</p>
@@ -134,11 +134,11 @@
     </div>
 
     <div class="panel" id="p-repair" role="tabpanel" aria-labelledby="t-repair" hidden>
-      <div class="card"><h3>Repair shops: coming soon</h3><p>We are building repair shop setups (drop-offs, estimates, vehicle or device details). Tell us what you repair and we will tell you what we can do now.</p><p style="margin-top:14px"><a class="btn btn-ghost" href="#contact">Ask about repair shops</a></p></div>
+      <div class="card"><h3>Repair shops: coming soon</h3><p>We are building repair shop setups (drop-offs, estimates, vehicle or device details). Tell us what you repair and we will tell you what we can do now.</p><p style="margin-top:14px"><a class="btn btn-ghost" href="contact.html?topic=repair">Ask about repair shops</a></p></div>
     </div>
 
     <div class="panel" id="p-land" role="tabpanel" aria-labelledby="t-land" hidden>
-      <div class="card"><h3>Landscaping: coming soon</h3><p>Estimate requests, site visits and callbacks. Tell us how you take jobs today and we will let you know when your setup is ready.</p><p style="margin-top:14px"><a class="btn btn-ghost" href="#contact">Ask about landscaping</a></p></div>
+      <div class="card"><h3>Landscaping: coming soon</h3><p>Estimate requests, site visits and callbacks. Tell us how you take jobs today and we will let you know when your setup is ready.</p><p style="margin-top:14px"><a class="btn btn-ghost" href="contact.html?topic=landscaping">Ask about landscaping</a></p></div>
     </div>
   </div>
 </section>
@@ -164,7 +164,7 @@
 
     <div class="founding">
       <p><strong>Founding customer offer:</strong> the first 3 businesses get setup free and keep their monthly price for 12 months.</p>
-      <a class="btn btn-primary" href="#contact" data-trial>Claim a spot</a>
+      <a class="btn btn-primary" href="trial.html">Claim a spot</a>
     </div>
 
     <h3 style="margin:46px 0 16px">Add-ons</h3>
@@ -209,33 +209,18 @@
 
 <!-- CONTACT -->
 <section id="contact">
-  <div class="wrap contact-grid">
-    <div>
-      <span class="eyebrow">Contact</span>
-      <h2 style="margin-top:14px">Start your free trial or ask a question</h2>
-      <p style="color:var(--muted)">Tell us about your business and we will reply by email, usually within one business day.</p>
-      <p><strong>Email:</strong> <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></p>
-      <p><strong>Hear a demo:</strong> <span class="demo-line">Demo line coming soon</span></p>
+  <div class="wrap">
+    <div class="cta-band">
+      <div><h3>Ready to try it?</h3><p>Book a 20-minute demo, start the free trial, or send us a question. Email: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></p></div>
+      <div class="cta-row"><a class="btn btn-primary" href="demo.html">Book a demo</a><a class="btn btn-ghost" href="trial.html">Start free trial</a><a class="btn btn-ghost" href="contact.html">Contact us</a></div>
     </div>
-    <form class="card" id="contactForm" novalidate>
-      <div class="row"><label for="cName">Your name</label><input id="cName" autocomplete="name" required></div>
-      <div class="row"><label for="cBiz">Business name</label><input id="cBiz" autocomplete="organization"></div>
-      <div class="row"><label for="cEmail">Your email</label><input id="cEmail" type="email" autocomplete="email" required></div>
-      <div class="row"><label for="cType">What type of business?</label>
-        <select id="cType"><option>Barbershop or salon</option><option>Plumbing or trades</option><option>Repair shop</option><option>Landscaping</option><option>Something else</option></select></div>
-      <div class="row"><label for="cWant">What would you like?</label>
-        <select id="cWant"><option value="trial">Start the free trial</option><option value="question">Ask a question</option><option value="demo">See a demo</option></select></div>
-      <div class="row"><label for="cMsg">Anything else?</label><textarea id="cMsg"></textarea></div>
-      <button class="btn btn-primary btn-block" type="submit">Send</button>
-      <p class="fine" id="formNote" style="margin-top:10px">This opens your email app with your message ready to send.</p>
-    </form>
   </div>
 </section>
 
 </main>
 
 <footer>
-  <div class="wrap terms">
+  <div class="wrap terms" id="terms">
     <h3>Terms and policies</h3>
     <details><summary>Free trial</summary><p>After setup, the first 50 minutes of calls on your receptionist are free. No payment is needed to start the trial. When the trial minutes are used, you choose a paid plan to continue. The one-time setup fee applies when you choose a plan, unless you are one of the first 3 founding customers.</p></details>
     <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>

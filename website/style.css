@@ -208,3 +208,54 @@ footer{padding:50px 0 60px;border-top:1px solid var(--line);background:rgba(255,
 .cta-row{display:flex;flex-wrap:wrap;gap:12px}
 .note-box{margin-top:18px;padding:14px 18px;border-radius:14px;background:rgba(255,255,255,.75);border:1px solid var(--line);color:var(--muted);font-size:.95rem}
 .plans.fit{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+
+/* sub pages: demo, trial, contact, checkout */
+.page-hero{padding:56px 0 24px}
+.page-hero p.lead{font-size:1.15rem;color:var(--muted);max-width:640px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:26px 0 8px}
+@media(max-width:700px){.facts{grid-template-columns:1fr}}
+.fact{background:var(--card);border:1px solid rgba(255,255,255,.9);border-radius:18px;padding:18px 20px;box-shadow:0 10px 30px -20px rgba(50,60,170,.4)}
+.fact small{display:block;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:.72rem}
+.fact b{font:700 1.5rem var(--head)}
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.timeline li{display:grid;grid-template-columns:92px 1fr;gap:14px;background:var(--card);border:1px solid rgba(255,255,255,.9);border-radius:16px;padding:16px 18px}
+.timeline .when{font:700 .95rem var(--head);color:#3a3fb0}
+.timeline p{margin:0;color:var(--muted)}
+.timeline h3{margin:0 0 2px;font-size:1.05rem}
+@media(max-width:520px){.timeline li{grid-template-columns:1fr;gap:4px}}
+.book-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:start}
+@media(max-width:900px){.book-grid{grid-template-columns:1fr}}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-head h3{margin:0}
+.cal-nav{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:1.4rem;cursor:pointer}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{text-align:center;font-size:.78rem;font-weight:700;color:var(--muted);padding:4px 0}
+.cal-day{aspect-ratio:1;min-height:42px;border-radius:12px;border:1px solid var(--line);background:#fff;font:600 .98rem var(--body);cursor:pointer;color:var(--ink)}
+.cal-day:hover:not(:disabled){border-color:var(--a1);background:#f1f0ff}
+.cal-day:disabled{background:transparent;border-color:transparent;color:#aab0cf;cursor:not-allowed}
+.cal-day.today{box-shadow:inset 0 0 0 2px rgba(0,184,255,.5)}
+.cal-day.sel{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px -8px rgba(80,90,255,.8)}
+.slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.slot{min-height:44px;border-radius:12px;border:1px solid var(--line);background:#fff;font:600 .95rem var(--body);cursor:pointer}
+.slot:hover{border-color:var(--a1);background:#f1f0ff}
+.slot.sel{background:var(--grad);color:#fff;border-color:transparent}
+.pick{padding:14px 16px;border-radius:14px;background:rgba(106,92,255,.08);border:1px solid rgba(106,92,255,.2);margin:6px 0 18px}
+.success{padding:26px;border-radius:20px;background:linear-gradient(120deg,rgba(0,217,166,.14),rgba(0,184,255,.12));border:1px solid rgba(0,217,166,.35)}
+.success h3{margin-bottom:6px}
+.prep{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:700px){.prep{grid-template-columns:1fr}}
+.hp{position:absolute;left:-9999px;height:0;overflow:hidden}
+.co-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:24px;align-items:start}
+@media(max-width:900px){.co-grid{grid-template-columns:1fr}}
+.co-sum{position:sticky;top:90px}
+.co-sum .line{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:.96rem}
+.co-sum .total{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:14px 0 4px}
+.co-sum .total b{font:700 2rem var(--head)}
+.addon{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:10px;cursor:pointer}
+.addon input{width:22px;height:22px;min-height:0;margin-top:3px;flex:none}
+.addon small{color:var(--muted)}
+.btn.disabled{opacity:.5;cursor:not-allowed}
+.agree{display:flex;gap:10px;align-items:flex-start;margin:14px 0}
+.agree input{width:22px;height:22px;min-height:0;flex:none;margin-top:3px}
+.lock{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:.9rem;margin-top:10px}
+[hidden]{display:none!important}
