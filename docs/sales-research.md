@@ -45,3 +45,10 @@ Everything here comes from web searches, mostly vendor blogs that sell answering
 - Features we do not have yet: texting the caller a link or details during the call, replying to texts, SMS alerts (all need Twilio); linked team accounts; transfer contacts (5 on Business, 20 on top plan).
 - Their low prices come from self-serve setup and templates, not from limited features. Ours is done-for-you, per-business booking rules (several barbers at once, combos, cancel/reschedule), no hard stop at the limit.
 - Lesson to copy: sell by industry with an industry-specific script and page (barbershops, repair shops, plumbers), not "AI receptionist for anyone".
+
+## Competitor: Boulevard (joinblvd.com) and its AI receptionist "Beau" (2026-10-23, from web search; Boulevard's own site was not reachable)
+
+- Boulevard is salon / barbershop management software (booking, payments, client records, texts, email marketing). Plans seen on its pricing page: Essentials $143/mo (1 location, up to 5 providers), Premier $234/mo (was $293), Prestige $328/mo (was $410), per location, with "normally" prices crossed out.
+- It now has its own AI phone receptionist, "Beau": answers every call, helps clients book, captures leads 24/7, built into the platform (Boulevard contact page and a job posting). One third-party comparison lists about $125 per location with 200 minutes included, then $0.60 per minute, requires a Boulevard subscription, and may send booking links and take messages rather than book directly. UNVERIFIED: check Boulevard directly.
+- Meaning for us: a real competitor only for shops already on Boulevard. We work with Square, Google Calendar or anything else, and are set up per shop.
+- Idea raised by Carter: emailing/texting clients "it's been a while". Decided NOT to build now: texts need consent and Twilio, it needs the client list from the booking software, the shop's software likely already does it, and outbound is outside the first version. Possible later upsell after the Square build, after checking the legal rules.
