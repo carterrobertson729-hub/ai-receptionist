@@ -68,6 +68,9 @@ header.site{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-
   .nav ul.open{display:flex}
   .nav .btn-nav{display:none}
 }
+.nav-cta{display:flex;gap:10px}
+.only-mobile{display:none}
+@media(max-width:900px){.only-mobile{display:block}}
 
 /* hero */
 .hero{padding:70px 0 40px}
@@ -212,8 +215,9 @@ footer{padding:50px 0 60px;border-top:1px solid var(--line);background:rgba(255,
       <li><a href="#pricing">Pricing</a></li>
       <li><a href="#faq">FAQ</a></li>
       <li><a href="#contact">Contact</a></li>
+      <li class="only-mobile"><a href="#contact" data-demo>Book a demo</a></li>
     </ul>
-    <a class="btn btn-primary btn-nav" href="#contact" data-trial>Start free trial</a>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="#contact" data-demo>Book a demo</a><a class="btn btn-primary" href="#contact" data-trial>Start free trial</a></div>
   </div>
 </header>
 
@@ -228,6 +232,7 @@ footer{padding:50px 0 60px;border-top:1px solid var(--line);background:rgba(255,
       <p class="lead">AnswerBay is an AI receptionist for local businesses. It answers your calls day and night, books appointments into your calendar, and sends you a summary of every call. We set everything up for you.</p>
       <div class="hero-cta">
         <a class="btn btn-primary" href="#contact" data-trial>Start free trial</a>
+        <a class="btn btn-ghost" href="#contact" data-demo>Book a demo</a>
         <a class="btn btn-ghost" href="#pricing">See pricing</a>
       </div>
       <p class="hero-note">Keep your current phone number. Cancel anytime.</p>
@@ -458,8 +463,8 @@ var cycle = 'monthly';
 function renderPlans(){
   var html = '';
   PLANS.forEach(function(p){
-    var perMonth = cycle === 'yearly' ? p.monthly * (1 - DISCOUNT) : p.monthly;
-    var yearTotal = p.monthly * 12 * (1 - DISCOUNT);
+    var yearTotal = Math.floor(p.monthly * 12 * (1 - DISCOUNT));       // yearly price rounded down to a whole dollar
+    var perMonth = cycle === 'yearly' ? Math.floor(p.monthly * (1 - DISCOUNT)) : p.monthly;
     html += '<article class="plan' + (p.pop ? ' pop' : '') + '">' + (p.pop ? '<div class="pop-badge">Most popular</div>' : '') +
       '<h3>' + p.name + '</h3><p class="for">' + p.who + '</p>' +
       '<div class="price"><b>' + money(perMonth) + '</b><span>/ month</span></div>' +
@@ -505,6 +510,8 @@ navList.addEventListener('click', function(){ navList.classList.remove('open'); 
 
 // trial buttons pre-select "Start the free trial"
 document.querySelectorAll('[data-trial]').forEach(function(a){ a.addEventListener('click', function(){ document.getElementById('cWant').value = 'trial'; }); });
+
+document.querySelectorAll('[data-demo]').forEach(function(a){ a.addEventListener('click', function(){ document.getElementById('cWant').value = 'demo'; }); });
 
 // duplicate the moving banners so they loop smoothly
 document.querySelectorAll('.track[data-dup]').forEach(function(t){ t.innerHTML += t.innerHTML; });
