@@ -37,3 +37,11 @@ Everything here comes from web searches, mostly vendor blogs that sell answering
 - State call-recording consent laws for target states; AI disclosure rules.
 - Whether Retell, n8n and Twilio terms allow resale (ask in writing).
 - Carter's own price, setup fee, and minutes tiers.
+
+## Competitor check: ai-receptionist.com realtor page (2026-10-23, from Carter's copy of their subscription page)
+
+- NOT missed-calls-only. They say: "Forward your cell or office line, or only the calls you miss" and "Get a new number for a sign or an ad if you prefer". So they support both modes (answering every call on a dedicated number, or conditional forwarding for missed calls only).
+- They sell by industry: separate pages and scripts for buyer calls, seller calls, rentals and property management (price questions, open house times, showing bookings, maintenance requests, urgent alerts on Starter and up, answers in the tenant's language).
+- Features we do not have yet: texting the caller a link or details during the call, replying to texts, SMS alerts (all need Twilio); linked team accounts; transfer contacts (5 on Business, 20 on top plan).
+- Their low prices come from self-serve setup and templates, not from limited features. Ours is done-for-you, per-business booking rules (several barbers at once, combos, cancel/reschedule), no hard stop at the limit.
+- Lesson to copy: sell by industry with an industry-specific script and page (barbershops, repair shops, plumbers), not "AI receptionist for anyone".
