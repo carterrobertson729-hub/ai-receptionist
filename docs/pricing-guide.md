@@ -76,3 +76,16 @@ Setup one time: standard $199 | Spanish +$99 | main line with transfer +$99 | co
 First 3 customers: setup waived for a testimonial; monthly price locked 12 months. Raise prices for new customers after 3-5 customers and a month of real data.
 Example (Plus + Spanish + main line): $379/month, setup $397, first month $776.
 Unverified: transfer billing, phone vs web call cost, competitor prices, n8n limits at volume.
+
+---
+
+## Overage and prepaid minute packs (decided by Carter 2026-10-23)
+
+- Overage AND optional prepaid minute packs: $0.45 per minute (replaces the $0.50 and $0.60 figures above). Your cost is about $0.17, so profit is about $0.28 a minute.
+- Reason: overage must cost more per minute than upgrading. Cheapest upgrade steps at the launch prices are about $0.40 (Starter to Standard), $0.32 (Standard to Plus), $0.31 (Plus to High volume). At $0.45, upgrading is always cheaper than staying small and paying overage. Do NOT lower overage to the competitor's $0.25: that creates a loophole.
+- If plan prices are ever lowered, keep overage at about 1.3x the cheapest upgrade step.
+- The AI never stops answering at the limit (a competitor plays "line unavailable" when out of minutes; that is our selling point).
+- Agreement rule: a shop that goes over its minutes 2 months in a row is moved to the next plan.
+- Prepaid packs are optional, never expire, and are tracked by hand for the first customers (automatic use needs a payment tool such as Stripe, not set up).
+- Open: shop-facing 80% and 100% email is not built yet (today only Carter is emailed).
+- Unverified: whether the competitor's AI is missed-calls-only; Carter is checking.
