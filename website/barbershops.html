@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI receptionist for barbershops | AnswerBay</title>
+<meta name="description" content="AnswerBay answers your barbershop's calls, books haircuts and combos by service, notes the barber a client asks for, and sends you a summary. Your first 50 minutes are free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-industry="Barbershop or salon">
+
+<header class="site">
+  <div class="wrap nav">
+    <a class="logo" href="index.html" aria-label="AnswerBay home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a5cff"/><stop offset=".6" stop-color="#00b8ff"/><stop offset="1" stop-color="#00d9a6"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lg)"/><path d="M9 21h3M15 14v14M21 10v22M27 15v12M33 19v4" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+      <span>AnswerBay</span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navList">&#9776;</button>
+    <ul id="navList">
+      <li><a href="index.html#how">How it works</a></li>
+      <li><a href="index.html#services">Services</a></li>
+      <li><a href="index.html#pricing">Pricing</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li class="only-mobile"><a href="#contact" data-demo>Book a demo</a></li>
+    </ul>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="#contact" data-demo>Book a demo</a><a class="btn btn-primary" href="#contact" data-trial>Start free trial</a></div>
+  </div>
+</header>
+
+<main id="top">
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="crumbs"><a href="index.html">AnswerBay</a> / Barbershops and salons</p>
+      <span class="eyebrow"><i></i> Your first 50 minutes are free</span>
+      <h1 style="margin-top:18px">The receptionist for a <span class="grad-text">busy barbershop.</span></h1>
+      <p class="lead">When you are mid-fade, the phone keeps ringing. AnswerBay picks up, books the right service with the right amount of time, notes who the client wants, and sends you the details. We set it up with your services, prices and hours.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#demo" data-demo>Book a demo</a>
+        <a class="btn btn-ghost" href="#contact" data-trial>Start free trial</a>
+        <a class="btn btn-ghost" href="index.html#pricing">See pricing</a>
+      </div>
+      <p class="hero-note">Keep your current number. Cancel anytime.</p>
+    </div>
+    <div class="call-card" aria-label="Example call">
+      <div class="call-top">
+        <div class="live"><i></i> Incoming call</div>
+        <div class="wave" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
+      </div>
+      <div class="bubble ai"><small>AnswerBay</small>Thanks for calling. How can I help you today?</div>
+      <div class="bubble them"><small>Caller</small>Hi, I need a haircut and a beard trim Saturday, with Marcus if he's in.</div>
+      <div class="bubble ai"><small>AnswerBay</small>Sure. I'll note Marcus as your request and the shop will do its best. Saturday morning or afternoon?</div>
+      <div class="bubble them"><small>Caller</small>Morning.</div>
+      <div class="bubble ai"><small>AnswerBay</small>I have 9:00, 9:45 and 10:30 open. Which works for you?</div>
+      <div class="chips"><span class="chip"><span class="ok">&#10003;</span> Booked: Sat 9:00</span><span class="chip"><span class="ok">&#10003;</span> Haircut + beard trim</span><span class="chip"><span class="ok">&#10003;</span> Barber request noted</span><span class="chip"><span class="ok">&#10003;</span> Summary sent</span></div>
+      <p class="example-tag">Example conversation for illustration.</p>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="track" data-dup><span class="tag hot">Books by service</span><span class="tag">Haircut + beard combos</span><span class="tag">Barber requests</span><span class="tag">Several barbers at once</span><span class="tag hot">Walk-in and hours questions</span><span class="tag">Cancel and reschedule</span><span class="tag">Weekly report</span><span class="tag">Spanish available</span></div>
+</div>
+
+<section id="handles">
+  <div class="wrap">
+    <div class="section-head"><span class="eyebrow">What it handles</span><h2 style="margin-top:14px">Built for how a barbershop takes calls</h2><p>Your services, prices, hours and rules go into the setup, so callers get your answers, not generic ones.</p></div>
+    <div class="grid g3">
+<div class="card"><h3>Books by service</h3><p>Haircuts, fades, shaves and more, each with its own length. Combos like a haircut plus a beard trim add up to the right amount of time.</p></div>
+<div class="card"><h3>Notes the barber a client asks for</h3><p>It records the barber the client wants and passes it on as a request. It never promises a barber, because your shop makes that call.</p></div>
+<div class="card"><h3>Handles several barbers at once</h3><p>You set how many appointments can run at the same time, so it never books more than your chairs can handle.</p></div>
+<div class="card"><h3>Parents and kids</h3><p>A parent can book a child and themselves in the same call, under one phone number, with the right service for each.</p></div>
+<div class="card"><h3>Answers the usual questions</h3><p>Prices, hours, address, walk-ins and card payments, only from what you gave it. It never takes card numbers over the phone.</p></div>
+<div class="card"><h3>Cancels, reschedules and checks</h3><p>Callers can change their appointment by phone after giving their name and phone number, and your calendar updates.</p></div>
+    </div>
+    <div class="note-box"><strong>Good to know:</strong> today it books into Google Calendar. If your shop uses Square, Boulevard or another booking app, tell us. Those connections are on our roadmap, and we will tell you honestly where they stand. Text-message reminders are not available yet.</div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow">What you see</span>
+      <h2 style="margin-top:14px">A clear summary after calls that matter</h2>
+      <p style="color:var(--muted)">You do not have to listen to recordings. After a booking or a message you get an email with the who, what and when, and every call lands in a call log.</p>
+      <ul class="ticks"><li>Email summary for bookings and messages</li><li>A call log you can open any time</li><li>A weekly report: calls, bookings, after-hours calls and minutes</li><li>Alerts at 80% and 100% of your minutes</li></ul>
+    </div>
+    <div class="email-mock" aria-label="Example email">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="body">
+        <div class="subject">Your Shop: Booked: Sam C. - Saturday at 9:00 AM</div>
+        <dl><dt>Result</dt><dd>Appointment booked for Saturday at 9:00 AM</dd><dt>Client</dt><dd>Sam C.</dd><dt>Phone</dt><dd>(555) 010-0142</dd><dt>Request</dt><dd>Men's Haircut + Beard Trim</dd><dt>Summary</dt><dd>Caller asked for Marcus. Booked the 9:00 opening.</dd><dt>Call time</dt><dd>Fri, 8:42 PM (after hours)</dd></dl>
+        <p class="example-tag" style="margin:0">Example email for illustration.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" style="padding-top:20px">
+  <div class="wrap">
+    <div class="section-head"><span class="eyebrow">Setup</span><h2 style="margin-top:14px">Live in a few business days</h2><p>You answer a few questions and change one phone setting. We do the rest.</p></div>
+    <div class="grid g4">
+<div class="card step"><div class="num">1</div><h3>Send us your menu</h3><p>Your services, prices, hours, barbers and any rules, from your booking page or a short form.</p></div><div class="card step"><div class="num">2</div><h3>We build it</h3><p>We set up the voice, your calendar and a phone number for your receptionist, then test it.</p></div><div class="card step"><div class="num">3</div><h3>Forward your calls</h3><p>You turn on call forwarding, for missed calls or every call. We walk you through it.</p></div><div class="card step"><div class="num">4</div><h3>Go live</h3><p>Bookings land in your calendar and summaries land in your inbox.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:30px">
+  <div class="wrap">
+    <div class="section-head"><span class="eyebrow">Which plan fits</span><h2 style="margin-top:14px">Pick the minutes that match your calls</h2><p>Most one-chair shops fit Starter. Shops with several barbers and steady calls often pick Standard. If you want it to answer every call, look at Plus or higher.</p></div>
+    <div class="plans fit" id="fit" style="margin-top:0"></div>
+    <p class="fine" style="margin-top:14px">Plans are for one location and are billed monthly or yearly (yearly is 10% off). Extra minutes are $0.40 each and calls are never cut off. <a href="index.html#pricing">See all plans, add-ons and the free trial</a>.</p>
+  </div>
+</section>
+
+<section id="faq" style="padding-top:20px">
+  <div class="wrap" style="max-width:860px">
+    <div class="section-head"><span class="eyebrow">FAQ</span><h2 style="margin-top:14px">Barbershop questions</h2></div>
+<details class="faq"><summary>Do you handle walk-ins?</summary><p>The receptionist tells callers that walk-ins are welcome if that is your policy. It will not promise a wait time, because it cannot know one. Callers who want a set time can book.</p></details>
+<details class="faq"><summary>What if a client wants a specific barber?</summary><p>It notes the request and passes it on. Your shop confirms it, so a barber who is off that day never gets promised.</p></details>
+<details class="faq"><summary>Can it take payments?</summary><p>No. It never takes card numbers over the phone. Payment stays at your shop.</p></details>
+<details class="faq"><summary>Does it speak Spanish?</summary><p>Yes, with the Spanish add-on. It starts in English and switches when the caller speaks Spanish. We test it with your own services first.</p></details>
+<details class="faq"><summary>I use Square or another booking app. Will it work?</summary><p>Today we book into Google Calendar, so a shop on Square would have two places to check. Direct connections to Square and other apps are planned. Tell us what you use and we will give you a straight answer.</p></details>
+<details class="faq"><summary>What does it cost?</summary><p>Plans start at $99 a month for 300 minutes, and your first 50 minutes are free. See the pricing for all plans.</p></details>
+  </div>
+</section>
+
+<section id="demo" style="padding-top:20px;padding-bottom:30px">
+  <div class="wrap">
+    <div class="cta-band">
+      <div><h3>Hear the barbershop receptionist</h3><p>Call the demo line to talk to it like a customer, or book a short call and we will show you.</p></div>
+      <div class="cta-row"><span class="demo-line">Barbershop demo line: coming soon</span><a class="btn btn-primary" href="#contact" data-demo>Book a demo</a></div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" style="padding-top:40px">
+  <div class="wrap contact-grid">
+    <div>
+      <span class="eyebrow">Contact</span>
+      <h2 style="margin-top:14px">Book a demo or start your free trial</h2>
+      <p style="color:var(--muted)">Tell us about your business and we will reply by email, usually within one business day.</p>
+      <p><strong>Email:</strong> <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></p>
+      <p><strong>Hear a demo:</strong> <span class="demo-line">Demo line coming soon</span></p>
+    </div>
+    <form class="card" id="contactForm" novalidate>
+      <div class="row"><label for="cName">Your name</label><input id="cName" autocomplete="name" required></div>
+      <div class="row"><label for="cBiz">Business name</label><input id="cBiz" autocomplete="organization"></div>
+      <div class="row"><label for="cEmail">Your email</label><input id="cEmail" type="email" autocomplete="email" required></div>
+      <div class="row"><label for="cType">What type of business?</label>
+        <select id="cType"><option>Barbershop or salon</option><option>Plumbing or trades</option><option>Repair shop</option><option>Landscaping</option><option>Something else</option></select></div>
+      <div class="row"><label for="cWant">What would you like?</label>
+        <select id="cWant"><option value="trial">Start the free trial</option><option value="question">Ask a question</option><option value="demo" selected>See a demo</option></select></div>
+      <div class="row"><label for="cMsg">Anything else?</label><textarea id="cMsg"></textarea></div>
+      <button class="btn btn-primary btn-block" type="submit">Send</button>
+      <p class="fine" id="formNote" style="margin-top:10px">This opens your email app with your message ready to send.</p>
+    </form>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap terms">
+    <h3>Terms and policies</h3>
+    <details><summary>Free trial</summary><p>After setup, the first 50 minutes of calls on your receptionist are free. No payment is needed to start the trial. When the trial minutes are used, you choose a paid plan to continue. The one-time setup fee applies when you choose a plan, unless you are one of the first 3 founding customers.</p></details>
+    <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>
+    <details><summary>Cancellation and refunds</summary><p>You can cancel anytime. Your plan stays active until the end of the period you have already paid for, then it does not renew. We do not refund payments for time you have already been billed for. Yearly plans are paid up front for twelve months, and cancelling stops the renewal.</p></details>
+    <details><summary>Works-or-refund guarantee</summary><p>If we cannot get your receptionist working with your phone line and calendar after setup, we refund what you paid. This guarantee covers the service not working. It does not cover a change of mind.</p></details>
+    <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
+    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span></div>
+  </div>
+</footer>
+
+<script>window.FIT = [{"id":"starter","note":"One-chair shop catching missed calls and after-hours calls."},{"id":"standard","pop":true,"badge":"Common for 2 to 4 barbers","note":"Several barbers and a steady phone."},{"id":"plus","note":"Busy shop, or answering every call with the main-line add-on."}];</script>
+<script src="site.js"></script>
+</body>
+</html>
