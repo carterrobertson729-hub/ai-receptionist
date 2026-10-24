@@ -1,15 +1,15 @@
 # After someone buys or starts a trial: what happens and who does what
 
-The website does NOT give anyone a phone number instantly. The number comes after you build their receptionist. The website says "live in a few business days", so keep to that. Technical details of the build are in `docs/new-customer-setup.md`.
+The website does NOT give anyone a phone number instantly. The number comes after you build their receptionist. The website promises: we reply within 2 to 3 business days, and most receptionists are live within about a week of ordering. Keep to that. Technical details of the build are in `docs/new-customer-setup.md`.
 
 ## The whole flow in one list
 
 | # | Who | What | How long |
 |---|---|---|---|
 | 1 | Customer | Reserves a plan on the checkout page (or starts the free trial / books a demo) | 5 min |
-| 2 | You | Netlify emails you the form (Forms notifications). For a reserved plan: send a Stripe payment link. For a trial: no payment | same day |
+| 2 | You | Netlify emails you the form (Forms notifications). For a reserved plan: send a Stripe payment link. For a trial: no payment | within 2 to 3 business days (aim for same day) |
 | 3 | Customer | Pays the link (Stripe emails them a receipt) | |
-| 4 | You | Send the WELCOME email (template A): setup questionnaire + calendar sharing steps | same day |
+| 4 | You | Send the WELCOME email (template A): setup questionnaire + calendar sharing steps | within 2 to 3 business days (aim for same day) |
 | 5 | Customer | Fills the questionnaire and shares their Google Calendar with you | 15-30 min |
 | 6 | You (with Claude) | Build: config file, prompt, Retell agent and functions, n8n settings paste, call log sheet, buy their Retell number ($2/month, you pay), attach it to their agent | 2-4 hours |
 | 7 | You | Test calls: booking, cancel, reschedule, after hours, call log row, summary email | 30 min |
