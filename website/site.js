@@ -19,8 +19,8 @@ var PLANS = [
     feats:['1,200 minutes a month','Everything in Plus','Built for answering every call'] }
 ];
 var ADDONS = [
-  { id:'spanish', name:'Spanish', monthly:15, setup:49, text:'Switches to Spanish when the caller speaks it.' },
-  { id:'main',    name:'Main line + transfer', monthly:25, setup:49, soon:true, text:'Answers every call and passes calls to your staff when asked.' },
+  { id:'spanish', name:'Spanish', monthly:15, setup:0, text:'Switches to Spanish when the caller speaks it.' },
+  { id:'main',    name:'Main line + transfer', monthly:25, setup:0, soon:true, text:'Answers every call and passes calls to your staff when asked.' },
   { id:'number',  name:'Extra number', monthly:10, setup:0, text:'A second line for another location or an ad.' }
 ];
 var SETUP_FEE = 99;

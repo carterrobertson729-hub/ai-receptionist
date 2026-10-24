@@ -52,7 +52,7 @@ My measured Retell cost is about $0.166 per minute ($10.21 for 61.52 minutes), p
 | High volume | 1,200 | $329 | ~$206 | ~$123 |
 
 - Add-ons: Spanish +$15 a month, main line with transfer +$25, extra number +$10. Extra minutes: $0.40 each (upgrading is always cheaper if they go over often).
-- One-time setup: $99 (free for the first 3 founding customers in exchange for a testimonial, price locked 12 months). Spanish setup +$49, main line setup +$49.
+- One-time setup: $99 (free for the first 3 founding customers in exchange for a testimonial, price locked 12 months). No extra setup fee for add-ons (Spanish, main line).
 - Pilot: 14 days, money back, on a forwarded number, so the owner sees real bookings in the call log.
 - Barbershop tickets are small ($27 haircut, $39 haircut plus beard trim): $99 needs about 3 extra bookings a month to pay for itself. A one-chair shop fits Starter; a shop with several barbers may want Standard.
 - Raise prices for new customers after the first 3 customers and once the call log shows results.

@@ -105,7 +105,7 @@ Four plans only (five was too many), month to month. Margins can be lower than f
 
 - Cost = $0.17 per minute used + $2 phone number. Card fees (about 3% + 30 cents) come off the profit. Your own time is not counted.
 - Add-ons per month: Spanish +$15, main line with transfer +$25, extra number +$10.
-- Setup (one time): $99 standard, free for the first 3 founding customers (testimonial; price locked 12 months). Spanish setup +$49, main line setup +$49, complicated systems quoted from $199.
+- Setup (one time): $99 standard, free for the first 3 founding customers (testimonial; price locked 12 months). No extra setup fee for Spanish or main line (Carter 2026-10-24). Complicated systems quoted from $199.
 - Overage: $0.40 per minute (cheapest upgrade step is about $0.30 per minute, so staying small and paying overage never wins). Replaces the $0.45 figure above. Optional prepaid packs use the same rate.
 - Pilot: 14 days, money back.
 - This supersedes the $149/$229/$309/$449 list above. Review after real call data and the first real Retell bills.
