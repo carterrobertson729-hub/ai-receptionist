@@ -36,8 +36,8 @@ var PLANS = [
     feats:['1,200 minutes a month','Everything in Plus','For the busiest businesses'] }
 ];
 var ADDONS = [
-  { id:'spanish', name:'Spanish', monthly:15, setup:0, text:'Switches to Spanish when the caller speaks it.' },
-  { id:'number',  name:'Extra number', monthly:15, setup:0, text:'Another phone number for the same receptionist, for an ad or a second line. Shares your minutes.' }
+  { id:'spanish', name:'Spanish', monthly:15, setup:0, text:'If a caller speaks Spanish, the receptionist switches to Spanish and helps them in their language.' },
+  { id:'number',  name:'Extra number', monthly:15, setup:0, text:'Another phone number for a second location. It shares your plan\'s minutes.' }
 ];
 var SETUP_FEE = 99;
 var DISCOUNT = 0.10; // yearly plans are 10% off, rounded down to a whole dollar
@@ -64,6 +64,7 @@ function renderPlans(){
       '<ul class="ticks">' + p.feats.map(function(f){ return '<li>' + f + '</li>'; }).join('') + '</ul>' +
       '<a class="btn ' + (p.pop ? 'btn-primary' : 'btn-ghost') + ' btn-block" href="checkout.html?plan=' + p.id + '&cycle=' + cycle + '">Choose ' + p.name + '</a></article>';
   });
+  $('plans').className = 'plans' + (PLANS.filter(function(p){ return p.mode === mode; }).length === 3 ? ' three' : '');
   $('plans').innerHTML = html;
   if ($('modeDesc')) $('modeDesc').innerHTML = '<strong>' + MODES[mode].title + ':</strong> ' + MODES[mode].desc;
 }

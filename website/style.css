@@ -322,3 +322,7 @@ fieldset.fs legend + *{clear:both}
 @media(max-width:560px){.modes{grid-template-columns:1fr}}
 .mode-desc{max-width:680px;margin:0 auto 22px;color:var(--muted);text-align:center}
 .mode-card .from{font:700 1.4rem var(--head);margin:0 0 10px;color:#3a3fb0}
+
+/* three plans are centered: one left, one middle, one right */
+.plans.three{grid-template-columns:repeat(3,minmax(0,1fr));max-width:920px;margin-inline:auto}
+@media(max-width:860px){.plans.three{grid-template-columns:1fr;max-width:440px}}
