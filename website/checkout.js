@@ -66,7 +66,12 @@
     e.preventDefault();
     if (!$('coAgree').checked) { $('coAgree').focus(); $('coAgreeNote').textContent = 'Please tick the box to agree to the terms.'; return; }
     if (!form.checkValidity()) { form.reportValidity(); return; }
-    sendForm(form, function(){ form.hidden = true; $('orderDone').hidden = false; $('orderDone').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    sendForm(form, function(){
+      form.hidden = true;
+      var link = $('setupLink'), ad = ADDONS.filter(function(a){ return $('ad-' + a.id).checked; }).map(function(a){ return a.name; }).join(', ');
+      if (link) link.href = 'setup.html?plan=' + encodeURIComponent(state.plan) + '&cycle=' + state.cycle + (ad ? '&addons=' + encodeURIComponent(ad) : '');
+      $('orderDone').hidden = false; $('orderDone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   });
 
   recompute();

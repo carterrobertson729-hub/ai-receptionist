@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Setup form | AnswerBay</title>
+<meta name="description" content="Tell AnswerBay about your business so we can build your AI receptionist. About 15 to 20 minutes.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a class="logo" href="index.html" aria-label="AnswerBay home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a5cff"/><stop offset=".6" stop-color="#00b8ff"/><stop offset="1" stop-color="#00d9a6"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lg)"/><path d="M9 21h3M15 14v14M21 10v22M27 15v12M33 19v4" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+      <span>AnswerBay</span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navList">&#9776;</button>
+    <ul id="navList">
+      <li><a href="how-it-works.html">How it works</a></li>
+      <li class="has-sub"><a href="services.html">Services</a><button type="button" class="sub-toggle" aria-label="Show services" aria-expanded="false">&#9662;</button>
+        <ul class="sub">
+          <li><a href="barbershops.html">Barbershops &amp; salons</a></li>
+          <li><a href="trades.html">Plumbing &amp; trades</a></li>
+          <li><a href="repair.html">Repair shops <span class="soon">Soon</span></a></li>
+          <li><a href="landscaping.html">Landscaping <span class="soon">Soon</span></a></li>
+        </ul>
+      </li>
+      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li class="only-mobile"><a href="demo.html">Book a demo</a></li>
+    </ul>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="demo.html">Book a demo</a><a class="btn btn-primary" href="trial.html">Start free trial</a></div>
+  </div>
+</header>
+
+<main id="top">
+
+<section class="page-hero">
+  <div class="wrap">
+    <p class="crumbs"><a href="index.html">AnswerBay</a> / Setup form</p>
+    <h1 style="margin-top:6px">Tell us about <span class="grad-text">your business</span></h1>
+    <p class="lead">This is how we build your receptionist. It takes about 15 to 20 minutes. If you are not sure about an answer, write "not sure" and we will suggest a sensible default.</p>
+    <div class="note-box" id="planBanner" hidden></div>
+  </div>
+</section>
+<section style="padding-top:10px;padding-bottom:70px">
+  <div class="wrap" style="max-width:820px">
+    <form id="setupForm" name="setup" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+      <input type="hidden" name="form-name" value="setup">
+      <p class="hp"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+      <input type="hidden" name="plan" id="sPlan"><input type="hidden" name="billing" id="sCycle"><input type="hidden" name="addons" id="sAddons">
+
+      <fieldset class="card fs"><legend>1. Your business</legend>
+        <div class="row"><label for="cName">Your name</label><input id="cName" name="name" autocomplete="name" required></div>
+        <div class="row"><label for="cBiz">Business name (the way callers should hear it)</label><input id="cBiz" name="business" autocomplete="organization" required></div>
+        <div class="row"><label for="cEmail">Your email</label><input id="cEmail" name="email" type="email" autocomplete="email" required></div>
+        <div class="row"><label for="cPhone">Your mobile number</label><input id="cPhone" name="owner_phone" type="tel" autocomplete="tel"></div>
+        <div class="row"><label for="cBizPhone">The business number customers call</label><input id="cBizPhone" name="business_phone" type="tel" required></div>
+        <div class="row"><label for="cType">What type of business?</label><select id="cType" name="business_type"><option>Barbershop or salon</option><option>Plumbing or trades</option><option>Repair shop</option><option>Landscaping</option><option>Something else</option></select></div>
+        <div class="row"><label for="cAddr">Business address (if callers ask where you are)</label><input id="cAddr" name="address" autocomplete="street-address"></div>
+        <div class="row"><label for="cSite">Website or online booking page (if any)</label><input id="cSite" name="website" type="url" placeholder="https://"></div>
+      </fieldset>
+
+      <fieldset class="card fs"><legend>2. Hours</legend>
+        <p class="fine">The hours you take appointments or want calls handled. Leave a day empty or tick Closed if you are closed.</p>
+        <div class="hrow"><span class="hday">Monday</span><input type="time" name="hours_mon_open" aria-label="Monday opens"><span>to</span><input type="time" name="hours_mon_close" aria-label="Monday closes"><label class="inline"><input type="checkbox" name="hours_mon_closed" value="closed"> Closed</label></div><div class="hrow"><span class="hday">Tuesday</span><input type="time" name="hours_tue_open" aria-label="Tuesday opens"><span>to</span><input type="time" name="hours_tue_close" aria-label="Tuesday closes"><label class="inline"><input type="checkbox" name="hours_tue_closed" value="closed"> Closed</label></div><div class="hrow"><span class="hday">Wednesday</span><input type="time" name="hours_wed_open" aria-label="Wednesday opens"><span>to</span><input type="time" name="hours_wed_close" aria-label="Wednesday closes"><label class="inline"><input type="checkbox" name="hours_wed_closed" value="closed"> Closed</label></div><div class="hrow"><span class="hday">Thursday</span><input type="time" name="hours_thu_open" aria-label="Thursday opens"><span>to</span><input type="time" name="hours_thu_close" aria-label="Thursday closes"><label class="inline"><input type="checkbox" name="hours_thu_closed" value="closed"> Closed</label></div><div class="hrow"><span class="hday">Friday</span><input type="time" name="hours_fri_open" aria-label="Friday opens"><span>to</span><input type="time" name="hours_fri_close" aria-label="Friday closes"><label class="inline"><input type="checkbox" name="hours_fri_closed" value="closed"> Closed</label></div><div class="hrow"><span class="hday">Saturday</span><input type="time" name="hours_sat_open" aria-label="Saturday opens"><span>to</span><input type="time" name="hours_sat_close" aria-label="Saturday closes"><label class="inline"><input type="checkbox" name="hours_sat_closed" value="closed"> Closed</label></div><div class="hrow"><span class="hday">Sunday</span><input type="time" name="hours_sun_open" aria-label="Sunday opens"><span>to</span><input type="time" name="hours_sun_close" aria-label="Sunday closes"><label class="inline"><input type="checkbox" name="hours_sun_closed" value="closed"> Closed</label></div>
+        <div class="row" style="margin-top:12px"><label for="cTz">Time zone</label><select id="cTz" name="time_zone"><option>Central</option><option>Eastern</option><option>Mountain</option><option>Pacific</option><option>Other</option></select></div>
+      </fieldset>
+
+      <fieldset class="card fs"><legend>3. How should it answer?</legend>
+        <label class="choice"><input type="radio" name="answer_mode" value="backup" checked><span><strong>Only when I miss a call or I am closed</strong><br><small>You or your staff answer first. The receptionist picks up the calls you miss and the calls after hours.</small></span></label>
+        <label class="choice"><input type="radio" name="answer_mode" value="main_line"><span><strong>Every call, all day and night</strong><br><small>Needs the main-line add-on. During open hours it can pass a call to your staff when a caller asks for a person.</small></span></label>
+        <div class="row"><label for="sRings">If staff answer first: how many rings before it goes to the receptionist?</label><select id="sRings" name="rings"><option>4 rings</option><option>3 rings</option><option>5 rings</option><option>6 rings</option><option>Not sure</option></select></div>
+        <div class="row"><label for="sTransfer">If a caller asks for a person: which number should ring? (not a number that forwards to the receptionist)</label><input id="sTransfer" name="transfer_number" type="tel"></div>
+        <div class="row"><label for="sCarrier">Who is your phone company?</label><select id="sCarrier" name="carrier"><option>Not sure</option><option>Verizon</option><option>AT&amp;T</option><option>T-Mobile</option><option>A business phone system</option><option>Something else</option></select></div>
+        <div class="row"><label for="sLogin">Who has the login for your phone account?</label><input id="sLogin" name="phone_login_holder" placeholder="Me, my partner, my office manager..."></div>
+      </fieldset>
+
+      <fieldset class="card fs"><legend>4. Services and prices</legend>
+        <div class="row"><label for="sServices">List each service you want booked: name, how long it takes, and the price. One per line.</label><textarea id="sServices" name="services" rows="7" placeholder="Men's haircut, 30 minutes, $30&#10;Haircut and beard trim, 45 minutes, $40"></textarea></div>
+        <div class="row"><label for="sQuote">Which services need a quote or a look first (so the receptionist should not state a price)?</label><textarea id="sQuote" name="quote_services"></textarea></div>
+        <div class="row"><label for="sNever">Anything the receptionist should never say or promise?</label><textarea id="sNever" name="never_say"></textarea></div>
+      </fieldset>
+
+      <fieldset class="card fs"><legend>5. Calendar and staff</legend>
+        <div class="row"><label for="sCal">What calendar or booking tool do you use?</label><select id="sCal" name="calendar_tool"><option>Google Calendar</option><option>Square Appointments</option><option>Boulevard</option><option>Jobber</option><option>Housecall Pro</option><option>Paper or none</option><option>Something else</option></select></div>
+        <div class="row"><label for="sCalEmail">The Google account email that owns your calendar (we will ask you to share it with us)</label><input id="sCalEmail" name="calendar_email" type="email"></div>
+        <div class="row"><label for="sAtOnce">How many appointments can run at the same time?</label><input id="sAtOnce" name="appointments_at_once" type="number" min="1" value="1"></div>
+        <div class="row"><label for="sStaff">Staff who take appointments (and what each does, if it matters)</label><textarea id="sStaff" name="staff"></textarea></div>
+        <div class="row"><label for="sNotice">How soon can a customer be booked? (for example, at least 2 hours from now)</label><input id="sNotice" name="booking_notice"></div>
+      </fieldset>
+
+      <fieldset class="card fs" data-for="barbershop" hidden><legend>6. Barbershop and salon questions</legend>
+        <div class="row"><label for="bWalk">Walk-ins</label><select id="bWalk" name="walkins"><option>Walk-ins welcome</option><option>By appointment only</option><option>It varies</option></select></div>
+        <div class="row"><label for="bAge">Rules by age or service (for example, who can book a kids' cut)</label><textarea id="bAge" name="age_rules"></textarea></div>
+        <div class="row"><label for="bBarber">Can clients request a barber?</label><select id="bBarber" name="barber_requests"><option>Yes, note the request</option><option>No</option></select></div>
+      </fieldset>
+
+      <fieldset class="card fs" data-for="trades" hidden><legend>6. Plumbing and trades questions</legend>
+        <div class="row"><label for="tEmerg">What counts as an emergency? (burst pipe, no heat, sewage backup...)</label><textarea id="tEmerg" name="emergencies"></textarea></div>
+        <div class="row"><label for="tOnCall">Who should be alerted for emergencies? Name, mobile, email and the days they are on call.</label><textarea id="tOnCall" name="on_call"></textarea></div>
+        <div class="row"><label for="tFee">Service call or trip fee (if any)</label><input id="tFee" name="service_call_fee"></div>
+        <div class="row"><label for="tAfter">Extra charge for nights, weekends or holidays (if any)</label><input id="tAfter" name="after_hours_fee"></div>
+        <div class="row"><label for="tBig">Your biggest jobs: for each, the starting price, the typical range, and whether the estimate visit is free or paid</label><textarea id="tBig" name="big_jobs"></textarea></div>
+        <div class="row"><label for="tGap">Time your techs need between jobs</label><select id="tGap" name="gap_between_jobs"><option>30 minutes</option><option>15 minutes</option><option>45 minutes</option><option>1 hour</option><option>Not sure</option></select></div>
+      </fieldset>
+
+      <fieldset class="card fs"><legend>7. Policies</legend>
+        <div class="row"><label for="pCancel">Do you charge for late cancellations or no-shows? How late counts as late, and how much?</label><textarea id="pCancel" name="cancellation_policy"></textarea></div>
+      </fieldset>
+
+      <fieldset class="card fs"><legend>8. After each call</legend>
+        <div class="row"><label for="aEmail">Where should call summaries go? (email)</label><input id="aEmail" name="summary_email" type="email"></div>
+        <div class="row"><label for="aBill">Who should get the minutes and billing emails? (usually the owner)</label><input id="aBill" name="billing_email" type="email"></div>
+        <p class="fine">Which calls do you want an email for?</p>
+        <label class="inline"><input type="checkbox" name="email_for" value="booked" checked> Bookings</label>
+        <label class="inline"><input type="checkbox" name="email_for" value="messages" checked> Messages</label>
+        <label class="inline"><input type="checkbox" name="email_for" value="urgent" checked> Urgent calls</label>
+        <label class="inline"><input type="checkbox" name="email_for" value="leads"> Any call where the caller left a name and number</label>
+        <label class="inline" style="margin-top:12px"><input type="checkbox" name="spanish" value="yes"> I added Spanish and want the receptionist to speak it</label>
+      </fieldset>
+
+      <fieldset class="card fs"><legend>9. Last things</legend>
+        <div class="row"><label for="lStates">Which state(s) do your customers call from?</label><input id="lStates" name="states"></div>
+        <div class="row"><label for="lNotes">Anything else we should know?</label><textarea id="lNotes" name="notes"></textarea></div>
+        <label class="agree"><input type="checkbox" name="agreed" value="yes" required><span>I understand calls are answered by an automated assistant and may be recorded and transcribed, and I agree to the <a href="#terms">terms and policies</a>.</span></label>
+        <button class="btn btn-primary btn-block" type="submit">Send my setup form</button>
+        <p class="fine" data-note style="margin-top:10px">You can come back and send us updates any time.</p>
+      </fieldset>
+    </form>
+    <div class="success" data-success hidden>
+      <h3>Thank you. We have everything we need to start.</h3>
+      <p>We will build and test your receptionist now. Most receptionists are live within <strong>4 business days</strong> after we get your form. If we have a question, we will email you.</p>
+      <p><strong>What happens next:</strong></p>
+      <ol><li>We ask you to share your calendar with us if you have not yet.</li><li>We build and test your receptionist.</li><li>We email you your receptionist's phone number and the steps to forward your calls.</li><li>You switch it on and we run a final test call together.</li></ol>
+      <p><a class="btn btn-ghost" href="index.html">Back to the home page</a></p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap terms" id="terms">
+    <nav class="foot-links" aria-label="Site pages"><a href="index.html">Home</a><a href="how-it-works.html">How it works</a><a href="services.html">Services</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="demo.html">Book a demo</a><a href="trial.html">Free trial</a></nav>
+    <h3>Terms and policies</h3>
+    <details><summary>Free trial</summary><p>After setup, the first 50 minutes of calls on your receptionist are free. No payment is needed to start the trial. When the trial minutes are used, you choose a paid plan to continue. The one-time setup fee applies when you choose a plan, unless you are one of the first 3 founding customers.</p></details>
+    <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>
+    <details><summary>Cancellation and refunds</summary><p>You can cancel anytime. Your plan stays active until the end of the period you have already paid for, then it does not renew. We do not refund payments for time you have already been billed for. Yearly plans are paid up front for twelve months, and cancelling stops the renewal.</p></details>
+    <details><summary>Works-or-refund guarantee</summary><p>If we cannot get your receptionist working with your phone line and calendar after setup, we refund what you paid. This guarantee covers the service not working. It does not cover a change of mind.</p></details>
+    <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
+    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span></div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+<script src="setup.js"></script>
+</body>
+</html>

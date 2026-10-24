@@ -19,7 +19,12 @@ The website does NOT give anyone a phone number instantly. The number comes afte
 | 11 | You | Day 3 check-in call or email. Weekly report starts on the next Monday | |
 | 12 | You | Trial only: when they use about 40 of the 50 minutes, email a plan offer (template C) | |
 
+## Promises on the website
+- Replies, payment links and demo confirmations: within 2 to 3 business days.
+- Receptionist live: about 4 business days AFTER we get the setup form (aim for 2 to 3 so you have slack; the first customers will be slower while you learn the steps).
+
 ## Things to set up once
+- In every Stripe Payment Link, set After payment, Redirect to your website, and use your site address followed by /setup.html (so paying customers land on the setup form).
 - Netlify: Forms, then Form notifications, so each form emails you.
 - Stripe: one Payment Link per plan and billing period (monthly/yearly), with the $99 setup as a one-time item. Paste them into CHECKOUT_LINKS in site.js. Until then, buttons on the checkout page reserve a plan and you send the link by hand.
 - A Google Form (or Tally form) with the questions from `docs/customer-setup-questionnaire.md`, so customers can fill it in online. Use its link in template A.
