@@ -109,3 +109,29 @@ Four plans only (five was too many), month to month. Margins can be lower than f
 - Overage: $0.40 per minute (cheapest upgrade step is about $0.30 per minute, so staying small and paying overage never wins). Replaces the $0.45 figure above. Optional prepaid packs use the same rate.
 - Pilot: 14 days, money back.
 - This supersedes the $149/$229/$309/$449 list above. Review after real call data and the first real Retell bills.
+
+
+---
+
+## TWO WAYS TO ANSWER (2026-10-24, Carter): replaces the four-plan list above
+
+Carter felt a missed-calls-only receptionist was too expensive at $99, so pricing now has two modes. The website shows one set at a time with a toggle (After-hours and missed calls / 24/7 receptionist), then Monthly/Yearly.
+
+After-hours and missed calls ("backup": staff answer first; the AI takes missed calls and everything after hours):
+| Plan | Minutes | Price | Cost at full use |
+|---|---|---|---|
+| Backup Lite | 150 | $59 | about $28 |
+| Backup Standard | 300 | $89 | about $53 |
+| Backup Plus | 500 | $139 | about $87 |
+
+24/7 receptionist ("always": the AI answers every call and can pass a call to staff in open hours; transfer is included, no add-on; transfer is still untested/launching soon):
+| Plan | Minutes | Price | Cost at full use |
+|---|---|---|---|
+| 24/7 Starter | 300 | $119 | about $53 |
+| 24/7 Standard | 500 | $179 | about $87 |
+| 24/7 Plus | 750 | $239 | about $130 |
+| 24/7 High volume | 1,200 | $349 | about $206 |
+
+- The "Main line + transfer" add-on is REMOVED (it is the 24/7 mode now).
+- Add-ons: Spanish +$15/mo, Extra number +$10/mo. No add-on setup fees. Setup $99 flat (free for the first 3 founding customers). Yearly = 10% off, rounded down. Overage $0.40/min.
+- Plan ids in site.js: backup-lite, backup-standard, backup-plus, always-starter, always-standard, always-plus, always-high.

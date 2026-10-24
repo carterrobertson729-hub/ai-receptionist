@@ -5,6 +5,7 @@
   var banner = $('planBanner');
   if (plan === 'trial') { banner.textContent = 'Your free trial: the first 50 minutes of calls are free.'; banner.hidden = false; }
   else if (planById(plan)) { banner.textContent = 'Your plan: ' + planById(plan).name + ' (' + (cyc === 'yearly' ? 'yearly' : 'monthly') + ')' + (addons ? ' with ' + addons : '') + '.'; banner.hidden = false; }
+  var always = plan.indexOf('always') === 0; var r = document.querySelector('input[name="answer_mode"][value="' + (always ? 'main_line' : 'backup') + '"]'); if (r && planById(plan)) r.checked = true;
   $('sPlan').value = plan; $('sCycle').value = cyc; $('sAddons').value = addons;
 
   function toggle(){

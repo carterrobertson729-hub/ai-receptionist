@@ -2,10 +2,13 @@
 (function(){
   var box = $('checkout'); if (!box) return;
   var q = new URLSearchParams(window.location.search);
-  var state = { plan: planById(q.get('plan')) ? q.get('plan') : 'standard', cycle: q.get('cycle') === 'yearly' ? 'yearly' : 'monthly', addons: {} };
+  var state = { plan: planById(q.get('plan')) ? q.get('plan') : 'backup-standard', cycle: q.get('cycle') === 'yearly' ? 'yearly' : 'monthly', addons: {} };
 
   // plan picker and add-ons
-  $('coPlan').innerHTML = PLANS.map(function(p){ return '<option value="' + p.id + '">' + p.name + ' (' + p.minutes.toLocaleString('en-US') + ' minutes, ' + money(p.monthly) + '/month)</option>'; }).join('');
+  $('coPlan').innerHTML = ['backup', 'always'].map(function(m){
+    return '<optgroup label="' + MODES[m].label + '">' + PLANS.filter(function(p){ return p.mode === m; }).map(function(p){
+      return '<option value="' + p.id + '">' + p.name + ' (' + p.minutes.toLocaleString('en-US') + ' minutes, ' + money(p.monthly) + '/month)</option>'; }).join('') + '</optgroup>';
+  }).join('');
   $('coPlan').value = state.plan;
   $('coAddons').innerHTML = ADDONS.map(function(a){
     return '<label class="addon"><input type="checkbox" id="ad-' + a.id + '" value="' + a.id + '"><span><strong>' + a.name + '</strong> +' + money(a.monthly) + '/month' + (a.setup ? ', setup +' + money(a.setup) : '') +

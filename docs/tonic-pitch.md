@@ -69,3 +69,7 @@ My measured Retell cost is about $0.166 per minute ($10.21 for 61.52 minutes), p
 3. Get a phone number to put on the demo so the owner can call from her own phone (a Retell number costs about $2 a month).
 4. Decide your pilot offer and price.
 5. Read the Retell, n8n, Google and Square terms about reselling.
+
+
+## Pricing update (2026-10-24)
+Pricing is now two modes. Tonic is a backup-style shop: Backup Lite 150 min $59, Backup Standard 300 min $89, Backup Plus 500 min $139. A shop that wants every call answered picks a 24/7 plan (300 min $119, 500 min $179, 750 min $239, 1,200 min $349). Spanish +$15/mo. Setup $99 (free for the first 3). See docs/pricing-guide.md.

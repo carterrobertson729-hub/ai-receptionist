@@ -75,7 +75,7 @@
 
 <div class="marquee" aria-hidden="true">
   <div class="track" data-dup>
-    <span class="tag hot">Answers 24/7</span><span class="tag">Books into your calendar</span><span class="tag">Call summary after every call</span><span class="tag">Keep your own number</span><span class="tag hot">We set it up for you</span><span class="tag">Weekly report</span><span class="tag">Cancel and reschedule by phone</span><span class="tag">Spanish available</span>
+    <span class="tag hot">Day and night coverage</span><span class="tag">Books into your calendar</span><span class="tag">Call summary after every call</span><span class="tag">Keep your own number</span><span class="tag hot">We set it up for you</span><span class="tag">Weekly report</span><span class="tag">Cancel and reschedule by phone</span><span class="tag">Spanish available</span>
   </div>
 </div>
 
@@ -150,10 +150,36 @@
   </div>
 </section>
 
+<!-- TWO WAYS -->
+<section id="modes">
+  <div class="wrap">
+    <div class="section-head"><span class="eyebrow">Two ways to use it</span><h2 style="margin-top:14px">Catch the calls you miss, or answer every call</h2><p>Pick the one that fits how your phone works today. You can switch later.</p></div>
+    <div class="grid g2">
+      <div class="card mode-card">
+        <h3>After-hours &amp; missed calls</h3>
+        <p class="from">From $59 a month</p>
+        <ul class="ticks"><li>Your staff answer first, as they do now</li><li>The receptionist picks up calls you miss, when you are busy, and every call after hours</li><li>Books, answers questions and takes messages</li><li>Smaller plans, because it only takes the calls nobody answered</li></ul>
+        <p><a class="btn btn-ghost" href="pricing.html?mode=backup">See these plans</a></p>
+      </div>
+      <div class="card mode-card">
+        <h3>24/7 receptionist</h3>
+        <p class="from">From $119 a month</p>
+        <ul class="ticks"><li>The receptionist answers every call, day and night</li><li>Passes a call to your staff when a caller asks for a person during open hours <span class="badge-soon">Launching soon</span></li><li>Nothing rings in the shop first, so no call is missed</li><li>Bigger plans, because it takes every call</li></ul>
+        <p><a class="btn btn-primary" href="pricing.html?mode=always">See these plans</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- PRICING -->
 <section id="pricing" style="padding-bottom:40px">
   <div class="wrap center" style="text-align:center">
-    <div class="section-head center"><span class="eyebrow">Pricing</span><h2 style="margin-top:14px">Simple plans. Pick the minutes you need.</h2><p>Every plan covers one location and includes setup help. Go over your minutes and the receptionist keeps answering. You are never cut off.</p><p style="margin:6px 0 0"><a class="more-link" href="pricing.html">Open the Pricing page &rarr;</a></p></div>
+    <div class="section-head center"><span class="eyebrow">Pricing</span><h2 style="margin-top:14px">Pick how it answers, then pick your size.</h2><p>Choose between catching missed and after-hours calls, or a receptionist that answers every call. Every plan covers one location and includes setup help. Go over your minutes and it keeps answering. You are never cut off.</p><p style="margin:6px 0 0"><a class="more-link" href="pricing.html">Open the Pricing page &rarr;</a></p></div>
+    <div class="modes" role="group" aria-label="How the receptionist answers">
+      <button type="button" id="mBackup" aria-pressed="true"><strong>After-hours &amp; missed calls</strong><small>Your staff answer first</small></button>
+      <button type="button" id="mAlways" aria-pressed="false"><strong>24/7 receptionist</strong><small>Answers every call</small></button>
+    </div>
+    <p class="mode-desc" id="modeDesc"></p>
     <div class="billing" role="group" aria-label="Billing period">
       <button id="bMonthly" aria-pressed="true">Monthly</button>
       <button id="bYearly" aria-pressed="false">Yearly <span class="save">Save 10%</span></button>
@@ -176,9 +202,8 @@
     </div>
 
     <h3 style="margin:46px 0 16px">Add-ons</h3>
-    <div class="grid g3 addons">
+    <div class="grid g2 addons">
       <div class="card"><h3>Spanish <span>+$15/mo</span></h3><p>The receptionist switches to Spanish when the caller speaks it.</p></div>
-      <div class="card"><h3>Main line + transfer <span>+$25/mo</span></h3><p>The receptionist answers every call, and passes calls to your staff when a caller asks for a person during open hours. <span class="badge-soon">Launching soon</span></p></div>
       <div class="card"><h3>Extra number <span>+$10/mo</span></h3><p>A second line for another location or a separate phone number for an ad.</p></div>
     </div>
     <p class="fine" style="margin-top:14px">One-time setup is $99 and covers building your receptionist, testing and walking you through call forwarding. Unusual phone systems are quoted separately.</p>

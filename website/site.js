@@ -3,24 +3,40 @@ var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
 // visitor reserve the plan and you send them a payment link.
 var CHECKOUT_LINKS = {
-  starter:  { monthly: '', yearly: '' },
-  standard: { monthly: '', yearly: '' },
-  plus:     { monthly: '', yearly: '' },
-  high:     { monthly: '', yearly: '' }
+  'backup-lite':     { monthly: '', yearly: '' },
+  'backup-standard': { monthly: '', yearly: '' },
+  'backup-plus':     { monthly: '', yearly: '' },
+  'always-starter':  { monthly: '', yearly: '' },
+  'always-standard': { monthly: '', yearly: '' },
+  'always-plus':     { monthly: '', yearly: '' },
+  'always-high':     { monthly: '', yearly: '' }
 };
+// Two ways it can answer. "backup" = after-hours and missed calls. "always" = 24/7 receptionist (answers every call, can pass calls to staff).
+var MODES = {
+  backup: { label: 'After-hours & missed calls', title: 'After-hours and missed calls',
+    desc: 'Your staff answer first. The receptionist catches the calls you miss and every call after hours, day and night. Best for shops that already have someone at the phone during the day.' },
+  always: { label: '24/7 receptionist', title: '24/7 receptionist',
+    desc: 'The receptionist answers every call, day and night, and can pass a call to your staff when a caller asks for a person during open hours. Best when nobody can reliably pick up the phone. It uses more minutes, so the plans are bigger.' }
+};
+var COMMON = ['Books into your calendar','Email summary after calls that matter','Call log and weekly report','Alerts at 80% and 100% of your minutes','Setup help and a phone number for the AI'];
 var PLANS = [
-  { id:'starter',  name:'Starter',     monthly:99,  minutes:300,  calls:120, who:'One-chair shops and solo owners',
-    feats:['300 minutes a month','One location, answered 24/7','Books into your calendar','Email summary after calls that matter','Call log and weekly report','Setup help and a phone number for the AI'] },
-  { id:'standard', name:'Standard',    monthly:159, minutes:500,  calls:200, who:'Growing shops and busy trades', pop:true,
-    feats:['500 minutes a month','Everything in Starter','Best fit for most small businesses','Usage alerts at 80% and 100%'] },
-  { id:'plus',     name:'Plus',        monthly:219, minutes:750,  calls:300, who:'Busy shops with several staff',
-    feats:['750 minutes a month','Everything in Standard','Room for answering more of your calls'] },
-  { id:'high',     name:'High volume', monthly:329, minutes:1200, calls:480, who:'High call volume or main-line answering',
-    feats:['1,200 minutes a month','Everything in Plus','Built for answering every call'] }
+  { id:'backup-lite',     mode:'backup', name:'Backup Lite',     short:'Lite',        monthly:59,  minutes:150,  calls:60,  who:'One-chair shops and solo owners',
+    feats:['150 minutes a month','Catches missed calls','Answers every call after hours'].concat(COMMON) },
+  { id:'backup-standard', mode:'backup', name:'Backup Standard', short:'Standard',    monthly:89,  minutes:300,  calls:120, who:'Shops with a steady phone', pop:true,
+    feats:['300 minutes a month','Everything in Lite','Room for a busier phone'] },
+  { id:'backup-plus',     mode:'backup', name:'Backup Plus',     short:'Plus',        monthly:139, minutes:500,  calls:200, who:'Busy shops that miss calls often',
+    feats:['500 minutes a month','Everything in Standard','Built for the busiest backup shops'] },
+  { id:'always-starter',  mode:'always', name:'24/7 Starter',    short:'Starter',     monthly:119, minutes:300,  calls:120, who:'Small shops that want every call answered',
+    feats:['300 minutes a month','Answers every call, day and night','Can pass calls to your staff when asked (launching soon)'].concat(COMMON) },
+  { id:'always-standard', mode:'always', name:'24/7 Standard',   short:'Standard',    monthly:179, minutes:500,  calls:200, who:'Most 24/7 businesses', pop:true,
+    feats:['500 minutes a month','Everything in Starter','Room for steady call volume'] },
+  { id:'always-plus',     mode:'always', name:'24/7 Plus',       short:'Plus',        monthly:239, minutes:750,  calls:300, who:'Busy shops with several staff',
+    feats:['750 minutes a month','Everything in Standard','Built for busy phones'] },
+  { id:'always-high',     mode:'always', name:'24/7 High volume',short:'High volume', monthly:349, minutes:1200, calls:480, who:'High call volume',
+    feats:['1,200 minutes a month','Everything in Plus','For the busiest businesses'] }
 ];
 var ADDONS = [
   { id:'spanish', name:'Spanish', monthly:15, setup:0, text:'Switches to Spanish when the caller speaks it.' },
-  { id:'main',    name:'Main line + transfer', monthly:25, setup:0, soon:true, text:'Answers every call and passes calls to your staff when asked.' },
   { id:'number',  name:'Extra number', monthly:10, setup:0, text:'A second line for another location or an ad.' }
 ];
 var SETUP_FEE = 99;
@@ -32,14 +48,16 @@ function $(id){ return document.getElementById(id); }
 function money(n){ return '$' + (Math.round(n*100)%100===0 ? Math.round(n).toLocaleString('en-US') : n.toFixed(2)); }
 function planById(id){ return PLANS.filter(function(p){ return p.id === id; })[0]; }
 var cycle = 'monthly';
+var query = new URLSearchParams(window.location.search);
+var mode = query.get('mode') === 'always' ? 'always' : 'backup';
 
 function renderPlans(){
   var html = '';
-  PLANS.forEach(function(p){
+  PLANS.filter(function(p){ return p.mode === mode; }).forEach(function(p){
     var yearTotal = Math.floor(p.monthly * 12 * (1 - DISCOUNT));
     var perMonth = cycle === 'yearly' ? Math.floor(p.monthly * (1 - DISCOUNT)) : p.monthly;
     html += '<article class="plan' + (p.pop ? ' pop' : '') + '">' + (p.pop ? '<div class="pop-badge">Most popular</div>' : '') +
-      '<h3>' + p.name + '</h3><p class="for">' + p.who + '</p>' +
+      '<h3>' + p.short + '</h3><p class="for">' + p.who + '</p>' +
       '<div class="price"><b>' + money(perMonth) + '</b><span>/ month</span></div>' +
       '<div class="billed">' + (cycle === 'yearly' ? 'Billed ' + money(yearTotal) + ' per year (you save ' + money(p.monthly*12 - yearTotal) + ')' : 'Billed monthly') + '</div>' +
       '<div class="mins"><b>' + p.minutes.toLocaleString('en-US') + ' minutes</b><small>About ' + p.calls + ' calls a month</small></div>' +
@@ -47,6 +65,7 @@ function renderPlans(){
       '<a class="btn ' + (p.pop ? 'btn-primary' : 'btn-ghost') + ' btn-block" href="checkout.html?plan=' + p.id + '&cycle=' + cycle + '">Choose ' + p.name + '</a></article>';
   });
   $('plans').innerHTML = html;
+  if ($('modeDesc')) $('modeDesc').innerHTML = '<strong>' + MODES[mode].title + ':</strong> ' + MODES[mode].desc;
 }
 function setCycle(c){
   cycle = c;
@@ -54,10 +73,16 @@ function setCycle(c){
   $('bYearly').setAttribute('aria-pressed', c === 'yearly');
   renderPlans();
 }
+function setMode(m){
+  mode = m;
+  if ($('mBackup')) { $('mBackup').setAttribute('aria-pressed', m === 'backup'); $('mAlways').setAttribute('aria-pressed', m === 'always'); }
+  renderPlans();
+}
 if ($('plans')) {
   $('bMonthly').onclick = function(){ setCycle('monthly'); };
   $('bYearly').onclick = function(){ setCycle('yearly'); };
-  renderPlans();
+  if ($('mBackup')) { $('mBackup').onclick = function(){ setMode('backup'); }; $('mAlways').onclick = function(){ setMode('always'); }; }
+  setMode(mode);
 }
 
 // "Which plan fits" cards on the industry pages. The page sets window.FIT = [{id, note}, ...]
@@ -105,7 +130,6 @@ document.querySelectorAll('.sub-toggle').forEach(function(b){
 })();
 
 // pre-select the business type: from the page (data-industry) or the link (?for=barbershop)
-var query = new URLSearchParams(window.location.search);
 var industry = document.body.getAttribute('data-industry') || INDUSTRIES[query.get('for')] || '';
 if (industry && $('cType')) { $('cType').value = industry; }
 if (query.get('topic') && $('cTopic')) {
