@@ -135,3 +135,11 @@ After-hours and missed calls ("backup": staff answer first; the AI takes missed 
 - The "Main line + transfer" add-on is REMOVED (it is the 24/7 mode now).
 - Add-ons: Spanish +$15/mo, Extra number +$10/mo. No add-on setup fees. Setup $99 flat (free for the first 3 founding customers). Yearly = 10% off, rounded down. Overage $0.40/min.
 - Plan ids in site.js: backup-lite, backup-standard, backup-plus, always-starter, always-standard, always-plus, always-high.
+
+---
+
+## Extra number and extra locations (2026-10-24, Carter)
+
+- Extra number: $15/month (was $10). It is another phone number that reaches the SAME receptionist (same hours, services, calendar), for an ad or a second line. It shares the plan's minutes.
+- Profit check: your cost for the number is about $2/month, so it adds about $13 a month. It cannot cut profit by itself, because its calls use the minutes already in the plan; calls above the plan are billed at $0.40/min (cost about $0.17), still a profit. A real risk only appears if the plan's price per minute is lower than your cost, and none of the plans are.
+- Extra location: NOT an add-on. A second location needs its own agent, settings, calendar and tests, so it is its own plan. Offer a second-location discount (suggested 20 to 25 percent off that plan, no setup fee). Carter to decide the exact percent; the website says "ask us about a second-location discount" until then.

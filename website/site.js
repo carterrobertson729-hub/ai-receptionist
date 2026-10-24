@@ -37,7 +37,7 @@ var PLANS = [
 ];
 var ADDONS = [
   { id:'spanish', name:'Spanish', monthly:15, setup:0, text:'Switches to Spanish when the caller speaks it.' },
-  { id:'number',  name:'Extra number', monthly:10, setup:0, text:'A second line for another location or an ad.' }
+  { id:'number',  name:'Extra number', monthly:15, setup:0, text:'Another phone number for the same receptionist, for an ad or a second line. Shares your minutes.' }
 ];
 var SETUP_FEE = 99;
 var DISCOUNT = 0.10; // yearly plans are 10% off, rounded down to a whole dollar
