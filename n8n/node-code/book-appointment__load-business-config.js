@@ -9,6 +9,6 @@ if (!config) throw new Error('Unknown business. Add ?business=<businessId> to th
 var now = Date.now();
 var windowEnd = now + (config.bookingRules.maxDaysAhead + 1) * 86400000;
 return [{ json: {
-  config: config, args: args, callId: call.call_id || '',
+  config: config, args: args, callId: call.call_id || '', fromNumber: call.from_number || '',
   nowMs: now, timeMin: new Date(now).toISOString(), timeMax: new Date(windowEnd).toISOString()
 } }];

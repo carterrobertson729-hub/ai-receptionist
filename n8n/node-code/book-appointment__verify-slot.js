@@ -297,12 +297,20 @@ var ctx = $('Load Business Config').first().json;
 var a = ctx.args;
 var events = $input.all().map(function (i) { return i.json; });
 
+// Accepts digits in any format, with or without +1, and numbers spoken as words ("two one nine, five five five...").
 function normalizePhone(raw) {
-  var d = String(raw || '').replace(/\D/g, '');
+  var words = { zero: 0, oh: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
+  var s = String(raw || '').toLowerCase().replace(/\b(double|triple)\s+(zero|oh|one|two|three|four|five|six|seven|eight|nine|\d)\b/g, function (m, k, w) {
+    var one = words.hasOwnProperty(w) ? String(words[w]) : w; return k === 'double' ? one + one : one + one + one;
+  });
+  s = s.replace(/\b(zero|oh|one|two|three|four|five|six|seven|eight|nine)\b/g, function (w) { return String(words[w]); });
+  var d = s.replace(/\D/g, '');
   if (d.length === 10) d = '1' + d;
   return d.length === 11 && d.charAt(0) === '1' ? '+' + d : null;
 }
 var phone = normalizePhone(a.phone);
+var usedCallerId = false;
+if (!phone && normalizePhone(ctx.fromNumber)) { phone = normalizePhone(ctx.fromNumber); usedCallerId = true; }   // real phone calls: fall back to the number they are calling from
 var name = String(a.name || '').trim();
 var address = String(a.address || '').trim();
 var problem = String(a.problem || '').trim();
@@ -332,6 +340,7 @@ else {
   out.label = friendlyLabel(startMs, tz);
 }
 out.phone = phone;
+out.usedCallerId = usedCallerId;
 out.name = name;
 out.address = address;
 out.problem = problem;

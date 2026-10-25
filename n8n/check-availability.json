@@ -35,7 +35,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "// The business settings come from the central \"Business Config\" workflow (previous step).\nvar item = $input.first().json;\nvar body = item.body || {};\nvar args = body.args || {};\nvar call = body.call || {};\nvar config = item.config;\nif (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');\nvar now = Date.now();\nvar windowEnd = now + (config.bookingRules.maxDaysAhead + 1) * 86400000;\nreturn [{ json: {\n  config: config, args: args, callId: call.call_id || '',\n  nowMs: now, timeMin: new Date(now).toISOString(), timeMax: new Date(windowEnd).toISOString()\n} }];"
+        "jsCode": "// The business settings come from the central \"Business Config\" workflow (previous step).\nvar item = $input.first().json;\nvar body = item.body || {};\nvar args = body.args || {};\nvar call = body.call || {};\nvar config = item.config;\nif (!config) throw new Error('Unknown business. Add ?business=<businessId> to the tool URL.');\nvar now = Date.now();\nvar windowEnd = now + (config.bookingRules.maxDaysAhead + 1) * 86400000;\nreturn [{ json: {\n  config: config, args: args, callId: call.call_id || '', fromNumber: call.from_number || '',\n  nowMs: now, timeMin: new Date(now).toISOString(), timeMax: new Date(windowEnd).toISOString()\n} }];"
       }
     },
     {

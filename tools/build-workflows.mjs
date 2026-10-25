@@ -31,7 +31,7 @@ if (!config) throw new Error('Unknown business. Add ?business=<businessId> to th
 var now = Date.now();
 var windowEnd = now + (config.bookingRules.maxDaysAhead + 1) * 86400000;
 return [{ json: {
-  config: config, args: args, callId: call.call_id || '',
+  config: config, args: args, callId: call.call_id || '', fromNumber: call.from_number || '',
   nowMs: now, timeMin: new Date(now).toISOString(), timeMax: new Date(windowEnd).toISOString()
 } }];`;
 
@@ -114,12 +114,20 @@ var ctx = $('Load Business Config').first().json;
 var a = ctx.args;
 var events = $input.all().map(function (i) { return i.json; });
 
+// Accepts digits in any format, with or without +1, and numbers spoken as words ("two one nine, five five five...").
 function normalizePhone(raw) {
-  var d = String(raw || '').replace(/\\D/g, '');
+  var words = { zero: 0, oh: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
+  var s = String(raw || '').toLowerCase().replace(/\\b(double|triple)\\s+(zero|oh|one|two|three|four|five|six|seven|eight|nine|\\d)\\b/g, function (m, k, w) {
+    var one = words.hasOwnProperty(w) ? String(words[w]) : w; return k === 'double' ? one + one : one + one + one;
+  });
+  s = s.replace(/\\b(zero|oh|one|two|three|four|five|six|seven|eight|nine)\\b/g, function (w) { return String(words[w]); });
+  var d = s.replace(/\\D/g, '');
   if (d.length === 10) d = '1' + d;
   return d.length === 11 && d.charAt(0) === '1' ? '+' + d : null;
 }
 var phone = normalizePhone(a.phone);
+var usedCallerId = false;
+if (!phone && normalizePhone(ctx.fromNumber)) { phone = normalizePhone(ctx.fromNumber); usedCallerId = true; }   // real phone calls: fall back to the number they are calling from
 var name = String(a.name || '').trim();
 var address = String(a.address || '').trim();
 var problem = String(a.problem || '').trim();
@@ -149,6 +157,7 @@ else {
   out.label = friendlyLabel(startMs, tz);
 }
 out.phone = phone;
+out.usedCallerId = usedCallerId;
 out.name = name;
 out.address = address;
 out.problem = problem;
@@ -176,7 +185,7 @@ if (v.status === 'open' || v.status === 'duplicate') {
   var cfg = $('Load Business Config').first().json.config;
   var textNote = cfg.smsEnabled === true ? 'Say a confirmation text is on its way.' : 'Do not say a text is coming; say it is on the calendar.';
   if (cfg.collectAddress === false) {
-    res = { booked: true, when: v.label, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + ' (about ' + v.durationMinutes + ' minutes). Confirm this back to the caller and tell them to arrive a few minutes early. ' + textNote };
+    res = { booked: true, when: v.label, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + ' (about ' + v.durationMinutes + ' minutes). Confirm this back to the caller and tell them to arrive a few minutes early. ' + textNote + (v.usedCallerId ? ' The phone number you gave could not be used, so the booking is under the number they are calling from (ending in ' + v.phone.slice(-4) + '). Tell the caller that, and offer to change it.' : '') };
   } else {
     res = { booked: true, when: v.label, visitKind: v.visitKind, estimatedMinutes: v.durationMinutes, message: 'Booked for ' + v.label + (v.visitKind === 'estimate' ? ' as an on-site ESTIMATE visit; the technician gives an exact price after seeing the job' : (v.visitKind === 'big_job' ? ' as the full job; the technician confirms the exact price on site before any work starts' : '')) + ' (estimated visit about ' + v.durationMinutes + ' minutes, an estimate only). Confirm this back to the caller. ' + textNote + ' Do not promise an exact arrival time.' };
   }
