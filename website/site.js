@@ -5,10 +5,10 @@ var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 var CHECKOUT_LINKS = {
   'backup-lite':     { monthly: 'https://buy.stripe.com/test_6oU5kFcsYe6h8wu3PScMM00', yearly: 'https://buy.stripe.com/test_9B63cx3Wse6h9AyeuwcMM07' },
   'backup-standard': { monthly: 'https://buy.stripe.com/test_bJe5kFfFa8LX142bikcMM01', yearly: 'https://buy.stripe.com/test_6oU3cx50wfalcMKbikcMM08' },
-  'backup-plus':     { monthly: 'https://buy.stripe.com/test_7sY8wR8cId2d7sqbikcMM02', yearly: '' },
-  'always-starter':  { monthly: '', yearly: '' },
-  'always-standard': { monthly: '', yearly: '' },
-  'always-plus':     { monthly: '', yearly: 'https://buy.stripe.com/test_dRm3cx50wgepaECdqscMM09' },
+  'backup-plus':     { monthly: 'https://buy.stripe.com/test_7sY8wR8cId2d7sqbikcMM02', yearly: 'https://buy.stripe.com/test_6oUdRbgJe9Q1286bikcMM0e' },
+  'always-starter':  { monthly: 'https://buy.stripe.com/test_9B69AV64A0fr7sq0DGcMM03', yearly: 'https://buy.stripe.com/test_14A7sN2Soe6haEC2LOcMM0c' },
+  'always-standard': { monthly: 'https://buy.stripe.com/test_5kQ00l78E1jv4ge0DGcMM04', yearly: 'https://buy.stripe.com/test_fZudRb50w5zL5ki4TWcMM0d' },
+  'always-plus':     { monthly: 'https://buy.stripe.com/test_4gMfZj50w9Q12863PScMM05', yearly: 'https://buy.stripe.com/test_dRm3cx50wgepaECdqscMM09' },
   'always-high':     { monthly: 'https://buy.stripe.com/test_aFa28t8cI3rDdQO724cMM06', yearly: 'https://buy.stripe.com/test_00w28tfFa6DP6omcmocMM0a' }
 };
 // Two ways it can answer. "backup" = after-hours and missed calls. "always" = 24/7 receptionist (answers every call, can pass calls to staff).
