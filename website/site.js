@@ -3,13 +3,13 @@ var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
 // visitor reserve the plan and you send them a payment link.
 var CHECKOUT_LINKS = {
-  'backup-lite':     { monthly: '', yearly: '' },
-  'backup-standard': { monthly: '', yearly: '' },
-  'backup-plus':     { monthly: '', yearly: '' },
+  'backup-lite':     { monthly: 'https://buy.stripe.com/test_6oU5kFcsYe6h8wu3PScMM00', yearly: 'https://buy.stripe.com/test_9B63cx3Wse6h9AyeuwcMM07' },
+  'backup-standard': { monthly: 'https://buy.stripe.com/test_bJe5kFfFa8LX142bikcMM01', yearly: 'https://buy.stripe.com/test_6oU3cx50wfalcMKbikcMM08' },
+  'backup-plus':     { monthly: 'https://buy.stripe.com/test_7sY8wR8cId2d7sqbikcMM02', yearly: '' },
   'always-starter':  { monthly: '', yearly: '' },
   'always-standard': { monthly: '', yearly: '' },
-  'always-plus':     { monthly: '', yearly: '' },
-  'always-high':     { monthly: '', yearly: '' }
+  'always-plus':     { monthly: '', yearly: 'https://buy.stripe.com/test_dRm3cx50wgepaECdqscMM09' },
+  'always-high':     { monthly: 'https://buy.stripe.com/test_aFa28t8cI3rDdQO724cMM06', yearly: 'https://buy.stripe.com/test_00w28tfFa6DP6omcmocMM0a' }
 };
 // Two ways it can answer. "backup" = after-hours and missed calls. "always" = 24/7 receptionist (answers every call, can pass calls to staff).
 var MODES = {
