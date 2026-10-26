@@ -3,8 +3,12 @@ var DEMO = {
   minutes: 20,                    // length of the call
   tz: 'America/Chicago',          // the time zone the hours below are in
   tzLabel: 'Central Time',
-  days: [1, 2, 3, 4, 5],          // 0 = Sunday ... 6 = Saturday
-  start: '10:00', end: '17:00',   // first start and the time the last call must finish by
+  // Hours by day of week (0 = Sunday ... 6 = Saturday), in the time zone above: [first start, time the last call must finish by].
+  // Weekdays are evenings only; weekends are open all day. Remove a day to close it.
+  hours: {
+    0: ['08:00', '23:00'], 6: ['08:00', '23:00'],
+    1: ['15:00', '23:00'], 2: ['15:00', '23:00'], 3: ['15:00', '23:00'], 4: ['15:00', '23:00'], 5: ['15:00', '23:00']
+  },
   stepMinutes: 30,                // a new slot every 30 minutes
   noticeHours: 24,                // earliest booking, from now
   daysAhead: 45                   // how far ahead people can book
@@ -41,9 +45,10 @@ var DEMO = {
 
   function slotsFor(y, m, d){
     var dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-    if (DEMO.days.indexOf(dow) === -1) return [];
+    var h = DEMO.hours[dow];
+    if (!h) return [];
     var out = [];
-    for (var s = hm(DEMO.start); s + DEMO.minutes <= hm(DEMO.end); s += DEMO.stepMinutes) {
+    for (var s = hm(h[0]); s + DEMO.minutes <= hm(h[1]); s += DEMO.stepMinutes) {
       var ms = instant(y, m, d, Math.floor(s / 60), s % 60);
       if (ms >= earliest && ms <= latest) out.push({ min: s, ms: ms });
     }
