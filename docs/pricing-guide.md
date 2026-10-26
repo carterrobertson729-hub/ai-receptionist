@@ -145,3 +145,18 @@ After-hours and missed calls ("backup": staff answer first; the AI takes missed 
 - Extra location: NOT an add-on. A second location needs its own agent, settings, calendar and tests, so it is its own plan. Offer a second-location discount (suggested 20 to 25 percent off that plan, no setup fee). Carter to decide the exact percent; the website says "ask us about a second-location discount" until then.
 
 - Wording update (2026-10-24): the extra number add-on is described as a number for a second location that shares the plan's minutes. If the second location has different hours, services or a different calendar, it needs real setup work, so the website says to ask us.
+
+
+## Custom plan for multiple locations / high volume (2026-10-26, Carter)
+
+Idea from a prospect who owns 7 auto shops: a "call us" plan with no listed price. Website: a "Custom plan" band under the plans on index.html and pricing.html (Book a call -> demo.html?for=custom), an FAQ entry, and "Custom plan (several locations)" topics in the contact and demo forms. Nothing is priced on the site.
+
+How to price it (suggestions, Carter decides):
+- Floor: never below cost. Retell about $0.17/min plus about $2 per phone number. 10,000 minutes = about $1,700 of cost before any profit.
+- Per-minute rate: the public overage is $0.40/min. A volume price somewhere around $0.28-0.35/min keeps a healthy margin ($0.11-0.18/min profit). Do not go near the $0.17 cost.
+- Per-location fee: $15-25 per location (number, calendar, config, testing) in addition to minutes.
+- Setup: per location or a flat quote, since each shop has its own hours, services and calendar.
+- Example for 7 shops using about 3,500 minutes a month: 3,500 x $0.30 = $1,050 + 7 x $20 = $140, about $1,190 a month against about $610 of cost.
+- Ask for an annual commitment or a 3-month minimum before offering the lowest rates.
+
+Things to check before quoting a big customer (all unverified): Retell volume pricing and call concurrency limits at that size; n8n plan limits (about 7 executions per call, so 4,000 calls is about 28,000 executions a month, above n8n Starter and Pro); whether the shops use shop-management software (Tekmetric, Shopmonkey and similar) instead of Google Calendar; billing one invoice for all locations in Stripe.

@@ -41,7 +41,7 @@ var ADDONS = [
 ];
 var SETUP_FEE = 99;
 var DISCOUNT = 0.10; // yearly plans are 10% off, rounded down to a whole dollar
-var INDUSTRIES = { barbershop: 'Barbershop or salon', trades: 'Plumbing or trades', repair: 'Repair shop', landscaping: 'Landscaping' };
+var INDUSTRIES = { barbershop: 'Barbershop or salon', trades: 'Plumbing or trades', repair: 'Repair shop', landscaping: 'Landscaping', custom: 'Several locations (custom plan)' };
 
 /* ===== Page logic ===== */
 function $(id){ return document.getElementById(id); }
@@ -134,7 +134,7 @@ document.querySelectorAll('.sub-toggle').forEach(function(b){
 var industry = document.body.getAttribute('data-industry') || INDUSTRIES[query.get('for')] || '';
 if (industry && $('cType')) { $('cType').value = industry; }
 if (query.get('topic') && $('cTopic')) {
-  var topics = { repair: 'Repair shops', landscaping: 'Landscaping' };
+  var topics = { repair: 'Repair shops', landscaping: 'Landscaping', custom: 'Custom plan (several locations)' };
   if (topics[query.get('topic')]) $('cTopic').value = topics[query.get('topic')];
 }
 
