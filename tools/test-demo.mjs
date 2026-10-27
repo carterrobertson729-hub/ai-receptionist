@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 const require = createRequire(import.meta.url);
-const { demoParse, demoConflict, demoEmails } = require('../n8n/code/demo.js');
+const { demoParse, demoConflict, demoEmails, demoBusy, demoEventInfo, demoCancelEmails } = require('../n8n/code/demo.js');
 let n = 0; const test = (t, f) => { f(); n++; console.log('ok  ' + t); };
 const opts = { secret: 'k1', tz: 'America/Chicago', minutes: 20, nowMs: Date.parse('2026-10-26T12:00:00Z') };
 const cfg = { ownerEmail: 'me@x.com', tzLabel: 'Central Time', minutes: 20, demoLine: '(219) 587-7319' };
@@ -46,5 +46,33 @@ test('no phone: asks for one. Calendar failure: warns the owner', () => {
 test('clash: owner told nothing was added, visitor asked for another time', () => {
   const p = demoParse(sub({}), opts); const m = demoEmails(p, 'Haircut', true, cfg);
   assert.match(m[0].subject, /CLASHES/); assert.match(m[1].subject, /pick another time/); assert.doesNotMatch(m[1].body, /is booked/);
+});
+test('booked emails carry a change/cancel link when the event id and site address are known', () => {
+  const p = demoParse(sub({}, { site_url: 'https://my.netlify.app/' }), opts); const m = demoEmails(p, '', true, cfg, 'abc123');
+  assert.match(m[1].body, /https:\/\/my\.netlify\.app\/demo-change\.html\?e=abc123/); assert.match(m[0].body, /demo-change\.html\?e=abc123/);
+  const m2 = demoEmails(demoParse(sub({}), opts), '', true, cfg, 'abc123');   // no site address anywhere
+  assert.doesNotMatch(m2[1].body, /demo-change/); assert.match(m2[1].body, /reply to this email/);
+  const m3 = demoEmails(demoParse(sub({}), opts), '', true, Object.assign({ siteUrl: 'https://x.app' }, cfg), 'zz');
+  assert.match(m3[1].body, /https:\/\/x\.app\/demo-change\.html\?e=zz/);
+});
+test('busy list: timed busy events only', () => {
+  const ev = (a, b, x) => Object.assign({ start: { dateTime: a }, end: { dateTime: b } }, x);
+  const b = demoBusy([ev('2026-10-28T17:30:00-05:00', '2026-10-28T17:50:00-05:00'), ev('2026-10-28T09:00:00-05:00', '2026-10-28T10:00:00-05:00', { transparency: 'transparent' }), { start: { date: '2026-10-28' }, end: { date: '2026-10-29' } }, ev('2026-10-28T11:00:00-05:00', '2026-10-28T12:00:00-05:00', { status: 'cancelled' })]);
+  assert.equal(b.length, 1); assert.equal(b[0].s, Date.parse('2026-10-28T22:30:00Z')); assert.equal(b[0].e - b[0].s, 20 * 60000);
+});
+test('event info: only future DEMO events can be looked up or cancelled', () => {
+  const now = Date.parse('2026-10-26T12:00:00Z');
+  const ev = (x) => Object.assign({ id: 'a1', summary: 'DEMO: Sam Lee (Lee Cuts)', description: 'Booked on the website\nName: Sam Lee\nEmail: s@x.com', start: { dateTime: '2026-10-28T15:30:00-05:00' }, end: { dateTime: '2026-10-28T15:50:00-05:00' } }, x);
+  const i = demoEventInfo(ev({}), 'America/Chicago', now);
+  assert.equal(i.ok, true); assert.equal(i.name, 'Sam Lee (Lee Cuts)'); assert.equal(i.email, 's@x.com'); assert.match(i.label, /Wednesday, October 28 at 3:30 PM/);
+  assert.equal(demoEventInfo(ev({ summary: 'Dentist' }), 'America/Chicago', now).reason, 'not_found');
+  assert.equal(demoEventInfo(ev({ status: 'cancelled' }), 'America/Chicago', now).reason, 'already_cancelled');
+  assert.equal(demoEventInfo(ev({}), 'America/Chicago', Date.parse('2026-10-29T00:00:00Z')).reason, 'in_the_past');
+  assert.equal(demoEventInfo({}, 'America/Chicago', now).reason, 'not_found');
+});
+test('cancel emails: owner always, visitor when their email is known', () => {
+  const m = demoCancelEmails({ name: 'Sam', label: 'Wednesday, October 28 at 3:30 PM', email: 's@x.com' }, cfg);
+  assert.equal(m.length, 2); assert.equal(m[0].to, 'me@x.com'); assert.equal(m[1].to, 's@x.com');
+  assert.equal(demoCancelEmails({ name: 'Sam', label: 'x', email: '' }, cfg).length, 1);
 });
 console.log(n + ' tests passed');

@@ -19,6 +19,11 @@ var DEMO = {
   var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   var selected = null, selectedTime = null;
+  var busy = [];                                   // times already booked on the demo calendar, from n8n
+  function isFree(ms){ var end = ms + DEMO.minutes * 60000; return !busy.some(function(b){ return b.s < end && b.e > ms; }); }
+  function loadBusy(){
+    return fetch(N8N_BASE + 'demo-slots').then(function(r){ if (!r.ok) throw new Error('bad'); return r.json(); }).then(function(j){ busy = (j && j.busy) || []; return true; }).catch(function(){ return false; });
+  }
 
   function zoneParts(ms, tz){
     var o = {};
@@ -50,7 +55,7 @@ var DEMO = {
     var out = [];
     for (var s = hm(h[0]); s + DEMO.minutes <= hm(h[1]); s += DEMO.stepMinutes) {
       var ms = instant(y, m, d, Math.floor(s / 60), s % 60);
-      if (ms >= earliest && ms <= latest) out.push({ min: s, ms: ms });
+      if (ms >= earliest && ms <= latest && isFree(ms)) out.push({ min: s, ms: ms });
     }
     return out;
   }
@@ -97,6 +102,8 @@ var DEMO = {
   }
 
   renderCalendar(); renderSlots(); updateSummary();
+  loadBusy().then(function(ok){ if (ok) { renderCalendar(); renderSlots(); updateSummary(); } });
+  if (new URLSearchParams(window.location.search).get('changed') && $('changedNote')) $('changedNote').hidden = false;
 
   // submit with the picked time
   var form = $('demoForm');
@@ -105,11 +112,23 @@ var DEMO = {
     e.preventDefault();
     if (selected === null || selectedTime === null) { $('pickSummary').textContent = 'Please pick a day and a time first.'; return; }
     if (!form.checkValidity()) { form.reportValidity(); return; }
+    // look again just before sending, in case someone else took the time while this page was open
+    var btn = $('demoSubmit'); btn.disabled = true;
+    loadBusy().then(function(){
+      if (!isFree(selectedMs)) {
+        selectedTime = null; renderCalendar(); renderSlots(); updateSummary();
+        $('pickSummary').textContent = 'Sorry, that time was just taken. Please pick another time.';
+        return;
+      }
+      send();
+    });
+    function send(){
     sendForm(form, function(){
       form.hidden = true;
       var ok = $('demoDone');
       ok.querySelector('[data-when]').innerHTML = $('pickSummary').innerHTML;
       ok.hidden = false; ok.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
+    }
   });
 })();

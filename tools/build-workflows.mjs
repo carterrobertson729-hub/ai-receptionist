@@ -657,7 +657,8 @@ const demoSettings = `var SETTINGS = {
   tz: 'America/Chicago', tzLabel: 'Central Time', minutes: 20,
   calendarId: 'd4e067809ac408fb853c1d9eee25b3264d00f060d29aa3f3ca88cd5a428d344e@group.calendar.google.com',   // the calendar demo bookings go on (a calendar ID, or 'primary' for the connected Google account's main calendar)
   ownerEmail: 'carter.robertson729@gmail.com',
-  demoLine: '(219) 587-7319'
+  demoLine: '(219) 587-7319',
+  siteUrl: ''                                  // your website address for the change/cancel link, e.g. https://yoursite.netlify.app (blank = use the address Netlify sends)
 };`;
 const demoParseCode = `${demoLib}
 ${demoSettings}
@@ -678,7 +679,7 @@ var p = $('Read Request').first().json;
 var clash = $('Check Calendar').first().json.clash;
 var made = $input.first().json;
 var calendarOk = !clash && !made.error && !!made.id;
-return demoEmails(p, clash, calendarOk, SETTINGS).map(function (m) { return { json: m }; });`;
+return demoEmails(p, clash, calendarOk, SETTINGS, made.id).map(function (m) { return { json: m }; });`;
 const demo = wf('Website - Demo Booking', [
   {
     id: 'm1000000-0000-4000-8000-000000000001', name: 'Netlify Demo Form', type: 'n8n-nodes-base.webhook', typeVersion: 2, position: [0, 0],
@@ -757,6 +758,111 @@ const demo = wf('Website - Demo Booking', [
 });
 writeFileSync(new URL('n8n/website-demo-booking.json', root), JSON.stringify(demo, null, 2) + '\n');
 
+
+// ---------- 12. website demo manage: open times for the booking page + change/cancel links ----------
+const manageSettings = `var SETTINGS = {
+  tz: 'America/Chicago', tzLabel: 'Central Time',
+  calendarId: 'd4e067809ac408fb853c1d9eee25b3264d00f060d29aa3f3ca88cd5a428d344e@group.calendar.google.com',   // same calendar as the booking workflow
+  ownerEmail: 'carter.robertson729@gmail.com',
+  daysAhead: 46
+};`;
+const slotWindowCode = `${manageSettings}
+var now = Date.now();
+return [{ json: { calendarId: SETTINGS.calendarId, timeMin: new Date(now).toISOString(), timeMax: new Date(now + SETTINGS.daysAhead * 86400000).toISOString() } }];`;
+const busyListCode = `${demoLib}
+var events = $input.all().map(function (i) { return i.json; }).filter(function (e) { return e && e.start; });
+return [{ json: { busy: demoBusy(events) } }];`;
+const readLinkCode = `${manageSettings}
+var q = ($input.first().json.query) || {};
+var id = String(q.e || '').replace(/[^a-zA-Z0-9_]/g, '').slice(0, 100);
+return [{ json: { id: id || 'none', action: q['do'] === 'cancel' ? 'cancel' : 'lookup', calendarId: SETTINGS.calendarId } }];`;
+const checkEventCode = `${demoLib}
+${manageSettings}
+var link = $('Read Link').first().json;
+var ev = $input.first().json;
+var info = demoEventInfo(ev && !ev.error ? ev : null, SETTINGS.tz, Date.now());
+info.cancel = info.ok && link.action === 'cancel';
+return [{ json: info }];`;
+const cancelEmailsCode = `${demoLib}
+${manageSettings}
+var info = $('Check Event').first().json;
+return demoCancelEmails(info, SETTINGS).map(function (m) { return { json: m }; });`;
+const respondJson = (id, name, position, body) => ({
+  id, name, type: 'n8n-nodes-base.respondToWebhook', typeVersion: 1.1, position,
+  parameters: { respondWith: 'json', responseBody: body, options: { responseHeaders: { entries: [{ name: 'Access-Control-Allow-Origin', value: '*' }] } } }
+});
+const getHook = (id, name, path, position) => ({
+  id, name, type: 'n8n-nodes-base.webhook', typeVersion: 2, position, webhookId: path.replace(/\//g, '-'),
+  parameters: { httpMethod: 'GET', path, responseMode: 'responseNode', options: { allowedOrigins: '*' } }
+});
+const gcal = (id, name, position, parameters, extra = {}) => ({
+  id, name, type: 'n8n-nodes-base.googleCalendar', typeVersion: 1.3, position, ...extra, parameters,
+  credentials: { googleCalendarOAuth2Api: { id: 'REPLACE', name: 'Google Calendar account' } }
+});
+const manage = wf('Website - Demo Manage', [
+  // A. open times for the booking page
+  getHook('n1000000-0000-4000-8000-000000000001', 'Open Times Request', 'website/demo-slots', [0, 0]),
+  code('n1000000-0000-4000-8000-000000000002', 'Slot Window', [240, 0], slotWindowCode),
+  gcal('n1000000-0000-4000-8000-000000000003', 'Get Busy Events', [480, 0], {
+    resource: 'event', operation: 'getAll',
+    calendar: { __rl: true, mode: 'id', value: '={{ $json.calendarId }}' },
+    returnAll: false, limit: 250, timeMin: '={{ $json.timeMin }}', timeMax: '={{ $json.timeMax }}',
+    options: { singleEvents: true, orderBy: 'startTime' }
+  }, { alwaysOutputData: true }),
+  code('n1000000-0000-4000-8000-000000000004', 'Busy List', [720, 0], busyListCode),
+  respondJson('n1000000-0000-4000-8000-000000000005', 'Send Busy Times', [960, 0], '={{ JSON.stringify($json) }}'),
+  // B. look up or cancel a demo from the link in the emails
+  getHook('n1000000-0000-4000-8000-000000000011', 'Change Link Request', 'website/demo-change', [0, 300]),
+  code('n1000000-0000-4000-8000-000000000012', 'Read Link', [240, 300], readLinkCode),
+  gcal('n1000000-0000-4000-8000-000000000013', 'Get Demo Event', [480, 300], {
+    resource: 'event', operation: 'get',
+    calendar: { __rl: true, mode: 'id', value: '={{ $json.calendarId }}' },
+    eventId: '={{ $json.id }}', options: {}
+  }, { alwaysOutputData: true, onError: 'continueRegularOutput' }),
+  code('n1000000-0000-4000-8000-000000000014', 'Check Event', [720, 300], checkEventCode),
+  {
+    id: 'n1000000-0000-4000-8000-000000000015', name: 'Cancel It?', type: 'n8n-nodes-base.if', typeVersion: 2.2, position: [960, 300],
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+        conditions: [{ id: 'c1', leftValue: '={{ $json.cancel }}', rightValue: true, operator: { type: 'boolean', operation: 'true', singleValue: true } }],
+        combinator: 'and'
+      },
+      options: {}
+    }
+  },
+  gcal('n1000000-0000-4000-8000-000000000016', 'Delete Demo Event', [1200, 220], {
+    resource: 'event', operation: 'delete',
+    calendar: { __rl: true, mode: 'id', value: "={{ $('Read Link').first().json.calendarId }}" },
+    eventId: "={{ $('Read Link').first().json.id }}", options: {}
+  }, { onError: 'continueRegularOutput' }),
+  respondJson('n1000000-0000-4000-8000-000000000017', 'Send Cancelled', [1440, 160], "={{ JSON.stringify({ ok: !$json.error, cancelled: !$json.error, name: $('Check Event').first().json.name, when: $('Check Event').first().json.label }) }}"),
+  code('n1000000-0000-4000-8000-000000000018', 'Cancel Emails', [1440, 300], cancelEmailsCode),
+  {
+    id: 'n1000000-0000-4000-8000-000000000019', name: 'Send Cancel Email', type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position: [1680, 300],
+    onError: 'continueRegularOutput',
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  },
+  respondJson('n1000000-0000-4000-8000-000000000020', 'Send Lookup Result', [1200, 420], "={{ JSON.stringify({ ok: $json.ok, reason: $json.reason || '', name: $json.name || '', when: $json.label || '' }) }}")
+], {
+  'Open Times Request': { main: [[{ node: 'Slot Window', type: 'main', index: 0 }]] },
+  'Slot Window': { main: [[{ node: 'Get Busy Events', type: 'main', index: 0 }]] },
+  'Get Busy Events': { main: [[{ node: 'Busy List', type: 'main', index: 0 }]] },
+  'Busy List': { main: [[{ node: 'Send Busy Times', type: 'main', index: 0 }]] },
+  'Change Link Request': { main: [[{ node: 'Read Link', type: 'main', index: 0 }]] },
+  'Read Link': { main: [[{ node: 'Get Demo Event', type: 'main', index: 0 }]] },
+  'Get Demo Event': { main: [[{ node: 'Check Event', type: 'main', index: 0 }]] },
+  'Check Event': { main: [[{ node: 'Cancel It?', type: 'main', index: 0 }]] },
+  'Cancel It?': { main: [[{ node: 'Delete Demo Event', type: 'main', index: 0 }], [{ node: 'Send Lookup Result', type: 'main', index: 0 }]] },
+  'Delete Demo Event': { main: [[{ node: 'Send Cancelled', type: 'main', index: 0 }, { node: 'Cancel Emails', type: 'main', index: 0 }]] },
+  'Cancel Emails': { main: [[{ node: 'Send Cancel Email', type: 'main', index: 0 }]] }
+});
+writeFileSync(new URL('n8n/website-demo-manage.json', root), JSON.stringify(manage, null, 2) + '\n');
+
 writeFileSync(new URL('n8n/business-config.json', root), JSON.stringify(bizConfig, null, 2) + '\n');
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
 writeFileSync(new URL('n8n/book-appointment.json', root), JSON.stringify(book, null, 2) + '\n');
@@ -766,7 +872,7 @@ writeFileSync(new URL('n8n/callback-request.json', root), JSON.stringify(callbac
 writeFileSync(new URL('n8n/find-appointment.json', root), JSON.stringify(lookup, null, 2) + '\n');
 writeFileSync(new URL('n8n/cancel-appointment.json', root), JSON.stringify(cancel, null, 2) + '\n');
 writeFileSync(new URL('n8n/reschedule-appointment.json', root), JSON.stringify(resched, null, 2) + '\n');
-console.log('Wrote 11 workflows');
+console.log('Wrote 12 workflows');
 
 // ---------- per-node code files: paste these into an existing n8n workflow instead of re-importing ----------
 import { mkdirSync, rmSync } from 'node:fs';
@@ -774,7 +880,7 @@ const nodeCodeDir = new URL('n8n/node-code/', root);
 rmSync(nodeCodeDir, { recursive: true, force: true });
 mkdirSync(nodeCodeDir, { recursive: true });
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly, demo]) {
+for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly, demo, manage]) {
   for (const n of w.nodes.filter((n) => n.type === 'n8n-nodes-base.code')) {
     const header = `// PASTE INTO n8n: workflow "${w.name}" > node "${n.name}" > Code tab (select all, replace, Save).\n`;
     writeFileSync(new URL(`${slug(w.name.replace('Receptionist - ', ''))}__${slug(n.name)}.js`, nodeCodeDir), header + n.parameters.jsCode + '\n');

@@ -74,6 +74,7 @@
     <div class="book-grid">
       <div class="card">
         <div id="calendar" aria-label="Calendar"></div>
+        <p class="note-box" id="changedNote" hidden>Your old demo was cancelled. Pick a new time below.</p>
         <div id="slots" style="margin-top:22px"></div>
       </div>
       <div>
@@ -91,12 +92,12 @@
           <input type="hidden" name="format" value="Phone call">
           <div class="row"><label for="cMsg">Anything we should know?</label><textarea id="cMsg" name="notes"></textarea></div>
           <button class="btn btn-primary btn-block" id="demoSubmit" type="submit" disabled>Request this time</button>
-          <p class="fine" data-note style="margin-top:10px">Your request is not final until we confirm it by email, usually within 2 to 3 business days.</p>
+          <p class="fine" data-note style="margin-top:10px">Your time is booked as soon as you send this. Times that are already taken are hidden. You will get a confirmation email with a link to change or cancel.</p>
         </form>
         <div class="success" id="demoDone" hidden>
           <h3>Request sent</h3>
           <p data-when></p>
-          <p>We will email you within 2 to 3 business days to confirm the time and send the call details. If that time does not work, we will suggest another.</p>
+          <p>Your demo is booked. Check your email for the confirmation, which has a link to change or cancel. If you do not see it in a few minutes, check your spam folder.</p>
           <p><a class="btn btn-ghost" href="index.html">Back to the home page</a></p>
         </div>
       </div>

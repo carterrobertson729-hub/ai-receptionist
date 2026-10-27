@@ -51,7 +51,7 @@ function demoParse(input, opts) {
     ok: true,
     name: String(d.name || '').trim(), email: String(d.email || '').trim(), phone: String(d.phone || '').trim(),
     business: String(d.business || '').trim(), businessType: String(d.business_type || '').trim(), notes: String(d.notes || '').trim(),
-    visitorLocal: String(d.local_time || '').trim(),
+    visitorLocal: String(d.local_time || '').trim(), siteUrl: String(sub.site_url || body.site_url || '').trim(),
     startMs: startMs, endMs: endMs,
     startIso: demoLocalIso(startMs, opts.tz), endIso: demoLocalIso(endMs, opts.tz),
     label: demoLabel(startMs, opts.tz)
@@ -71,7 +71,7 @@ function demoConflict(events, startMs, endMs) {
 }
 
 // p = demoParse result, clash = title from demoConflict ('' if none), calendarOk = false if creating the event failed.
-function demoEmails(p, clash, calendarOk, cfg) {
+function demoEmails(p, clash, calendarOk, cfg, eventId) {
   var first = (p.name || 'there').split(/\s+/)[0];
   var tzLabel = cfg.tzLabel;
   var when = p.label + ' ' + tzLabel;
@@ -80,6 +80,8 @@ function demoEmails(p, clash, calendarOk, cfg) {
     'Business: ' + (p.business || 'not given') + (p.businessType ? ' (' + p.businessType + ')' : ''),
     'Notes: ' + (p.notes || 'none'), p.visitorLocal ? 'Their local time: ' + p.visitorLocal : ''
   ].filter(Boolean).join('\n');
+  var base = String(cfg.siteUrl || p.siteUrl || '').replace(/\/+$/, '');
+  var manage = eventId && base ? base + '/demo-change.html?e=' + encodeURIComponent(eventId) : '';
   var out = [];
   if (clash) {
     out.push({ to: cfg.ownerEmail, subject: 'Demo request CLASHES with your calendar: ' + p.name + ', ' + when,
@@ -89,12 +91,42 @@ function demoEmails(p, clash, calendarOk, cfg) {
     return out;
   }
   out.push({ to: cfg.ownerEmail, subject: 'New demo booked: ' + p.name + ', ' + when,
-    body: (calendarOk ? 'Added to your calendar.' : 'WARNING: the calendar event could not be created. Add it yourself.') + '\n\nWhen: ' + when + ' (' + cfg.minutes + ' minutes, phone call)\n' + details });
+    body: (calendarOk ? 'Added to your calendar.' : 'WARNING: the calendar event could not be created. Add it yourself.') + '\n\nWhen: ' + when + ' (' + cfg.minutes + ' minutes, phone call)\n' + details + (manage ? '\n\nThey can change or cancel with this link (it frees the time): ' + manage : '') });
   if (p.email) out.push({ to: p.email, subject: 'Your AnswerBay demo is booked: ' + when,
     body: 'Hi ' + first + ',\n\nYour AnswerBay demo is booked for ' + when + (p.visitorLocal ? ' (' + p.visitorLocal + ' in your time zone)' : '') + '. It is a ' + cfg.minutes + '-minute phone call.\n\n' +
       (p.phone ? 'We will call you at ' + p.phone + '.' : 'You did not leave a phone number, so please reply to this email with the best number to reach you.') +
-      '\n\nWant to hear the receptionist before then? Call our barbershop demo line at ' + cfg.demoLine + ' and book a haircut.\n\nIf you need to change the time, just reply to this email.\n\nThe AnswerBay team' });
+      '\n\nWant to hear the receptionist before then? Call our barbershop demo line at ' + cfg.demoLine + ' and book a haircut.\n\n' + (manage ? 'Need to change or cancel? Use this link. It takes a few seconds and frees up the time: ' + manage : 'If you need to change the time, reply to this email.') + '\n\nThe AnswerBay team' });
   return out;
 }
 
-if (typeof module !== 'undefined') module.exports = { demoParse: demoParse, demoConflict: demoConflict, demoEmails: demoEmails, demoLocalIso: demoLocalIso };
+// Busy intervals (ms) from calendar events, for hiding taken times on the website.
+function demoBusy(events) {
+  var out = [];
+  for (var i = 0; i < events.length; i++) {
+    var e = events[i];
+    if (!e || !e.start || !e.start.dateTime || !e.end || !e.end.dateTime) continue;
+    if (e.transparency === 'transparent' || e.status === 'cancelled') continue;
+    out.push({ s: Date.parse(e.start.dateTime), e: Date.parse(e.end.dateTime) });
+  }
+  return out;
+}
+
+// Look at a calendar event fetched by id. Only events this workflow made ("DEMO: ...") can be looked up or cancelled.
+function demoEventInfo(ev, tz, nowMs) {
+  if (!ev || !ev.id || !ev.start || !ev.start.dateTime) return { ok: false, reason: 'not_found' };
+  if (ev.status === 'cancelled') return { ok: false, reason: 'already_cancelled' };
+  if (String(ev.summary || '').indexOf('DEMO:') !== 0) return { ok: false, reason: 'not_found' };
+  var startMs = Date.parse(ev.start.dateTime);
+  if (startMs < nowMs) return { ok: false, reason: 'in_the_past' };
+  var m = /^Email: (.*)$/m.exec(ev.description || '');
+  return { ok: true, name: String(ev.summary).replace(/^DEMO:\s*/, ''), startMs: startMs, label: demoLabel(startMs, tz), email: m ? m[1].trim() : '' };
+}
+
+function demoCancelEmails(info, cfg) {
+  var when = info.label + ' ' + cfg.tzLabel;
+  var out = [{ to: cfg.ownerEmail, subject: 'Demo cancelled: ' + info.name + ', ' + when, body: info.name + ' cancelled their demo for ' + when + '. The time is open again and the calendar event was removed.' + (info.email ? '\nTheir email: ' + info.email : '') }];
+  if (info.email) out.push({ to: info.email, subject: 'Your AnswerBay demo is cancelled', body: 'Your AnswerBay demo for ' + when + ' is cancelled and the time is released. You can book another time on our website whenever you like.\n\nThe AnswerBay team' });
+  return out;
+}
+
+if (typeof module !== 'undefined') module.exports = { demoParse: demoParse, demoConflict: demoConflict, demoEmails: demoEmails, demoLocalIso: demoLocalIso, demoBusy: demoBusy, demoEventInfo: demoEventInfo, demoCancelEmails: demoCancelEmails };

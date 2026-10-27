@@ -13,6 +13,8 @@ var CHECKOUT_LINKS = {
 };
 // Stripe customer portal login link (Stripe Dashboard > Settings > Billing > Customer portal > turn on the login link). Paste it here; until then the Log in page sends people to the contact page.
 var PORTAL_LINK = '';
+// Where the website talks to your n8n workflows (hides booked demo times, lets people cancel or change a demo). Must end with a slash.
+var N8N_BASE = 'https://icrob.app.n8n.cloud/webhook/website/';
 // Two ways it can answer. "backup" = after-hours and missed calls. "always" = 24/7 receptionist (answers every call, can pass calls to staff).
 var MODES = {
   backup: { label: 'After-hours & missed calls', title: 'After-hours and missed calls',
