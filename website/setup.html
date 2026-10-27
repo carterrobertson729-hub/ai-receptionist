@@ -25,7 +25,7 @@
       <li class="has-sub"><a href="services.html">Services</a><button type="button" class="sub-toggle" aria-label="Show services" aria-expanded="false">&#9662;</button>
         <ul class="sub">
           <li><a href="barbershops.html">Barbershops &amp; salons</a></li>
-          <li><a href="trades.html">Plumbing &amp; trades</a></li>
+          <li><a href="trades.html">Plumbing &amp; home services</a></li>
           <li><a href="repair.html">Repair shops <span class="soon">Soon</span></a></li>
           <li><a href="landscaping.html">Landscaping <span class="soon">Soon</span></a></li>
         </ul>
@@ -62,7 +62,7 @@
         <div class="row"><label for="cEmail">Your email</label><input id="cEmail" name="email" type="email" autocomplete="email" required></div>
         <div class="row"><label for="cPhone">Your mobile number</label><input id="cPhone" name="owner_phone" type="tel" autocomplete="tel"></div>
         <div class="row"><label for="cBizPhone">The business number customers call</label><input id="cBizPhone" name="business_phone" type="tel" required></div>
-        <div class="row"><label for="cType">What type of business?</label><select id="cType" name="business_type"><option>Barbershop or salon</option><option>Plumbing or trades</option><option>Repair shop</option><option>Landscaping</option><option>Something else</option></select></div>
+        <div class="row"><label for="cType">What type of business?</label><select id="cType" name="business_type"><option>Barbershop or salon</option><option>Plumbing or home services</option><option>Repair shop</option><option>Landscaping</option><option>Something else</option></select></div>
         <div class="row"><label for="cAddr">Business address (if callers ask where you are)</label><input id="cAddr" name="address" autocomplete="street-address"></div>
         <div class="row"><label for="cSite">Website or online booking page (if any)</label><input id="cSite" name="website" type="url" placeholder="https://"></div>
       </fieldset>
@@ -102,7 +102,7 @@
         <div class="row"><label for="bBarber">Can clients request a barber?</label><select id="bBarber" name="barber_requests"><option>Yes, note the request</option><option>No</option></select></div>
       </fieldset>
 
-      <fieldset class="card fs" data-for="trades" hidden><legend>6. Plumbing and trades questions</legend>
+      <fieldset class="card fs" data-for="trades" hidden><legend>6. Plumbing and home services questions</legend>
         <div class="row"><label for="tEmerg">What counts as an emergency? (burst pipe, no heat, sewage backup...)</label><textarea id="tEmerg" name="emergencies"></textarea></div>
         <div class="row"><label for="tOnCall">Who should be alerted for emergencies? Name, mobile, email and the days they are on call.</label><textarea id="tOnCall" name="on_call"></textarea></div>
         <div class="row"><label for="tFee">Service call or trip fee (if any)</label><input id="tFee" name="service_call_fee"></div>

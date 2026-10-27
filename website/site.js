@@ -41,7 +41,7 @@ var ADDONS = [
 ];
 var SETUP_FEE = 99;
 var DISCOUNT = 0.10; // yearly plans are 10% off, rounded down to a whole dollar
-var INDUSTRIES = { barbershop: 'Barbershop or salon', trades: 'Plumbing or trades', repair: 'Repair shop', landscaping: 'Landscaping', custom: 'Several locations (custom plan)' };
+var INDUSTRIES = { barbershop: 'Barbershop or salon', trades: 'Plumbing or home services', repair: 'Repair shop', landscaping: 'Landscaping', custom: 'Several locations (custom plan)' };
 
 /* ===== Page logic ===== */
 function $(id){ return document.getElementById(id); }
