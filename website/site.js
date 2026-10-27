@@ -13,6 +13,10 @@ var CHECKOUT_LINKS = {
 };
 // Stripe customer portal login link (Stripe Dashboard > Settings > Billing > Customer portal > turn on the login link). Paste it here; until then the Log in page sends people to the contact page.
 var PORTAL_LINK = '';
+// Google sign-in (Firebase Authentication). Paste the web app config from Firebase here, for example:
+// var FIREBASE_CONFIG = { apiKey: '...', authDomain: '...firebaseapp.com', projectId: '...', appId: '...' };
+// Until it is set, the sign-in button explains that sign-in is almost ready. (These values are public by design, not secrets.)
+var FIREBASE_CONFIG = null;
 // Where the website talks to your n8n workflows (hides booked demo times, lets people cancel or change a demo). Must end with a slash.
 var N8N_BASE = 'https://icrob.app.n8n.cloud/webhook/website/';
 // Two ways it can answer. "backup" = after-hours and missed calls. "always" = 24/7 receptionist (answers every call, can pass calls to staff).
@@ -141,6 +145,14 @@ if (query.get('topic') && $('cTopic')) {
   var topics = { repair: 'Repair shops', landscaping: 'Landscaping', custom: 'Custom plan (several locations)', account: 'Help with my account' };
   if (topics[query.get('topic')]) $('cTopic').value = topics[query.get('topic')];
 }
+
+// prefill name and email after sign-in (links from the login page carry ?email=&name=, and the browser remembers the last sign-in)
+(function(){
+  var em = query.get('email'), nm = query.get('name');
+  try { em = em || localStorage.getItem('ab_email'); nm = nm || localStorage.getItem('ab_name'); } catch (e) {}
+  document.querySelectorAll('input[name="email"]:not([type="hidden"])').forEach(function(i){ if (em && !i.value) i.value = em; });
+  document.querySelectorAll('input[name="name"]:not([type="hidden"])').forEach(function(i){ if (nm && !i.value) i.value = nm; });
+})();
 
 // duplicate the moving banners so they loop smoothly
 document.querySelectorAll('.track[data-dup]').forEach(function(t){ t.innerHTML += t.innerHTML; });

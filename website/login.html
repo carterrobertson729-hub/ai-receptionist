@@ -50,16 +50,34 @@
 </section>
 <section style="padding-top:20px">
   <div class="wrap">
+    <div class="card" id="authCard" style="margin-bottom:20px">
+      <div id="signedOut">
+        <h3>Sign up or log in with Google</h3>
+        <p>Use your Google account to create your AnswerBay account or to log back in. We only receive your name and email address, never your Google password.</p>
+        <label class="agree" style="margin-top:14px"><input type="checkbox" id="authTerms"><span>I agree to the <a href="#terms">terms and policies</a>, including that calls are answered by an automated assistant and may be recorded.</span></label>
+        <label class="agree"><input type="checkbox" id="authNotify"><span>Optional: I would like to receive emails from AnswerBay about my account, updates and offers. I can unsubscribe at any time.</span></label>
+        <p style="margin-top:16px"><button class="btn btn-primary" id="googleBtn" type="button" disabled>Continue with Google</button></p>
+        <p class="fine" id="authMsg" aria-live="polite" style="margin-top:10px"></p>
+      </div>
+      <div id="signedIn" hidden>
+        <h3 id="hello">Welcome</h3>
+        <p id="who" class="fine"></p>
+        <p style="margin-top:16px"><a class="btn btn-primary" id="toPlans" href="pricing.html">Choose a plan</a> <a class="btn btn-ghost" id="toSetup" href="setup.html">Fill in my setup form</a> <a class="btn btn-ghost" href="demo.html">Book a demo</a> <button class="btn btn-ghost" id="signOutBtn" type="button">Sign out</button></p>
+      </div>
+    </div>
+    <form name="signup" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="signup"><input name="bot-field"><input name="name"><input name="email"><input name="terms"><input name="notifications"><input name="new_account">
+    </form>
     <div class="grid g2">
       <div class="card">
-        <h3>Existing customers</h3>
-        <p>Update your card, download invoices, and change or cancel your plan. We use Stripe's secure customer portal. You log in with the email you paid with and a one-time code.</p>
+        <h3>Billing and invoices</h3>
+        <p>Already a paying customer? Update your card, download invoices, and change or cancel your plan in Stripe's secure customer portal. You log in there with the email you paid with and a one-time code.</p>
         <p style="margin-top:18px"><a class="btn btn-primary" id="portalBtn" href="contact.html?topic=account">Log in to manage my plan</a></p>
         <p class="fine" id="portalNote" hidden style="margin-top:10px">The customer portal is coming soon. Until then, contact us and we will help with your account right away.</p>
       </div>
       <div class="card">
-        <h3>New here? Sign up</h3>
-        <p>You sign up by choosing a plan. After you pay, you fill in a short setup form and we build your receptionist. It is not instant, and most are live within about 4 business days after we get your form.</p>
+        <h3>New here?</h3>
+        <p>Create your account above, then choose a plan. After you pay, you fill in a short setup form and we build your receptionist. It is not instant, and most are live within about 4 business days after we get your form.</p>
         <p style="margin-top:18px"><a class="btn btn-primary" href="pricing.html">Choose a plan</a> <a class="btn btn-ghost" href="demo.html">Book a demo first</a></p>
       </div>
     </div>
@@ -67,14 +85,52 @@
   </div>
 </section>
 <script>
-  (function(){
-    // PORTAL_LINK is set at the top of site.js. Until it is filled in, the button leads to the contact page.
-    var b = document.getElementById('portalBtn'), n = document.getElementById('portalNote');
-    window.addEventListener('load', function(){
-      if (typeof PORTAL_LINK === 'string' && PORTAL_LINK) { b.href = PORTAL_LINK; }
-      else { n.hidden = false; b.textContent = 'Contact us about my account'; }
-    });
-  })();
+  window.addEventListener('load', function(){
+    var $ = function(id){ return document.getElementById(id); };
+    // billing portal button (PORTAL_LINK is set at the top of site.js)
+    var b = $('portalBtn'), n = $('portalNote');
+    if (typeof PORTAL_LINK === 'string' && PORTAL_LINK) { b.href = PORTAL_LINK; }
+    else { n.hidden = false; b.textContent = 'Contact us about my account'; }
+
+    // Google sign-in through Firebase Authentication (FIREBASE_CONFIG is set at the top of site.js)
+    var msg = $('authMsg'), btn = $('googleBtn'), terms = $('authTerms');
+    function sync(){ btn.disabled = !terms.checked; }
+    terms.onchange = sync; sync();
+    if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG) {
+      msg.textContent = 'Google sign-in is almost ready. For now, choose a plan below or book a demo and we will set you up.';
+      btn.disabled = true; terms.onchange = null; return;
+    }
+    function load(src){ return new Promise(function(ok, bad){ var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
+    var base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+    load(base + 'firebase-app-compat.js').then(function(){ return load(base + 'firebase-auth-compat.js'); }).then(function(){
+      firebase.initializeApp(FIREBASE_CONFIG);
+      var auth = firebase.auth();
+      function showUser(u){
+        var out = $('signedOut'), inn = $('signedIn');
+        if (!u) { out.hidden = false; inn.hidden = true; return; }
+        out.hidden = true; inn.hidden = false;
+        $('hello').textContent = 'Welcome, ' + (u.displayName || 'there');
+        $('who').textContent = 'Signed in as ' + (u.email || '');
+        var q = '?email=' + encodeURIComponent(u.email || '') + '&name=' + encodeURIComponent(u.displayName || '');
+        $('toSetup').href = 'setup.html' + q;
+        $('toPlans').href = 'pricing.html';
+        try { localStorage.setItem('ab_email', u.email || ''); localStorage.setItem('ab_name', u.displayName || ''); } catch (e) {}
+      }
+      auth.onAuthStateChanged(showUser);
+      btn.onclick = function(){
+        msg.textContent = '';
+        auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(function(res){
+          var u = res.user, fresh = !!(res.additionalUserInfo && res.additionalUserInfo.isNewUser);
+          // keep a record that they agreed to the terms (arrives in Netlify Forms and your email)
+          var body = new URLSearchParams({ 'form-name': 'signup', name: u.displayName || '', email: u.email || '', terms: 'agreed', notifications: $('authNotify').checked ? 'yes' : 'no', new_account: fresh ? 'yes' : 'no' }).toString();
+          fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body }).catch(function(){});
+        }).catch(function(err){
+          msg.textContent = (err && err.code === 'auth/popup-closed-by-user') ? '' : 'Sorry, Google sign-in did not work. Please try again, or contact us and we will help.';
+        });
+      };
+      $('signOutBtn').onclick = function(){ auth.signOut(); };
+    }).catch(function(){ msg.textContent = 'Sorry, sign-in could not load. Please try again in a minute.'; btn.disabled = true; });
+  });
 </script>
 
 </main>
@@ -88,6 +144,7 @@
     <details><summary>Works-or-refund guarantee</summary><p>If we cannot get your receptionist working with your phone line and calendar after setup, we refund what you paid. This guarantee covers the service not working. It does not cover a change of mind.</p></details>
     <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
     <details><summary>Emails and notifications</summary><p>When you sign up you can tick an optional box to allow us to email you about your account, product updates and offers. If you tick it, we may send you those emails. If you do not, that is fine: we will still send the messages needed to run your service, such as receipts, setup questions, usage and billing notices, and summaries you ask for. You can stop the optional emails at any time by replying "unsubscribe" or emailing us.</p></details>
+    <details><summary>Accounts and sign-in</summary><p>You can create an account by signing in with Google. We receive your name and email address from Google, and never your Google password. We use them to set up your account, contact you about your service and, if you tick the optional box, send you updates and offers. We keep a record that you agreed to these terms. You can ask us to delete your account by emailing us.</p></details>
     <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span></div>
   </div>
 </footer>
