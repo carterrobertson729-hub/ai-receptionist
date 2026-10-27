@@ -655,7 +655,7 @@ const DEMO_SECRET = '46e6486d1b217038c635';   // goes on the end of the Netlify 
 const demoSettings = `var SETTINGS = {
   secret: '${DEMO_SECRET}',
   tz: 'America/Chicago', tzLabel: 'Central Time', minutes: 20,
-  calendarId: 'primary',                       // your calendar: 'primary' = the Google account connected in n8n, or paste a calendar ID
+  calendarId: 'd4e067809ac408fb853c1d9eee25b3264d00f060d29aa3f3ca88cd5a428d344e@group.calendar.google.com',   // the calendar demo bookings go on (a calendar ID, or 'primary' for the connected Google account's main calendar)
   ownerEmail: 'carter.robertson729@gmail.com',
   demoLine: '(219) 587-7319'
 };`;
