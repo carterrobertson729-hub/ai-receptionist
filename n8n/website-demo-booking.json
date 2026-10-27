@@ -1,0 +1,326 @@
+{
+  "name": "Website - Demo Booking",
+  "nodes": [
+    {
+      "id": "m1000000-0000-4000-8000-000000000001",
+      "name": "Netlify Demo Form",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "website-demo-booking",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "website/demo-booking",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "m1000000-0000-4000-8000-000000000002",
+      "name": "Read Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Website demo bookings: turns a Netlify \"demo\" form submission into a calendar slot and emails.\n// Self-contained (no other helpers needed). Unit-tested by tools/test-demo.mjs.\n\nfunction demoZoneParts(ms, tz) {\n  var o = {};\n  new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })\n    .formatToParts(new Date(ms)).forEach(function (p) { o[p.type] = p.value; });\n  return o;\n}\n\n// The real moment in time when it is y-m-d hh:mm on the clock in tz.\nfunction demoInstant(y, m, d, hh, mm, tz) {\n  var guess = Date.UTC(y, m - 1, d, hh, mm), p = demoZoneParts(guess, tz);\n  var asIfUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);\n  return guess - (asIfUtc - guess);\n}\n\nfunction demoPad(n) { return ('0' + n).slice(-2); }\n\n// 2026-10-28T15:30:00-05:00 style string for a moment in tz.\nfunction demoLocalIso(ms, tz) {\n  var p = demoZoneParts(ms, tz);\n  var asIfUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);\n  var off = Math.round((asIfUtc - ms) / 60000), a = Math.abs(off);\n  return p.year + '-' + p.month + '-' + p.day + 'T' + p.hour + ':' + p.minute + ':00' + (off < 0 ? '-' : '+') + demoPad(Math.floor(a / 60)) + ':' + demoPad(a % 60);\n}\n\nfunction demoLabel(ms, tz) {\n  var day = new Date(ms).toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric' });\n  var time = new Date(ms).toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' });\n  return day + ' at ' + time;\n}\n\n// input: the webhook item ({ body, query }). opts: { secret, tz, minutes, nowMs }.\nfunction demoParse(input, opts) {\n  var query = (input && input.query) || {};\n  var body = (input && input.body) || input || {};\n  var sub = body.payload || body;                       // Netlify wraps the submission differently depending on the notification type\n  var d = sub.data || {};\n  var formName = sub.form_name || body.form_name || d['form-name'] || '';\n  if (opts.secret && query.key !== opts.secret) return { ok: false, reason: 'bad_key' };\n  if (formName !== 'demo') return { ok: false, reason: 'not_demo_form' };\n  var dm = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(d.date || ''));\n  var tm = /(\\d{1,2}):(\\d{2})\\s*(AM|PM)/i.exec(String(d.time || ''));\n  if (!dm || !tm) return { ok: false, reason: 'no_time' };\n  var h = +tm[1] % 12 + (/pm/i.test(tm[3]) ? 12 : 0);\n  var startMs = demoInstant(+dm[1], +dm[2], +dm[3], h, +tm[2], opts.tz);\n  var endMs = startMs + opts.minutes * 60000;\n  if (startMs < opts.nowMs) return { ok: false, reason: 'in_the_past' };\n  return {\n    ok: true,\n    name: String(d.name || '').trim(), email: String(d.email || '').trim(), phone: String(d.phone || '').trim(),\n    business: String(d.business || '').trim(), businessType: String(d.business_type || '').trim(), notes: String(d.notes || '').trim(),\n    visitorLocal: String(d.local_time || '').trim(),\n    startMs: startMs, endMs: endMs,\n    startIso: demoLocalIso(startMs, opts.tz), endIso: demoLocalIso(endMs, opts.tz),\n    label: demoLabel(startMs, opts.tz)\n  };\n}\n\n// Is another real (busy, timed) event overlapping the demo slot? Returns its title, or '' if the slot is free.\nfunction demoConflict(events, startMs, endMs) {\n  for (var i = 0; i < events.length; i++) {\n    var e = events[i];\n    if (!e || !e.start || !e.start.dateTime) continue;      // all-day events do not block\n    if (e.transparency === 'transparent' || e.status === 'cancelled') continue;\n    var s = Date.parse(e.start.dateTime), t = Date.parse(e.end && e.end.dateTime);\n    if (s < endMs && t > startMs) return e.summary || 'another event';\n  }\n  return '';\n}\n\n// p = demoParse result, clash = title from demoConflict ('' if none), calendarOk = false if creating the event failed.\nfunction demoEmails(p, clash, calendarOk, cfg) {\n  var first = (p.name || 'there').split(/\\s+/)[0];\n  var tzLabel = cfg.tzLabel;\n  var when = p.label + ' ' + tzLabel;\n  var details = [\n    'Name: ' + p.name, 'Email: ' + p.email, 'Phone: ' + (p.phone || 'not given'),\n    'Business: ' + (p.business || 'not given') + (p.businessType ? ' (' + p.businessType + ')' : ''),\n    'Notes: ' + (p.notes || 'none'), p.visitorLocal ? 'Their local time: ' + p.visitorLocal : ''\n  ].filter(Boolean).join('\\n');\n  var out = [];\n  if (clash) {\n    out.push({ to: cfg.ownerEmail, subject: 'Demo request CLASHES with your calendar: ' + p.name + ', ' + when,\n      body: 'Someone asked for a demo at ' + when + ', but your calendar already has \"' + clash + '\" then. Nothing was added. They were told the time is taken and asked for another.\\n\\n' + details });\n    if (p.email) out.push({ to: p.email, subject: 'Your AnswerBay demo: please pick another time',\n      body: 'Hi ' + first + ',\\n\\nThanks for asking for a demo. The time you picked (' + when + ') was just taken. Please reply to this email with a couple of times that work for you, or pick another time on our website, and we will confirm.\\n\\nThe AnswerBay team' });\n    return out;\n  }\n  out.push({ to: cfg.ownerEmail, subject: 'New demo booked: ' + p.name + ', ' + when,\n    body: (calendarOk ? 'Added to your calendar.' : 'WARNING: the calendar event could not be created. Add it yourself.') + '\\n\\nWhen: ' + when + ' (' + cfg.minutes + ' minutes, phone call)\\n' + details });\n  if (p.email) out.push({ to: p.email, subject: 'Your AnswerBay demo is booked: ' + when,\n    body: 'Hi ' + first + ',\\n\\nYour AnswerBay demo is booked for ' + when + (p.visitorLocal ? ' (' + p.visitorLocal + ' in your time zone)' : '') + '. It is a ' + cfg.minutes + '-minute phone call.\\n\\n' +\n      (p.phone ? 'We will call you at ' + p.phone + '.' : 'You did not leave a phone number, so please reply to this email with the best number to reach you.') +\n      '\\n\\nWant to hear the receptionist before then? Call our barbershop demo line at ' + cfg.demoLine + ' and book a haircut.\\n\\nIf you need to change the time, just reply to this email.\\n\\nThe AnswerBay team' });\n  return out;\n}\n\n\nvar SETTINGS = {\n  secret: '46e6486d1b217038c635',\n  tz: 'America/Chicago', tzLabel: 'Central Time', minutes: 20,\n  calendarId: 'primary',                       // your calendar: 'primary' = the Google account connected in n8n, or paste a calendar ID\n  ownerEmail: 'carter.robertson729@gmail.com',\n  demoLine: '(219) 587-7319'\n};\nvar item = $input.first().json;\nvar p = demoParse(item, { secret: SETTINGS.secret, tz: SETTINGS.tz, minutes: SETTINGS.minutes, nowMs: Date.now() });\nif (!p.ok) return [{ json: p }];\np.calendarId = SETTINGS.calendarId;\np.timeMin = new Date(p.startMs - 60 * 60000).toISOString();   // look an hour either side so overlapping events are found\np.timeMax = new Date(p.endMs + 60 * 60000).toISOString();\nreturn [{ json: p }];"
+      }
+    },
+    {
+      "id": "m1000000-0000-4000-8000-000000000003",
+      "name": "Valid Request?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "m1000000-0000-4000-8000-000000000004",
+      "name": "Get Calendar Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        -80
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "resource": "event",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.calendarId }}"
+        },
+        "returnAll": false,
+        "limit": 50,
+        "timeMin": "={{ $json.timeMin }}",
+        "timeMax": "={{ $json.timeMax }}",
+        "options": {
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "m1000000-0000-4000-8000-000000000005",
+      "name": "Check Calendar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -80
+      ],
+      "parameters": {
+        "jsCode": "// Website demo bookings: turns a Netlify \"demo\" form submission into a calendar slot and emails.\n// Self-contained (no other helpers needed). Unit-tested by tools/test-demo.mjs.\n\nfunction demoZoneParts(ms, tz) {\n  var o = {};\n  new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })\n    .formatToParts(new Date(ms)).forEach(function (p) { o[p.type] = p.value; });\n  return o;\n}\n\n// The real moment in time when it is y-m-d hh:mm on the clock in tz.\nfunction demoInstant(y, m, d, hh, mm, tz) {\n  var guess = Date.UTC(y, m - 1, d, hh, mm), p = demoZoneParts(guess, tz);\n  var asIfUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);\n  return guess - (asIfUtc - guess);\n}\n\nfunction demoPad(n) { return ('0' + n).slice(-2); }\n\n// 2026-10-28T15:30:00-05:00 style string for a moment in tz.\nfunction demoLocalIso(ms, tz) {\n  var p = demoZoneParts(ms, tz);\n  var asIfUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);\n  var off = Math.round((asIfUtc - ms) / 60000), a = Math.abs(off);\n  return p.year + '-' + p.month + '-' + p.day + 'T' + p.hour + ':' + p.minute + ':00' + (off < 0 ? '-' : '+') + demoPad(Math.floor(a / 60)) + ':' + demoPad(a % 60);\n}\n\nfunction demoLabel(ms, tz) {\n  var day = new Date(ms).toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric' });\n  var time = new Date(ms).toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' });\n  return day + ' at ' + time;\n}\n\n// input: the webhook item ({ body, query }). opts: { secret, tz, minutes, nowMs }.\nfunction demoParse(input, opts) {\n  var query = (input && input.query) || {};\n  var body = (input && input.body) || input || {};\n  var sub = body.payload || body;                       // Netlify wraps the submission differently depending on the notification type\n  var d = sub.data || {};\n  var formName = sub.form_name || body.form_name || d['form-name'] || '';\n  if (opts.secret && query.key !== opts.secret) return { ok: false, reason: 'bad_key' };\n  if (formName !== 'demo') return { ok: false, reason: 'not_demo_form' };\n  var dm = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(d.date || ''));\n  var tm = /(\\d{1,2}):(\\d{2})\\s*(AM|PM)/i.exec(String(d.time || ''));\n  if (!dm || !tm) return { ok: false, reason: 'no_time' };\n  var h = +tm[1] % 12 + (/pm/i.test(tm[3]) ? 12 : 0);\n  var startMs = demoInstant(+dm[1], +dm[2], +dm[3], h, +tm[2], opts.tz);\n  var endMs = startMs + opts.minutes * 60000;\n  if (startMs < opts.nowMs) return { ok: false, reason: 'in_the_past' };\n  return {\n    ok: true,\n    name: String(d.name || '').trim(), email: String(d.email || '').trim(), phone: String(d.phone || '').trim(),\n    business: String(d.business || '').trim(), businessType: String(d.business_type || '').trim(), notes: String(d.notes || '').trim(),\n    visitorLocal: String(d.local_time || '').trim(),\n    startMs: startMs, endMs: endMs,\n    startIso: demoLocalIso(startMs, opts.tz), endIso: demoLocalIso(endMs, opts.tz),\n    label: demoLabel(startMs, opts.tz)\n  };\n}\n\n// Is another real (busy, timed) event overlapping the demo slot? Returns its title, or '' if the slot is free.\nfunction demoConflict(events, startMs, endMs) {\n  for (var i = 0; i < events.length; i++) {\n    var e = events[i];\n    if (!e || !e.start || !e.start.dateTime) continue;      // all-day events do not block\n    if (e.transparency === 'transparent' || e.status === 'cancelled') continue;\n    var s = Date.parse(e.start.dateTime), t = Date.parse(e.end && e.end.dateTime);\n    if (s < endMs && t > startMs) return e.summary || 'another event';\n  }\n  return '';\n}\n\n// p = demoParse result, clash = title from demoConflict ('' if none), calendarOk = false if creating the event failed.\nfunction demoEmails(p, clash, calendarOk, cfg) {\n  var first = (p.name || 'there').split(/\\s+/)[0];\n  var tzLabel = cfg.tzLabel;\n  var when = p.label + ' ' + tzLabel;\n  var details = [\n    'Name: ' + p.name, 'Email: ' + p.email, 'Phone: ' + (p.phone || 'not given'),\n    'Business: ' + (p.business || 'not given') + (p.businessType ? ' (' + p.businessType + ')' : ''),\n    'Notes: ' + (p.notes || 'none'), p.visitorLocal ? 'Their local time: ' + p.visitorLocal : ''\n  ].filter(Boolean).join('\\n');\n  var out = [];\n  if (clash) {\n    out.push({ to: cfg.ownerEmail, subject: 'Demo request CLASHES with your calendar: ' + p.name + ', ' + when,\n      body: 'Someone asked for a demo at ' + when + ', but your calendar already has \"' + clash + '\" then. Nothing was added. They were told the time is taken and asked for another.\\n\\n' + details });\n    if (p.email) out.push({ to: p.email, subject: 'Your AnswerBay demo: please pick another time',\n      body: 'Hi ' + first + ',\\n\\nThanks for asking for a demo. The time you picked (' + when + ') was just taken. Please reply to this email with a couple of times that work for you, or pick another time on our website, and we will confirm.\\n\\nThe AnswerBay team' });\n    return out;\n  }\n  out.push({ to: cfg.ownerEmail, subject: 'New demo booked: ' + p.name + ', ' + when,\n    body: (calendarOk ? 'Added to your calendar.' : 'WARNING: the calendar event could not be created. Add it yourself.') + '\\n\\nWhen: ' + when + ' (' + cfg.minutes + ' minutes, phone call)\\n' + details });\n  if (p.email) out.push({ to: p.email, subject: 'Your AnswerBay demo is booked: ' + when,\n    body: 'Hi ' + first + ',\\n\\nYour AnswerBay demo is booked for ' + when + (p.visitorLocal ? ' (' + p.visitorLocal + ' in your time zone)' : '') + '. It is a ' + cfg.minutes + '-minute phone call.\\n\\n' +\n      (p.phone ? 'We will call you at ' + p.phone + '.' : 'You did not leave a phone number, so please reply to this email with the best number to reach you.') +\n      '\\n\\nWant to hear the receptionist before then? Call our barbershop demo line at ' + cfg.demoLine + ' and book a haircut.\\n\\nIf you need to change the time, just reply to this email.\\n\\nThe AnswerBay team' });\n  return out;\n}\n\n\nvar p = $('Read Request').first().json;\nvar events = $input.all().map(function (i) { return i.json; }).filter(function (e) { return e && e.start; });\nreturn [{ json: { clash: demoConflict(events, p.startMs, p.endMs) } }];"
+      }
+    },
+    {
+      "id": "m1000000-0000-4000-8000-000000000006",
+      "name": "Slot Free?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        -80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.clash }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "m1000000-0000-4000-8000-000000000007",
+      "name": "Create Demo Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1440,
+        -180
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "event",
+        "operation": "create",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Read Request').first().json.calendarId }}"
+        },
+        "start": "={{ $('Read Request').first().json.startIso }}",
+        "end": "={{ $('Read Request').first().json.endIso }}",
+        "useDefaultReminders": true,
+        "additionalFields": {
+          "summary": "={{ 'DEMO: ' + $('Read Request').first().json.name + ($('Read Request').first().json.business ? ' (' + $('Read Request').first().json.business + ')' : '') }}",
+          "description": "={{ 'Booked on the website\\nName: ' + $('Read Request').first().json.name + '\\nEmail: ' + $('Read Request').first().json.email + '\\nPhone: ' + ($('Read Request').first().json.phone || 'not given') + '\\nBusiness: ' + ($('Read Request').first().json.business || 'not given') + ' (' + $('Read Request').first().json.businessType + ')\\nNotes: ' + ($('Read Request').first().json.notes || 'none') }}"
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "m1000000-0000-4000-8000-000000000008",
+      "name": "Build Emails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        -80
+      ],
+      "parameters": {
+        "jsCode": "// Website demo bookings: turns a Netlify \"demo\" form submission into a calendar slot and emails.\n// Self-contained (no other helpers needed). Unit-tested by tools/test-demo.mjs.\n\nfunction demoZoneParts(ms, tz) {\n  var o = {};\n  new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })\n    .formatToParts(new Date(ms)).forEach(function (p) { o[p.type] = p.value; });\n  return o;\n}\n\n// The real moment in time when it is y-m-d hh:mm on the clock in tz.\nfunction demoInstant(y, m, d, hh, mm, tz) {\n  var guess = Date.UTC(y, m - 1, d, hh, mm), p = demoZoneParts(guess, tz);\n  var asIfUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);\n  return guess - (asIfUtc - guess);\n}\n\nfunction demoPad(n) { return ('0' + n).slice(-2); }\n\n// 2026-10-28T15:30:00-05:00 style string for a moment in tz.\nfunction demoLocalIso(ms, tz) {\n  var p = demoZoneParts(ms, tz);\n  var asIfUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);\n  var off = Math.round((asIfUtc - ms) / 60000), a = Math.abs(off);\n  return p.year + '-' + p.month + '-' + p.day + 'T' + p.hour + ':' + p.minute + ':00' + (off < 0 ? '-' : '+') + demoPad(Math.floor(a / 60)) + ':' + demoPad(a % 60);\n}\n\nfunction demoLabel(ms, tz) {\n  var day = new Date(ms).toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric' });\n  var time = new Date(ms).toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' });\n  return day + ' at ' + time;\n}\n\n// input: the webhook item ({ body, query }). opts: { secret, tz, minutes, nowMs }.\nfunction demoParse(input, opts) {\n  var query = (input && input.query) || {};\n  var body = (input && input.body) || input || {};\n  var sub = body.payload || body;                       // Netlify wraps the submission differently depending on the notification type\n  var d = sub.data || {};\n  var formName = sub.form_name || body.form_name || d['form-name'] || '';\n  if (opts.secret && query.key !== opts.secret) return { ok: false, reason: 'bad_key' };\n  if (formName !== 'demo') return { ok: false, reason: 'not_demo_form' };\n  var dm = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(d.date || ''));\n  var tm = /(\\d{1,2}):(\\d{2})\\s*(AM|PM)/i.exec(String(d.time || ''));\n  if (!dm || !tm) return { ok: false, reason: 'no_time' };\n  var h = +tm[1] % 12 + (/pm/i.test(tm[3]) ? 12 : 0);\n  var startMs = demoInstant(+dm[1], +dm[2], +dm[3], h, +tm[2], opts.tz);\n  var endMs = startMs + opts.minutes * 60000;\n  if (startMs < opts.nowMs) return { ok: false, reason: 'in_the_past' };\n  return {\n    ok: true,\n    name: String(d.name || '').trim(), email: String(d.email || '').trim(), phone: String(d.phone || '').trim(),\n    business: String(d.business || '').trim(), businessType: String(d.business_type || '').trim(), notes: String(d.notes || '').trim(),\n    visitorLocal: String(d.local_time || '').trim(),\n    startMs: startMs, endMs: endMs,\n    startIso: demoLocalIso(startMs, opts.tz), endIso: demoLocalIso(endMs, opts.tz),\n    label: demoLabel(startMs, opts.tz)\n  };\n}\n\n// Is another real (busy, timed) event overlapping the demo slot? Returns its title, or '' if the slot is free.\nfunction demoConflict(events, startMs, endMs) {\n  for (var i = 0; i < events.length; i++) {\n    var e = events[i];\n    if (!e || !e.start || !e.start.dateTime) continue;      // all-day events do not block\n    if (e.transparency === 'transparent' || e.status === 'cancelled') continue;\n    var s = Date.parse(e.start.dateTime), t = Date.parse(e.end && e.end.dateTime);\n    if (s < endMs && t > startMs) return e.summary || 'another event';\n  }\n  return '';\n}\n\n// p = demoParse result, clash = title from demoConflict ('' if none), calendarOk = false if creating the event failed.\nfunction demoEmails(p, clash, calendarOk, cfg) {\n  var first = (p.name || 'there').split(/\\s+/)[0];\n  var tzLabel = cfg.tzLabel;\n  var when = p.label + ' ' + tzLabel;\n  var details = [\n    'Name: ' + p.name, 'Email: ' + p.email, 'Phone: ' + (p.phone || 'not given'),\n    'Business: ' + (p.business || 'not given') + (p.businessType ? ' (' + p.businessType + ')' : ''),\n    'Notes: ' + (p.notes || 'none'), p.visitorLocal ? 'Their local time: ' + p.visitorLocal : ''\n  ].filter(Boolean).join('\\n');\n  var out = [];\n  if (clash) {\n    out.push({ to: cfg.ownerEmail, subject: 'Demo request CLASHES with your calendar: ' + p.name + ', ' + when,\n      body: 'Someone asked for a demo at ' + when + ', but your calendar already has \"' + clash + '\" then. Nothing was added. They were told the time is taken and asked for another.\\n\\n' + details });\n    if (p.email) out.push({ to: p.email, subject: 'Your AnswerBay demo: please pick another time',\n      body: 'Hi ' + first + ',\\n\\nThanks for asking for a demo. The time you picked (' + when + ') was just taken. Please reply to this email with a couple of times that work for you, or pick another time on our website, and we will confirm.\\n\\nThe AnswerBay team' });\n    return out;\n  }\n  out.push({ to: cfg.ownerEmail, subject: 'New demo booked: ' + p.name + ', ' + when,\n    body: (calendarOk ? 'Added to your calendar.' : 'WARNING: the calendar event could not be created. Add it yourself.') + '\\n\\nWhen: ' + when + ' (' + cfg.minutes + ' minutes, phone call)\\n' + details });\n  if (p.email) out.push({ to: p.email, subject: 'Your AnswerBay demo is booked: ' + when,\n    body: 'Hi ' + first + ',\\n\\nYour AnswerBay demo is booked for ' + when + (p.visitorLocal ? ' (' + p.visitorLocal + ' in your time zone)' : '') + '. It is a ' + cfg.minutes + '-minute phone call.\\n\\n' +\n      (p.phone ? 'We will call you at ' + p.phone + '.' : 'You did not leave a phone number, so please reply to this email with the best number to reach you.') +\n      '\\n\\nWant to hear the receptionist before then? Call our barbershop demo line at ' + cfg.demoLine + ' and book a haircut.\\n\\nIf you need to change the time, just reply to this email.\\n\\nThe AnswerBay team' });\n  return out;\n}\n\n\nvar SETTINGS = {\n  secret: '46e6486d1b217038c635',\n  tz: 'America/Chicago', tzLabel: 'Central Time', minutes: 20,\n  calendarId: 'primary',                       // your calendar: 'primary' = the Google account connected in n8n, or paste a calendar ID\n  ownerEmail: 'carter.robertson729@gmail.com',\n  demoLine: '(219) 587-7319'\n};\nvar p = $('Read Request').first().json;\nvar clash = $('Check Calendar').first().json.clash;\nvar made = $input.first().json;\nvar calendarOk = !clash && !made.error && !!made.id;\nreturn demoEmails(p, clash, calendarOk, SETTINGS).map(function (m) { return { json: m }; });"
+      }
+    },
+    {
+      "id": "m1000000-0000-4000-8000-000000000009",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1920,
+        -80
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Netlify Demo Form": {
+      "main": [
+        [
+          {
+            "node": "Read Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Request": {
+      "main": [
+        [
+          {
+            "node": "Valid Request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Request?": {
+      "main": [
+        [
+          {
+            "node": "Get Calendar Events",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Calendar Events": {
+      "main": [
+        [
+          {
+            "node": "Check Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Calendar": {
+      "main": [
+        [
+          {
+            "node": "Slot Free?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slot Free?": {
+      "main": [
+        [
+          {
+            "node": "Create Demo Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Demo Event": {
+      "main": [
+        [
+          {
+            "node": "Build Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Emails": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

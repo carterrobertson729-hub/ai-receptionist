@@ -12,6 +12,7 @@ const callbackLib = stripExports(read('n8n/code/callback.js'));
 const apptLib = stripExports(read('n8n/code/appointments.js'));
 const usageLib = stripExports(read('n8n/code/usage.js'));
 const reportLib = stripExports(read('n8n/code/report.js'));
+const demoLib = stripExports(read('n8n/code/demo.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -648,6 +649,114 @@ const weekly = wf('Receptionist - Weekly Owner Report', [
 });
 writeFileSync(new URL('n8n/weekly-owner-report.json', root), JSON.stringify(weekly, null, 2) + '\n');
 
+
+// ---------- 11. website demo bookings (Netlify form -> calendar + emails) ----------
+const DEMO_SECRET = '46e6486d1b217038c635';   // goes on the end of the Netlify webhook URL as ?key=...
+const demoSettings = `var SETTINGS = {
+  secret: '${DEMO_SECRET}',
+  tz: 'America/Chicago', tzLabel: 'Central Time', minutes: 20,
+  calendarId: 'primary',                       // your calendar: 'primary' = the Google account connected in n8n, or paste a calendar ID
+  ownerEmail: 'carter.robertson729@gmail.com',
+  demoLine: '(219) 587-7319'
+};`;
+const demoParseCode = `${demoLib}
+${demoSettings}
+var item = $input.first().json;
+var p = demoParse(item, { secret: SETTINGS.secret, tz: SETTINGS.tz, minutes: SETTINGS.minutes, nowMs: Date.now() });
+if (!p.ok) return [{ json: p }];
+p.calendarId = SETTINGS.calendarId;
+p.timeMin = new Date(p.startMs - 60 * 60000).toISOString();   // look an hour either side so overlapping events are found
+p.timeMax = new Date(p.endMs + 60 * 60000).toISOString();
+return [{ json: p }];`;
+const demoConflictCode = `${demoLib}
+var p = $('Read Request').first().json;
+var events = $input.all().map(function (i) { return i.json; }).filter(function (e) { return e && e.start; });
+return [{ json: { clash: demoConflict(events, p.startMs, p.endMs) } }];`;
+const demoEmailsCode = `${demoLib}
+${demoSettings}
+var p = $('Read Request').first().json;
+var clash = $('Check Calendar').first().json.clash;
+var made = $input.first().json;
+var calendarOk = !clash && !made.error && !!made.id;
+return demoEmails(p, clash, calendarOk, SETTINGS).map(function (m) { return { json: m }; });`;
+const demo = wf('Website - Demo Booking', [
+  {
+    id: 'm1000000-0000-4000-8000-000000000001', name: 'Netlify Demo Form', type: 'n8n-nodes-base.webhook', typeVersion: 2, position: [0, 0],
+    webhookId: 'website-demo-booking',
+    parameters: { httpMethod: 'POST', path: 'website/demo-booking', responseMode: 'onReceived', options: {} }
+  },
+  code('m1000000-0000-4000-8000-000000000002', 'Read Request', [240, 0], demoParseCode),
+  {
+    id: 'm1000000-0000-4000-8000-000000000003', name: 'Valid Request?', type: 'n8n-nodes-base.if', typeVersion: 2.2, position: [480, 0],
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+        conditions: [{ id: 'c1', leftValue: '={{ $json.ok }}', rightValue: true, operator: { type: 'boolean', operation: 'true', singleValue: true } }],
+        combinator: 'and'
+      },
+      options: {}
+    }
+  },
+  {
+    id: 'm1000000-0000-4000-8000-000000000004', name: 'Get Calendar Events', type: 'n8n-nodes-base.googleCalendar', typeVersion: 1.3, position: [720, -80],
+    alwaysOutputData: true,
+    parameters: {
+      resource: 'event', operation: 'getAll',
+      calendar: { __rl: true, mode: 'id', value: '={{ $json.calendarId }}' },
+      returnAll: false, limit: 50, timeMin: '={{ $json.timeMin }}', timeMax: '={{ $json.timeMax }}',
+      options: { singleEvents: true, orderBy: 'startTime' }
+    },
+    credentials: { googleCalendarOAuth2Api: { id: 'REPLACE', name: 'Google Calendar account' } }
+  },
+  code('m1000000-0000-4000-8000-000000000005', 'Check Calendar', [960, -80], demoConflictCode),
+  {
+    id: 'm1000000-0000-4000-8000-000000000006', name: 'Slot Free?', type: 'n8n-nodes-base.if', typeVersion: 2.2, position: [1200, -80],
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+        conditions: [{ id: 'c1', leftValue: '={{ $json.clash }}', rightValue: '', operator: { type: 'string', operation: 'empty', singleValue: true } }],
+        combinator: 'and'
+      },
+      options: {}
+    }
+  },
+  {
+    id: 'm1000000-0000-4000-8000-000000000007', name: 'Create Demo Event', type: 'n8n-nodes-base.googleCalendar', typeVersion: 1.3, position: [1440, -180],
+    onError: 'continueRegularOutput',
+    parameters: {
+      resource: 'event', operation: 'create',
+      calendar: { __rl: true, mode: 'id', value: "={{ $('Read Request').first().json.calendarId }}" },
+      start: "={{ $('Read Request').first().json.startIso }}", end: "={{ $('Read Request').first().json.endIso }}",
+      useDefaultReminders: true,
+      additionalFields: {
+        summary: "={{ 'DEMO: ' + $('Read Request').first().json.name + ($('Read Request').first().json.business ? ' (' + $('Read Request').first().json.business + ')' : '') }}",
+        description: "={{ 'Booked on the website\\nName: ' + $('Read Request').first().json.name + '\\nEmail: ' + $('Read Request').first().json.email + '\\nPhone: ' + ($('Read Request').first().json.phone || 'not given') + '\\nBusiness: ' + ($('Read Request').first().json.business || 'not given') + ' (' + $('Read Request').first().json.businessType + ')\\nNotes: ' + ($('Read Request').first().json.notes || 'none') }}"
+      }
+    },
+    credentials: { googleCalendarOAuth2Api: { id: 'REPLACE', name: 'Google Calendar account' } }
+  },
+  code('m1000000-0000-4000-8000-000000000008', 'Build Emails', [1680, -80], demoEmailsCode),
+  {
+    id: 'm1000000-0000-4000-8000-000000000009', name: 'Send Email', type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position: [1920, -80],
+    onError: 'continueRegularOutput',
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  }
+], {
+  'Netlify Demo Form': { main: [[{ node: 'Read Request', type: 'main', index: 0 }]] },
+  'Read Request': { main: [[{ node: 'Valid Request?', type: 'main', index: 0 }]] },
+  'Valid Request?': { main: [[{ node: 'Get Calendar Events', type: 'main', index: 0 }], []] },
+  'Get Calendar Events': { main: [[{ node: 'Check Calendar', type: 'main', index: 0 }]] },
+  'Check Calendar': { main: [[{ node: 'Slot Free?', type: 'main', index: 0 }]] },
+  'Slot Free?': { main: [[{ node: 'Create Demo Event', type: 'main', index: 0 }], [{ node: 'Build Emails', type: 'main', index: 0 }]] },
+  'Create Demo Event': { main: [[{ node: 'Build Emails', type: 'main', index: 0 }]] },
+  'Build Emails': { main: [[{ node: 'Send Email', type: 'main', index: 0 }]] }
+});
+writeFileSync(new URL('n8n/website-demo-booking.json', root), JSON.stringify(demo, null, 2) + '\n');
+
 writeFileSync(new URL('n8n/business-config.json', root), JSON.stringify(bizConfig, null, 2) + '\n');
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
 writeFileSync(new URL('n8n/book-appointment.json', root), JSON.stringify(book, null, 2) + '\n');
@@ -657,7 +766,7 @@ writeFileSync(new URL('n8n/callback-request.json', root), JSON.stringify(callbac
 writeFileSync(new URL('n8n/find-appointment.json', root), JSON.stringify(lookup, null, 2) + '\n');
 writeFileSync(new URL('n8n/cancel-appointment.json', root), JSON.stringify(cancel, null, 2) + '\n');
 writeFileSync(new URL('n8n/reschedule-appointment.json', root), JSON.stringify(resched, null, 2) + '\n');
-console.log('Wrote 10 workflows');
+console.log('Wrote 11 workflows');
 
 // ---------- per-node code files: paste these into an existing n8n workflow instead of re-importing ----------
 import { mkdirSync, rmSync } from 'node:fs';
@@ -665,7 +774,7 @@ const nodeCodeDir = new URL('n8n/node-code/', root);
 rmSync(nodeCodeDir, { recursive: true, force: true });
 mkdirSync(nodeCodeDir, { recursive: true });
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly]) {
+for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly, demo]) {
   for (const n of w.nodes.filter((n) => n.type === 'n8n-nodes-base.code')) {
     const header = `// PASTE INTO n8n: workflow "${w.name}" > node "${n.name}" > Code tab (select all, replace, Save).\n`;
     writeFileSync(new URL(`${slug(w.name.replace('Receptionist - ', ''))}__${slug(n.name)}.js`, nodeCodeDir), header + n.parameters.jsCode + '\n');
