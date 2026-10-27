@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in or sign up | AnswerBay</title>
+<meta name="description" content="Log in to manage your AnswerBay plan, or sign up by choosing a plan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a class="logo" href="index.html" aria-label="AnswerBay home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a5cff"/><stop offset=".6" stop-color="#00b8ff"/><stop offset="1" stop-color="#00d9a6"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lg)"/><path d="M9 21h3M15 14v14M21 10v22M27 15v12M33 19v4" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+      <span>AnswerBay</span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navList">&#9776;</button>
+    <ul id="navList">
+      <li><a href="how-it-works.html">How it works</a></li>
+      <li class="has-sub"><a href="services.html">Services</a><button type="button" class="sub-toggle" aria-label="Show services" aria-expanded="false">&#9662;</button>
+        <ul class="sub">
+          <li><a href="barbershops.html">Barbershops &amp; salons</a></li>
+          <li><a href="trades.html">Plumbing &amp; home services</a></li>
+          <li><a href="repair.html">Repair shops <span class="soon">Soon</span></a></li>
+          <li><a href="landscaping.html">Landscaping <span class="soon">Soon</span></a></li>
+        </ul>
+      </li>
+      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li class="only-mobile"><a href="demo.html">Book a demo</a></li>
+      <li class="only-mobile"><a href="login.html">Log in</a></li>
+    </ul>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="login.html">Log in</a><a class="btn btn-ghost" href="demo.html">Book a demo</a><a class="btn btn-primary" href="pricing.html">See plans</a></div>
+  </div>
+</header>
+
+<main id="top">
+
+<section class="page-hero">
+  <div class="wrap">
+    <p class="crumbs"><a href="index.html">AnswerBay</a> / Log in</p>
+    <h1 style="margin-top:6px">Log in or <span class="grad-text">sign up</span></h1>
+    <p class="lead">Existing customers can manage their plan here. New to AnswerBay? Choose a plan to get started.</p>
+  </div>
+</section>
+<section style="padding-top:20px">
+  <div class="wrap">
+    <div class="grid g2">
+      <div class="card">
+        <h3>Existing customers</h3>
+        <p>Update your card, download invoices, and change or cancel your plan. We use Stripe's secure customer portal. You log in with the email you paid with and a one-time code.</p>
+        <p style="margin-top:18px"><a class="btn btn-primary" id="portalBtn" href="contact.html?topic=account">Log in to manage my plan</a></p>
+        <p class="fine" id="portalNote" hidden style="margin-top:10px">The customer portal is coming soon. Until then, contact us and we will help with your account right away.</p>
+      </div>
+      <div class="card">
+        <h3>New here? Sign up</h3>
+        <p>You sign up by choosing a plan. After you pay, you fill in a short setup form and we build your receptionist. It is not instant, and most are live within about 4 business days after we get your form.</p>
+        <p style="margin-top:18px"><a class="btn btn-primary" href="pricing.html">Choose a plan</a> <a class="btn btn-ghost" href="demo.html">Book a demo first</a></p>
+      </div>
+    </div>
+    <p class="fine" style="margin-top:16px">By signing up you agree to the <a href="#terms">terms and policies</a> below.</p>
+  </div>
+</section>
+<script>
+  (function(){
+    // PORTAL_LINK is set at the top of site.js. Until it is filled in, the button leads to the contact page.
+    var b = document.getElementById('portalBtn'), n = document.getElementById('portalNote');
+    window.addEventListener('load', function(){
+      if (typeof PORTAL_LINK === 'string' && PORTAL_LINK) { b.href = PORTAL_LINK; }
+      else { n.hidden = false; b.textContent = 'Contact us about my account'; }
+    });
+  })();
+</script>
+
+</main>
+
+<footer>
+  <div class="wrap terms" id="terms">
+    <nav class="foot-links" aria-label="Site pages"><a href="index.html">Home</a><a href="how-it-works.html">How it works</a><a href="services.html">Services</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="demo.html">Book a demo</a><a href="login.html">Log in</a></nav>
+    <h3>Terms and policies</h3>
+    <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>
+    <details><summary>Cancellation and refunds</summary><p>You can cancel anytime. Your plan stays active until the end of the period you have already paid for, then it does not renew. We do not refund payments for time you have already been billed for. Yearly plans are paid up front for twelve months, and cancelling stops the renewal.</p></details>
+    <details><summary>Works-or-refund guarantee</summary><p>If we cannot get your receptionist working with your phone line and calendar after setup, we refund what you paid. This guarantee covers the service not working. It does not cover a change of mind.</p></details>
+    <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
+    <details><summary>Emails and notifications</summary><p>When you sign up you can tick an optional box to allow us to email you about your account, product updates and offers. If you tick it, we may send you those emails. If you do not, that is fine: we will still send the messages needed to run your service, such as receipts, setup questions, usage and billing notices, and summaries you ask for. You can stop the optional emails at any time by replying "unsubscribe" or emailing us.</p></details>
+    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span></div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

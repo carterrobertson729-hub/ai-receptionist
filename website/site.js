@@ -11,6 +11,8 @@ var CHECKOUT_LINKS = {
   'always-plus':     { monthly: 'https://buy.stripe.com/test_4gMfZj50w9Q12863PScMM05', yearly: 'https://buy.stripe.com/test_dRm3cx50wgepaECdqscMM09' },
   'always-high':     { monthly: 'https://buy.stripe.com/test_aFa28t8cI3rDdQO724cMM06', yearly: 'https://buy.stripe.com/test_00w28tfFa6DP6omcmocMM0a' }
 };
+// Stripe customer portal login link (Stripe Dashboard > Settings > Billing > Customer portal > turn on the login link). Paste it here; until then the Log in page sends people to the contact page.
+var PORTAL_LINK = '';
 // Two ways it can answer. "backup" = after-hours and missed calls. "always" = 24/7 receptionist (answers every call, can pass calls to staff).
 var MODES = {
   backup: { label: 'After-hours & missed calls', title: 'After-hours and missed calls',
@@ -134,7 +136,7 @@ document.querySelectorAll('.sub-toggle').forEach(function(b){
 var industry = document.body.getAttribute('data-industry') || INDUSTRIES[query.get('for')] || '';
 if (industry && $('cType')) { $('cType').value = industry; }
 if (query.get('topic') && $('cTopic')) {
-  var topics = { repair: 'Repair shops', landscaping: 'Landscaping', custom: 'Custom plan (several locations)' };
+  var topics = { repair: 'Repair shops', landscaping: 'Landscaping', custom: 'Custom plan (several locations)', account: 'Help with my account' };
   if (topics[query.get('topic')]) $('cTopic').value = topics[query.get('topic')];
 }
 

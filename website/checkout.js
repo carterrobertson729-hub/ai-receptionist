@@ -47,7 +47,7 @@
     var pay = $('payLink'), reserve = $('reserveBox');
     if (link) {
       reserve.hidden = true; pay.hidden = false;
-      var ref = [plan.id, state.cycle].concat(addons.map(function(a){ return a.id; })).join('_');
+      var ref = [plan.id, state.cycle].concat(addons.map(function(a){ return a.id; })).concat($('coNotify').checked ? ['notify'] : []).join('_');
       pay.href = link + (link.indexOf('?') === -1 ? '?' : '&') + 'client_reference_id=' + encodeURIComponent(ref);
       pay.classList.toggle('disabled', !agreed); pay.setAttribute('aria-disabled', !agreed);
       $('payNote').textContent = addons.length ? 'The secure payment page covers the plan and setup. We add your add-ons to your subscription during setup.' : 'You will pay on a secure payment page.';
@@ -61,6 +61,7 @@
   $('bMonthly').onclick = function(){ state.cycle = 'monthly'; recompute(); };
   $('bYearly').onclick = function(){ state.cycle = 'yearly'; recompute(); };
   $('coAgree').onchange = recompute;
+  $('coNotify').onchange = recompute;
   $('payLink').addEventListener('click', function(e){ if (!$('coAgree').checked) { e.preventDefault(); $('coAgree').focus(); } });
 
   // reserving a plan (used until online payment is switched on)

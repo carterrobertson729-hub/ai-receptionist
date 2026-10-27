@@ -326,3 +326,13 @@ fieldset.fs legend + *{clear:both}
 /* three plans are centered: one left, one middle, one right */
 .plans.three{grid-template-columns:repeat(3,minmax(0,1fr));max-width:920px;margin-inline:auto}
 @media(max-width:860px){.plans.three{grid-template-columns:1fr;max-width:440px}}
+
+/* header: keep three buttons on one line between the mobile breakpoint and wide screens */
+.nav-cta .btn{white-space:nowrap}
+@media(max-width:1180px){
+  .nav-cta{gap:6px}
+  .nav-cta .btn{padding:9px 13px;font-size:.9rem}
+  .nav #navList{gap:0}
+  .nav #navList a{padding-left:10px;padding-right:10px}
+  #navList>li>a{white-space:nowrap}
+}
