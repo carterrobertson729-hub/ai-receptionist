@@ -10,7 +10,7 @@ var DEMO = {
     1: ['15:00', '23:00'], 2: ['15:00', '23:00'], 3: ['15:00', '23:00'], 4: ['15:00', '23:00'], 5: ['15:00', '23:00']
   },
   stepMinutes: 30,                // a new slot every 30 minutes
-  noticeHours: 24,                // earliest booking, from now
+  noticeHours: 3,                 // earliest booking, from now (hours of notice you need)
   daysAhead: 45                   // how far ahead people can book
 };
 
