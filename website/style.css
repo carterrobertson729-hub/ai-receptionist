@@ -336,3 +336,16 @@ fieldset.fs legend + *{clear:both}
   .nav #navList a{padding-left:10px;padding-right:10px}
   #navList>li>a{white-space:nowrap}
 }
+
+/* signed-in account menu in the header */
+.acct{position:relative}
+.acct-btn{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 6px;border-radius:999px;border:1px solid var(--line);background:#fff;font:inherit;font-weight:600;font-size:.9rem;color:var(--ink,#0d1033);cursor:pointer}
+.acct-btn:hover{border-color:var(--a1)}
+.acct-ini{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6a5cff,#00b8ff);color:#fff;font-size:.8rem}
+.acct-name{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-caret{font-size:.7rem;color:var(--muted)}
+.acct-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:220px;padding:8px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px rgba(40,40,120,.18);z-index:60}
+.acct-menu[hidden]{display:none}
+.acct-email{padding:8px 10px;font-size:.82rem;color:var(--muted);word-break:break-all;border-bottom:1px solid var(--line);margin-bottom:4px}
+.acct-menu a,.acct-menu button{display:block;width:100%;text-align:left;padding:9px 10px;border:0;background:transparent;border-radius:8px;font:inherit;font-size:.95rem;color:inherit;cursor:pointer;text-decoration:none}
+.acct-menu a:hover,.acct-menu button:hover{background:rgba(106,92,255,.1)}

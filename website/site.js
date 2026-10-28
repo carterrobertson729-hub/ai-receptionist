@@ -159,6 +159,78 @@ if (query.get('topic') && $('cTopic')) {
   document.querySelectorAll('input[name="name"]:not([type="hidden"])').forEach(function(i){ if (nm && !i.value) i.value = nm; });
 })();
 
+
+// ===== signed-in header: Log in turns into a small account menu with Sign out =====
+(function(){
+  function get(k){ try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function clear(){ try { localStorage.removeItem('ab_email'); localStorage.removeItem('ab_name'); } catch (e) {} }
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
+  var cta = document.querySelector('.nav-cta');
+  var loginBtn = cta && cta.querySelector('a[href="login.html"]');
+  var mobileLogin = document.querySelector('#navList li.only-mobile a[href="login.html"]');
+  var footLogins = document.querySelectorAll('.foot-links a[href="login.html"]');
+  var menu = null, fbPromise = null;
+
+  // load Firebase once (used by the login page and by this menu)
+  function load(src){ return new Promise(function(ok, bad){ var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
+  function loadFirebase(){
+    if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG) return Promise.reject(new Error('no config'));
+    if (fbPromise) return fbPromise;
+    var base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+    fbPromise = load(base + 'firebase-app-compat.js').then(function(){ return load(base + 'firebase-auth-compat.js'); }).then(function(){
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      return firebase.auth();
+    });
+    return fbPromise;
+  }
+
+  function render(email, name){
+    if (menu) { menu.remove(); menu = null; }
+    if (!email) {
+      if (loginBtn) loginBtn.style.display = '';
+      if (mobileLogin) { mobileLogin.textContent = 'Log in'; mobileLogin.setAttribute('href', 'login.html'); mobileLogin.onclick = null; }
+      footLogins.forEach(function(a){ a.textContent = 'Log in'; });
+      return;
+    }
+    var shown = name || email.split('@')[0];
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (cta) {
+      menu = document.createElement('div'); menu.className = 'acct';
+      menu.innerHTML = '<button type="button" class="acct-btn" aria-haspopup="true" aria-expanded="false"><span class="acct-ini">' + esc(shown.charAt(0).toUpperCase()) + '</span><span class="acct-name">' + esc(shown.split(' ')[0]) + '</span><span class="acct-caret">&#9662;</span></button>' +
+        '<div class="acct-menu" hidden><div class="acct-email">' + esc(email) + '</div><a href="setup.html">My setup form</a><a href="login.html">My account</a><button type="button" class="acct-out">Sign out</button></div>';
+      cta.insertBefore(menu, cta.firstChild);
+      var btn = menu.querySelector('.acct-btn'), panel = menu.querySelector('.acct-menu');
+      btn.onclick = function(e){ e.stopPropagation(); var open = panel.hidden; panel.hidden = !open; btn.setAttribute('aria-expanded', open); };
+      menu.querySelector('.acct-out').onclick = signOut;
+    }
+    if (mobileLogin) { mobileLogin.textContent = 'Sign out'; mobileLogin.setAttribute('href', '#'); mobileLogin.onclick = function(e){ e.preventDefault(); signOut(); }; }
+    footLogins.forEach(function(a){ a.textContent = 'My account'; });
+  }
+  document.addEventListener('click', function(e){ if (menu && !menu.contains(e.target)) { var p = menu.querySelector('.acct-menu'), b = menu.querySelector('.acct-btn'); if (p) p.hidden = true; if (b) b.setAttribute('aria-expanded', false); } });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && menu) { var p = menu.querySelector('.acct-menu'); if (p) p.hidden = true; } });
+
+  function signOut(){
+    clear(); render('', '');
+    loadFirebase().then(function(auth){ return auth.signOut(); }).catch(function(){});
+    if (/login\.html$/.test(window.location.pathname) && window.abLoginRefresh) window.abLoginRefresh(null);
+  }
+  function remember(u){ try { localStorage.setItem('ab_email', u.email || ''); localStorage.setItem('ab_name', u.displayName || ''); } catch (e) {} }
+
+  window.abAccount = { render: render, signOut: signOut, load: loadFirebase, remember: remember, clear: clear };
+
+  // show the menu straight away if this browser signed in before, then confirm with Firebase
+  var email = get('ab_email');
+  if (email) {
+    render(email, get('ab_name'));
+    loadFirebase().then(function(auth){
+      auth.onAuthStateChanged(function(u){
+        if (u) { remember(u); render(u.email || '', u.displayName || ''); }
+        else { clear(); render('', ''); }
+      });
+    }).catch(function(){});
+  }
+})();
+
 // duplicate the moving banners so they loop smoothly
 document.querySelectorAll('.track[data-dup]').forEach(function(t){ t.innerHTML += t.innerHTML; });
 

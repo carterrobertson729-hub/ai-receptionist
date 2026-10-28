@@ -89,11 +89,7 @@
       msg.textContent = 'Google sign-in is almost ready. For now, you can choose a plan or book a demo from the menu.';
       btn.disabled = true; terms.onchange = null; return;
     }
-    function load(src){ return new Promise(function(ok, bad){ var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
-    var base = 'https://www.gstatic.com/firebasejs/10.12.2/';
-    load(base + 'firebase-app-compat.js').then(function(){ return load(base + 'firebase-auth-compat.js'); }).then(function(){
-      firebase.initializeApp(FIREBASE_CONFIG);
-      var auth = firebase.auth();
+    abAccount.load().then(function(auth){
       function showUser(u){
         var out = $('signedOut'), inn = $('signedIn');
         if (!u) { out.hidden = false; inn.hidden = true; return; }
@@ -103,8 +99,9 @@
         var q = '?email=' + encodeURIComponent(u.email || '') + '&name=' + encodeURIComponent(u.displayName || '');
         $('toSetup').href = 'setup.html' + q;
         $('toPlans').href = 'pricing.html';
-        try { localStorage.setItem('ab_email', u.email || ''); localStorage.setItem('ab_name', u.displayName || ''); } catch (e) {}
+        abAccount.remember(u); abAccount.render(u.email || '', u.displayName || '');
       }
+      window.abLoginRefresh = showUser;
       auth.onAuthStateChanged(showUser);
       btn.onclick = function(){
         msg.textContent = '';
@@ -124,7 +121,7 @@
           if (msg.textContent) msg.textContent += ' (error: ' + code + ')';
         });
       };
-      $('signOutBtn').onclick = function(){ auth.signOut(); };
+      $('signOutBtn').onclick = function(){ abAccount.signOut(); showUser(null); };
     }).catch(function(){ msg.textContent = 'Sorry, sign-in could not load. Please try again in a minute.'; btn.disabled = true; });
   });
 </script>
@@ -133,7 +130,7 @@
 
 <footer>
   <div class="wrap terms" id="terms">
-    <nav class="foot-links" aria-label="Site pages"><a href="index.html">Home</a><a href="how-it-works.html">How it works</a><a href="services.html">Services</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="demo.html">Book a demo</a><a href="login.html">Log in</a></nav>
+    <nav class="foot-links" aria-label="Site pages"><a href="index.html">Home</a><a href="how-it-works.html">How it works</a><a href="services.html">Services</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="demo.html">Book a demo</a><a href="setup.html">Setup form</a><a href="login.html">Log in</a></nav>
     <h3>Terms and policies</h3>
     <details><summary>Plans, minutes and extra minutes</summary><p>Plans are billed monthly or yearly (yearly is 10% less than twelve monthly payments, paid up front). Each plan covers one location and the included minutes shown. Minutes do not roll over. If you use more than your included minutes, calls keep being answered and extra minutes are billed at $0.40 each on your next bill. Add-ons are billed monthly.</p></details>
     <details><summary>Cancellation and refunds</summary><p>You can cancel anytime. Your plan stays active until the end of the period you have already paid for, then it does not renew. We do not refund payments for time you have already been billed for. Yearly plans are paid up front for twelve months, and cancelling stops the renewal.</p></details>
