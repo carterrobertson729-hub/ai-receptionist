@@ -116,7 +116,7 @@
         }).catch(function(err){
           var code = (err && err.code) || 'unknown';
           var why = { 'auth/popup-closed-by-user': '', 'auth/cancelled-popup-request': '',
-            'auth/unauthorized-domain': 'This website address is not allowed yet in our sign-in settings. We are fixing it.',
+            'auth/unauthorized-domain': 'This website address (' + window.location.hostname + ') is not allowed yet in our sign-in settings. We are fixing it.',
             'auth/operation-not-allowed': 'Google sign-in is not switched on yet in our settings. We are fixing it.',
             'auth/popup-blocked': 'Your browser blocked the sign-in window. Please allow pop-ups for this site and try again.',
             'auth/network-request-failed': 'The connection failed. Please check your internet and try again.' };
