@@ -16,7 +16,12 @@ var PORTAL_LINK = '';
 // Google sign-in (Firebase Authentication). Paste the web app config from Firebase here, for example:
 // var FIREBASE_CONFIG = { apiKey: '...', authDomain: '...firebaseapp.com', projectId: '...', appId: '...' };
 // Until it is set, the sign-in button explains that sign-in is almost ready. (These values are public by design, not secrets.)
-var FIREBASE_CONFIG = null;
+var FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyCIr2guVNbwYw0JjoZnQeeEEfwh-Sg-0tg',
+  authDomain: 'answerbay-bf6f7.firebaseapp.com',
+  projectId: 'answerbay-bf6f7',
+  appId: '1:116359651974:web:d447a6768b2782981c2707'
+};
 // Where the website talks to your n8n workflows (hides booked demo times, lets people cancel or change a demo). Must end with a slash.
 var N8N_BASE = 'https://icrob.app.n8n.cloud/webhook/website/';
 // Two ways it can answer. "backup" = after-hours and missed calls. "always" = 24/7 receptionist (answers every call, can pass calls to staff).
