@@ -26,7 +26,7 @@ Logo files are in the website zip's companion download: `answerbay-logo-120.png`
 What Google shows ("Choose an account ... to continue to ...") comes from the project's OAuth consent screen, not from the website. Steps (names are from memory, the screens change):
 1. Firebase console > gear icon > Project settings > General: set the Public-facing name to AnswerBay and pick a support email. Save.
 2. Google Cloud console (console.cloud.google.com), pick the project `answerbay-bf6f7` at the top. Open APIs & Services > OAuth consent screen (newer layout: Google Auth Platform > Branding).
-3. Fill in: App name = AnswerBay, User support email, App logo = upload `answerbay-logo-120.png`, App home page = your website address, links to your privacy policy and terms (the Terms section at the bottom of any page, for example https://endearing-macaron-e2b7a6.netlify.app/index.html#terms), developer contact email. Save.
+3. Fill in: App name = AnswerBay, User support email, App logo = upload `answerbay-logo-120.png`, App home page = your website address, links to your privacy policy https://endearing-macaron-e2b7a6.netlify.app/privacy.html and terms https://endearing-macaron-e2b7a6.netlify.app/terms.html (these pages exist after the website zip with `privacy.html` and `terms.html` is uploaded), developer contact email. Save.
 4. Check the publishing status. If it says Testing, only people on the test-user list can sign in. Set it to In production (publish app) so any customer can.
 
 Things to know:
