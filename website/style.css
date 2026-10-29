@@ -51,7 +51,7 @@ header.site{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-
 .nav ul a{display:block;padding:9px 14px;border-radius:10px;text-decoration:none;font-weight:500;color:#2c3466}
 .nav ul a:hover{background:rgba(106,92,255,.1)}
 .menu-btn{display:none;background:#fff;border:1px solid var(--line);border-radius:12px;width:46px;height:46px;font-size:1.3rem;cursor:pointer}
-@media(max-width:900px){
+@media(max-width:1120px){
   .menu-btn{display:block}
   .nav #navList{display:none;position:absolute;left:0;right:0;top:68px;flex-direction:column;background:rgba(255,255,255,.97);padding:12px 16px 18px;border-bottom:1px solid var(--line)}
   .nav #navList.open{display:flex}
@@ -59,7 +59,7 @@ header.site{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-
 }
 .nav-cta{display:flex;gap:10px}
 .only-mobile{display:none}
-@media(max-width:900px){.only-mobile{display:block}}
+@media(max-width:1120px){.only-mobile{display:block}}
 
 /* hero */
 .hero{padding:70px 0 40px}
@@ -269,7 +269,7 @@ footer{padding:50px 0 60px;border-top:1px solid var(--line);background:rgba(255,
 .has-sub:hover>ul.sub,.has-sub:focus-within>ul.sub,.has-sub.open>ul.sub{display:flex}
 .sub .soon{font-size:.7rem;margin-left:6px;padding:2px 7px;border-radius:99px;background:rgba(255,122,89,.16);color:#c24a2b;font-weight:700}
 .nav a[aria-current="page"]{background:rgba(106,92,255,.12);color:#2b2f9a}
-@media(max-width:900px){
+@media(max-width:1120px){
   .has-sub{flex-wrap:wrap}
   .has-sub>a{flex:1}
   .nav ul.sub{position:static;box-shadow:none;border:0;padding:0 0 0 14px;min-width:0;width:100%;background:transparent}
@@ -329,7 +329,7 @@ fieldset.fs legend + *{clear:both}
 
 /* header: keep three buttons on one line between the mobile breakpoint and wide screens */
 .nav-cta .btn{white-space:nowrap}
-@media(max-width:1180px){
+@media(max-width:1360px){
   .nav-cta{gap:6px}
   .nav-cta .btn{padding:9px 13px;font-size:.9rem}
   .nav #navList{gap:0}
@@ -349,3 +349,24 @@ fieldset.fs legend + *{clear:both}
 .acct-email{padding:8px 10px;font-size:.82rem;color:var(--muted);word-break:break-all;border-bottom:1px solid var(--line);margin-bottom:4px}
 .acct-menu a,.acct-menu button{display:block;width:100%;text-align:left;padding:9px 10px;border:0;background:transparent;border-radius:8px;font:inherit;font-size:.95rem;color:inherit;cursor:pointer;text-decoration:none}
 .acct-menu a:hover,.acct-menu button:hover{background:rgba(106,92,255,.1)}
+
+/* red error under a checkbox or field */
+.err{color:#c62828;font-weight:600;font-size:.92rem;margin:-6px 0 10px 32px}
+.err[hidden]{display:none}
+.agree.bad input{outline:2px solid #c62828;outline-offset:2px}
+
+/* terms pop-up */
+.tm-overlay{position:fixed;inset:0;background:rgba(15,18,50,.55);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+.tm-box{background:#fff;border-radius:18px;max-width:720px;width:100%;max-height:min(86vh,760px);display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(20,20,80,.35)}
+.tm-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.tm-head h3{margin:0}
+.tm-x{border:0;background:rgba(106,92,255,.1);border-radius:10px;width:40px;height:40px;font-size:1.4rem;line-height:1;cursor:pointer;color:#2c3466}
+.tm-x:hover{background:rgba(106,92,255,.2)}
+.tm-body{padding:16px 22px;overflow-y:auto;flex:1}
+.tm-body h4{margin:18px 0 6px}
+.tm-body h4:first-child{margin-top:0}
+.tm-body p{margin:0 0 8px;color:var(--muted);line-height:1.55}
+.tm-foot{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--line)}
+@media(max-width:1120px){.nav-cta{display:none}}
+
+#navList>li>a{white-space:nowrap}

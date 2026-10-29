@@ -33,9 +33,10 @@
       <li><a href="faq.html">FAQ</a></li>
       <li><a href="contact.html">Contact</a></li>
       <li class="only-mobile"><a href="demo.html">Book a demo</a></li>
+      <li class="only-mobile"><a href="login.html?mode=signup">Sign up</a></li>
       <li class="only-mobile"><a href="login.html">Log in</a></li>
     </ul>
-    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="login.html">Log in</a><a class="btn btn-ghost" href="demo.html">Book a demo</a><a class="btn btn-primary" href="pricing.html">See plans</a></div>
+    <div class="nav-cta btn-nav"><a class="btn btn-ghost" href="login.html">Log in</a><a class="btn btn-ghost" href="login.html?mode=signup">Sign up</a><a class="btn btn-ghost" href="demo.html">Book a demo</a><a class="btn btn-primary" href="pricing.html">See plans</a></div>
   </div>
 </header>
 
@@ -44,19 +45,20 @@
 <section class="page-hero">
   <div class="wrap">
     <p class="crumbs"><a href="index.html">AnswerBay</a> / Log in</p>
-    <h1 style="margin-top:6px">Log in or <span class="grad-text">sign up</span></h1>
-    <p class="lead">Use your Google account to sign up or log back in.</p>
+    <h1 style="margin-top:6px" id="pageTitle">Log in or <span class="grad-text">sign up</span></h1>
+    <p class="lead" id="pageLead">Use your Google account to sign up or log back in.</p>
   </div>
 </section>
 <section style="padding-top:20px">
   <div class="wrap">
     <div class="card" id="authCard" style="margin-bottom:20px">
       <div id="signedOut">
-        <h3>Sign up or log in with Google</h3>
+        <h3 id="cardTitle">Sign up or log in with Google</h3>
         <p>Use your Google account to create your AnswerBay account or to log back in. We only receive your name and email address, never your Google password.</p>
-        <label class="agree" style="margin-top:14px"><input type="checkbox" id="authTerms"><span>I agree to the <a href="#terms">terms and policies</a>, including that calls are answered by an automated assistant and may be recorded.</span></label>
+        <label class="agree" id="termsRow" style="margin-top:14px"><input type="checkbox" id="authTerms"><span>I agree to the <a href="#terms">terms and policies</a>, including that calls are answered by an automated assistant and may be recorded.</span></label>
+        <p class="err" id="termsErr" role="alert" hidden>You must tick this box to agree to the terms and policies before you can continue.</p>
         <label class="agree"><input type="checkbox" id="authNotify"><span>Optional: I would like to receive emails from AnswerBay about my account, updates and offers. I can unsubscribe at any time.</span></label>
-        <p style="margin-top:16px"><button class="btn btn-primary" id="googleBtn" type="button" disabled>Continue with Google</button></p>
+        <p style="margin-top:16px"><button class="btn btn-primary" id="googleBtn" type="button">Continue with Google</button></p>
         <p class="fine" id="authMsg" aria-live="polite" style="margin-top:10px"></p>
       </div>
       <div id="signedIn" hidden>
@@ -87,12 +89,20 @@
     if (typeof PORTAL_LINK === 'string' && PORTAL_LINK) { $('portalBtn').href = PORTAL_LINK; $('billingCard').hidden = false; }
 
     // Google sign-in through Firebase Authentication (FIREBASE_CONFIG is set at the top of site.js)
-    var msg = $('authMsg'), btn = $('googleBtn'), terms = $('authTerms');
-    function sync(){ btn.disabled = !terms.checked; }
-    terms.onchange = sync; sync();
+    var msg = $('authMsg'), btn = $('googleBtn'), terms = $('authTerms'), termsErr = $('termsErr'), row = $('termsRow');
+    var mode = new URLSearchParams(window.location.search).get('mode');
+    if (mode === 'signup') {
+      $('pageTitle').innerHTML = 'Create your <span class="grad-text">account</span>'; $('pageLead').textContent = 'Sign up with your Google account. It takes a few seconds.';
+      $('cardTitle').textContent = 'Sign up with Google'; btn.textContent = 'Sign up with Google'; document.title = 'Sign up | AnswerBay';
+    } else if (mode === 'login') {
+      $('pageTitle').innerHTML = 'Log <span class="grad-text">in</span>'; $('pageLead').textContent = 'Use your Google account to log back in.';
+      $('cardTitle').textContent = 'Log in with Google'; btn.textContent = 'Log in with Google'; document.title = 'Log in | AnswerBay';
+    }
+    function showErr(on){ termsErr.hidden = !on; row.classList.toggle('bad', on); }
+    terms.onchange = function(){ if (terms.checked) showErr(false); };
     if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG) {
       msg.textContent = 'Google sign-in is almost ready. For now, you can choose a plan or book a demo from the menu.';
-      btn.disabled = true; terms.onchange = null; return;
+      btn.disabled = true; return;
     }
     abAccount.load().then(function(auth){
       function showUser(u){
@@ -110,6 +120,7 @@
       auth.onAuthStateChanged(showUser);
       btn.onclick = function(){
         msg.textContent = '';
+        if (!terms.checked) { showErr(true); terms.focus(); return; }
         auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(function(res){
           var u = res.user, fresh = !!(res.additionalUserInfo && res.additionalUserInfo.isNewUser);
           // keep a record that they agreed to the terms (arrives in Netlify Forms and your email)
@@ -147,6 +158,6 @@
   </div>
 </footer>
 
-<script src="site.js"></script>
+<script src="site.js?v=20261029"></script>
 </body>
 </html>

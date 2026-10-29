@@ -62,13 +62,14 @@
   $('bYearly').onclick = function(){ state.cycle = 'yearly'; recompute(); };
   $('coAgree').onchange = recompute;
   $('coNotify').onchange = recompute;
-  $('payLink').addEventListener('click', function(e){ if (!$('coAgree').checked) { e.preventDefault(); $('coAgree').focus(); } });
+  $('payLink').addEventListener('click', function(e){ if (!$('coAgree').checked) { e.preventDefault(); $('coAgree').focus(); $('coAgreeNote').textContent = 'You must tick this box to agree to the terms and policies before you can continue.'; $('coAgreeNote').className = 'err'; } });
+  $('coAgree').addEventListener('change', function(){ if ($('coAgree').checked) { $('coAgreeNote').textContent = ''; } });
 
   // reserving a plan (used until online payment is switched on)
   var form = $('orderForm'); form.setAttribute('data-custom', '');
   form.addEventListener('submit', function(e){
     e.preventDefault();
-    if (!$('coAgree').checked) { $('coAgree').focus(); $('coAgreeNote').textContent = 'Please tick the box to agree to the terms.'; return; }
+    if (!$('coAgree').checked) { $('coAgree').focus(); $('coAgreeNote').textContent = 'You must tick this box to agree to the terms and policies before you can continue.'; $('coAgreeNote').className = 'err'; return; }
     if (!form.checkValidity()) { form.reportValidity(); return; }
     sendForm(form, function(){
       form.hidden = true;

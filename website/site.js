@@ -167,6 +167,8 @@ if (query.get('topic') && $('cTopic')) {
   function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
   var cta = document.querySelector('.nav-cta');
   var loginBtn = cta && cta.querySelector('a[href="login.html"]');
+  var signupBtn = cta && cta.querySelector('a[href="login.html?mode=signup"]');
+  var mobileSignup = document.querySelector('#navList li.only-mobile a[href="login.html?mode=signup"]');
   var mobileLogin = document.querySelector('#navList li.only-mobile a[href="login.html"]');
   var footLogins = document.querySelectorAll('.foot-links a[href="login.html"]');
   var menu = null, fbPromise = null;
@@ -188,12 +190,16 @@ if (query.get('topic') && $('cTopic')) {
     if (menu) { menu.remove(); menu = null; }
     if (!email) {
       if (loginBtn) loginBtn.style.display = '';
+      if (signupBtn) signupBtn.style.display = '';
+      if (mobileSignup) mobileSignup.parentNode.style.display = '';
       if (mobileLogin) { mobileLogin.textContent = 'Log in'; mobileLogin.setAttribute('href', 'login.html'); mobileLogin.onclick = null; }
       footLogins.forEach(function(a){ a.textContent = 'Log in'; });
       return;
     }
     var shown = name || email.split('@')[0];
     if (loginBtn) loginBtn.style.display = 'none';
+    if (signupBtn) signupBtn.style.display = 'none';
+    if (mobileSignup) mobileSignup.parentNode.style.display = 'none';
     if (cta) {
       menu = document.createElement('div'); menu.className = 'acct';
       menu.innerHTML = '<button type="button" class="acct-btn" aria-haspopup="true" aria-expanded="false"><span class="acct-ini">' + esc(shown.charAt(0).toUpperCase()) + '</span><span class="acct-name">' + esc(shown.split(' ')[0]) + '</span><span class="acct-caret">&#9662;</span></button>' +
@@ -229,6 +235,54 @@ if (query.get('topic') && $('cTopic')) {
       });
     }).catch(function(){});
   }
+})();
+
+
+// ===== terms pop-up: clicking "terms and policies" next to a checkbox shows everything in one scrollable box =====
+(function(){
+  var box = null, lastFocus = null, target = null;
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
+  function build(){
+    var html = '';
+    document.querySelectorAll('#terms details').forEach(function(d){
+      var s = d.querySelector('summary'), p = d.querySelector('p');
+      if (s && p) html += '<h4>' + esc(s.textContent) + '</h4><p>' + esc(p.textContent) + '</p>';
+    });
+    return html || '<p>Please see the terms and policies at the bottom of this page.</p>';
+  }
+  function close(){
+    if (!box) return;
+    box.remove(); box = null; document.body.style.overflow = '';
+    document.removeEventListener('keydown', onKey);
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function onKey(e){ if (e.key === 'Escape') close(); }
+  function open(checkbox, opener){
+    target = checkbox; lastFocus = opener;
+    box = document.createElement('div'); box.className = 'tm-overlay';
+    box.innerHTML = '<div class="tm-box" role="dialog" aria-modal="true" aria-labelledby="tmTitle"><div class="tm-head"><h3 id="tmTitle">Terms and policies</h3><button type="button" class="tm-x" aria-label="Close">&times;</button></div>' +
+      '<div class="tm-body" tabindex="0">' + build() + '</div>' +
+      '<div class="tm-foot"><button type="button" class="btn btn-ghost tm-close">Close</button>' + (checkbox ? '<button type="button" class="btn btn-primary tm-agree">I agree and continue</button>' : '') + '</div></div>';
+    document.body.appendChild(box); document.body.style.overflow = 'hidden';
+    box.addEventListener('click', function(e){ if (e.target === box) close(); });
+    box.querySelector('.tm-x').onclick = close;
+    box.querySelector('.tm-close').onclick = close;
+    var ag = box.querySelector('.tm-agree');
+    if (ag) ag.onclick = function(){
+      if (target) { target.checked = true; target.dispatchEvent(new Event('change', { bubbles: true })); }
+      close();
+      var cont = document.getElementById('googleBtn') || document.getElementById('payLink'); if (cont && !cont.hidden) cont.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    box.querySelector('.tm-x').focus();
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('label.agree a[href="#terms"]');
+    if (!a) return;
+    e.preventDefault();
+    open(a.closest('label.agree').querySelector('input[type="checkbox"]'), a);
+  });
+  window.abTerms = { open: open, close: close };
 })();
 
 // duplicate the moving banners so they loop smoothly
