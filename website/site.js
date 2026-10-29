@@ -188,6 +188,7 @@ if (query.get('topic') && $('cTopic')) {
 
   function render(email, name){
     if (menu) { menu.remove(); menu = null; }
+    if (email) document.documentElement.setAttribute('data-signed-in', '1'); else document.documentElement.removeAttribute('data-signed-in');
     if (!email) {
       if (loginBtn) loginBtn.style.display = '';
       if (signupBtn) signupBtn.style.display = '';

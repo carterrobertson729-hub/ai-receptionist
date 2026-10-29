@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>try{if(localStorage.getItem('ab_email'))document.documentElement.setAttribute('data-signed-in','1')}catch(e){}</script>
 </head>
 <body>
 
@@ -53,6 +54,7 @@
   <div class="wrap">
     <div class="card" id="authCard" style="margin-bottom:20px">
       <div id="signedOut">
+        <div class="brandrow"><svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a5cff"/><stop offset=".6" stop-color="#00b8ff"/><stop offset="1" stop-color="#00d9a6"/></linearGradient></defs><rect width="40" height="40" rx="12" fill="url(#lg2)"/><path d="M9 21h3M15 14v14M21 10v22M27 15v12M33 19v4" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/></svg><span>AnswerBay</span></div>
         <h3 id="cardTitle">Sign up or log in with Google</h3>
         <p>Use your Google account to create your AnswerBay account or to log back in. We only receive your name and email address, never your Google password.</p>
         <label class="agree" id="termsRow" style="margin-top:14px"><input type="checkbox" id="authTerms"><span>I agree to the <a href="#terms">terms and policies</a>, including that calls are answered by an automated assistant and may be recorded.</span></label>

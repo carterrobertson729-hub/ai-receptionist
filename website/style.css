@@ -370,3 +370,9 @@ fieldset.fs legend + *{clear:both}
 @media(max-width:1120px){.nav-cta{display:none}}
 
 #navList>li>a{white-space:nowrap}
+
+/* signed in: the Log in and Sign up buttons stay hidden (set by site.js and an early inline script) */
+html[data-signed-in] .nav-cta > a[href^="login.html"],
+html[data-signed-in] #navList li.only-mobile:has(> a[href="login.html?mode=signup"]){display:none !important}
+.brandrow{display:flex;align-items:center;gap:10px;margin-bottom:12px;font:700 1.15rem var(--head)}
+.brandrow svg{width:34px;height:34px;flex:none}
