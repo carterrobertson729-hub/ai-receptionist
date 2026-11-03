@@ -189,3 +189,4 @@ Carter built one earlier attempt (a pressure washing receptionist on Retell + n8
 ## Market context (vendor-sourced, treat as optimistic)
 
 Roughly 30 to 40% of local service calls arrive after hours; about 28% of business calls go unanswered. Many ready-made AI receptionists already exist, and phone and scheduling software are adding the feature. Sales is the hard part. Goal: sign three paying businesses in one industry from a working demo before building much more.
+- Sign-out redirect + friendlier example calls (2026-11-03, version 2026-11-03c, Carter): signing out now sends the visitor to the home page (`/`, after Firebase finishes or a 1.5 s timeout). The example calls on index.html, barbershops.html and trades.html were rewritten in a warmer, more natural voice (and the barbershop/home ones now end with a booking confirmation line). NEXT: Stripe one-time $99 setup fee on the 14 payment links + redirect to /setup.html.

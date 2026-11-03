@@ -1,4 +1,4 @@
-window.AB_JS_VERSION = '2026-11-03b';
+window.AB_JS_VERSION = '2026-11-03c';
 /* ===== Settings you edit ===== */
 var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
@@ -225,8 +225,14 @@ if (query.get('topic') && $('cTopic')) {
 
   function signOut(){
     clear(); render('', '');
-    loadFirebase().then(function(auth){ return auth.signOut(); }).catch(function(){});
-    if (/\/login(\.html)?\/?$/.test(window.location.pathname) && window.abLoginRefresh) window.abLoginRefresh(null);
+    var done = false;
+    function goHome(){
+      if (done) return; done = true;
+      if (window.abLoginRefresh) { try { window.abLoginRefresh(null); } catch (e) {} }
+      window.location.href = '/';
+    }
+    setTimeout(goHome, 1500);
+    loadFirebase().then(function(auth){ return auth.signOut(); }).then(goHome, goHome);
   }
   function remember(u){ try { localStorage.setItem('ab_email', u.email || ''); localStorage.setItem('ab_name', u.displayName || ''); } catch (e) {} }
 
