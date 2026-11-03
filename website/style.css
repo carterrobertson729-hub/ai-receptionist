@@ -372,7 +372,10 @@ fieldset.fs legend + *{clear:both}
 #navList>li>a{white-space:nowrap}
 
 /* signed in: the Log in and Sign up buttons stay hidden (set by site.js and an early inline script) */
-html[data-signed-in] .nav-cta > a[href^="login.html"],
+html[data-signed-in] .nav-cta > a[href^="login.html"]{display:none !important}
 html[data-signed-in] #navList li.only-mobile:has(> a[href="login.html?mode=signup"]){display:none !important}
 .brandrow{display:flex;align-items:center;gap:10px;margin-bottom:12px;font:700 1.15rem var(--head)}
 .brandrow svg{width:34px;height:34px;flex:none}
+
+/* diagnostics panel (add ?debug=1 to any page address) */
+#abDebug{position:fixed;left:8px;bottom:8px;z-index:500;max-width:min(520px,calc(100vw - 16px));max-height:60vh;overflow:auto;background:#10143a;color:#e8ecff;font:12px/1.45 ui-monospace,Menlo,monospace;padding:10px 12px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.4);white-space:pre-wrap;word-break:break-word}

@@ -1,3 +1,4 @@
+window.AB_JS_VERSION = '2026-11-03a';
 /* ===== Settings you edit ===== */
 var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
@@ -186,32 +187,42 @@ if (query.get('topic') && $('cTopic')) {
     return fbPromise;
   }
 
+  function headerAuthLinks(){
+    return Array.prototype.filter.call(document.querySelectorAll('header.site a[href^="login.html"]'), function(a){ return !a.closest('.acct-menu') && !a.closest('#navList'); });
+  }
+  function setHidden(list, hide){ list.forEach(function(el){ if (hide) el.style.setProperty('display', 'none', 'important'); else el.style.removeProperty('display'); }); }
+
   function render(email, name){
-    if (menu) { menu.remove(); menu = null; }
-    if (email) document.documentElement.setAttribute('data-signed-in', '1'); else document.documentElement.removeAttribute('data-signed-in');
+    try { if (menu) { menu.remove(); menu = null; } } catch (e) {}
+    var links = headerAuthLinks();
+    var mobSign = document.querySelectorAll('#navList li.only-mobile a[href="login.html?mode=signup"]');
+    var mobLogin = document.querySelectorAll('#navList li.only-mobile a[href="login.html"]');
+    var foots = document.querySelectorAll('.foot-links a[href="login.html"]');
     if (!email) {
-      if (loginBtn) loginBtn.style.display = '';
-      if (signupBtn) signupBtn.style.display = '';
-      if (mobileSignup) mobileSignup.parentNode.style.display = '';
-      if (mobileLogin) { mobileLogin.textContent = 'Log in'; mobileLogin.setAttribute('href', 'login.html'); mobileLogin.onclick = null; }
-      footLogins.forEach(function(a){ a.textContent = 'Log in'; });
+      document.documentElement.removeAttribute('data-signed-in');
+      setHidden(links, false);
+      mobSign.forEach(function(a){ a.parentNode.style.removeProperty('display'); });
+      mobLogin.forEach(function(a){ a.textContent = 'Log in'; a.setAttribute('href', 'login.html'); a.onclick = null; });
+      foots.forEach(function(a){ a.textContent = 'Log in'; });
       return;
     }
+    // hide Log in / Sign up first, so nothing below can leave them on screen
+    document.documentElement.setAttribute('data-signed-in', '1');
+    setHidden(links, true);
+    mobSign.forEach(function(a){ a.parentNode.style.setProperty('display', 'none', 'important'); });
+    mobLogin.forEach(function(a){ a.textContent = 'Sign out'; a.setAttribute('href', '#'); a.onclick = function(e){ e.preventDefault(); signOut(); }; });
+    foots.forEach(function(a){ a.textContent = 'My account'; });
     var shown = name || email.split('@')[0];
-    if (loginBtn) loginBtn.style.display = 'none';
-    if (signupBtn) signupBtn.style.display = 'none';
-    if (mobileSignup) mobileSignup.parentNode.style.display = 'none';
-    if (cta) {
+    var host = document.querySelector('header.site .nav-cta');
+    if (host) {
       menu = document.createElement('div'); menu.className = 'acct';
       menu.innerHTML = '<button type="button" class="acct-btn" aria-haspopup="true" aria-expanded="false"><span class="acct-ini">' + esc(shown.charAt(0).toUpperCase()) + '</span><span class="acct-name">' + esc(shown.split(' ')[0]) + '</span><span class="acct-caret">&#9662;</span></button>' +
         '<div class="acct-menu" hidden><div class="acct-email">' + esc(email) + '</div><a href="setup.html">My setup form</a><a href="login.html">My account</a><button type="button" class="acct-out">Sign out</button></div>';
-      cta.insertBefore(menu, cta.firstChild);
+      host.insertBefore(menu, host.firstChild);
       var btn = menu.querySelector('.acct-btn'), panel = menu.querySelector('.acct-menu');
       btn.onclick = function(e){ e.stopPropagation(); var open = panel.hidden; panel.hidden = !open; btn.setAttribute('aria-expanded', open); };
       menu.querySelector('.acct-out').onclick = signOut;
     }
-    if (mobileLogin) { mobileLogin.textContent = 'Sign out'; mobileLogin.setAttribute('href', '#'); mobileLogin.onclick = function(e){ e.preventDefault(); signOut(); }; }
-    footLogins.forEach(function(a){ a.textContent = 'My account'; });
   }
   document.addEventListener('click', function(e){ if (menu && !menu.contains(e.target)) { var p = menu.querySelector('.acct-menu'), b = menu.querySelector('.acct-btn'); if (p) p.hidden = true; if (b) b.setAttribute('aria-expanded', false); } });
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && menu) { var p = menu.querySelector('.acct-menu'); if (p) p.hidden = true; } });
@@ -284,6 +295,33 @@ if (query.get('topic') && $('cTopic')) {
     open(a.closest('label.agree').querySelector('input[type="checkbox"]'), a);
   });
   window.abTerms = { open: open, close: close };
+})();
+
+// ===== diagnostics: add ?debug=1 to any page address to see what the page is doing =====
+(function(){
+  if (!/[?&]debug=1/.test(window.location.search)) return;
+  function lines(){
+    var login = document.querySelector('header.site .nav-cta > a[href="login.html"]');
+    var out = [];
+    out.push('site.js version : ' + window.AB_JS_VERSION);
+    var f = document.querySelector('.site-ver'); out.push('footer version  : ' + (f ? f.textContent : '(none)'));
+    out.push('abAccount       : ' + typeof window.abAccount);
+    out.push('firebase sdk    : ' + typeof window.firebase + (window.firebase && window.firebase.apps ? ' apps=' + window.firebase.apps.length : ''));
+    out.push('FIREBASE_CONFIG : ' + (typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG ? 'set' : 'EMPTY'));
+    var ls = ''; try { ls = localStorage.getItem('ab_email') || '(empty)'; } catch (e) { ls = 'blocked: ' + e.message; }
+    out.push('saved email     : ' + ls);
+    out.push('signed-in flag  : ' + (document.documentElement.getAttribute('data-signed-in') || '(not set)'));
+    out.push('Log in button   : ' + (login ? 'display=' + getComputedStyle(login).display : 'not found'));
+    out.push('name button     : ' + (document.querySelector('.acct-btn') ? 'present' : 'missing'));
+    try { var u = window.firebase && firebase.apps.length ? firebase.auth().currentUser : null; out.push('firebase user   : ' + (u ? u.email : 'none')); } catch (e) { out.push('firebase user   : error ' + e.message); }
+    out.push('window width    : ' + window.innerWidth);
+    out.push('browser         : ' + navigator.userAgent);
+    var errs = window.__abErrors || []; out.push('errors          : ' + (errs.length ? '\n  - ' + errs.join('\n  - ') : 'none'));
+    return out.join('\n');
+  }
+  var box = document.createElement('div'); box.id = 'abDebug'; document.body.appendChild(box);
+  function paint(){ box.textContent = 'AnswerBay debug (send a screenshot of this box)\n' + lines(); }
+  paint(); setInterval(paint, 1000);
 })();
 
 // duplicate the moving banners so they loop smoothly
