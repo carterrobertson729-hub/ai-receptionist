@@ -1,4 +1,4 @@
-window.AB_JS_VERSION = '2026-11-03a';
+window.AB_JS_VERSION = '2026-11-03b';
 /* ===== Settings you edit ===== */
 var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
@@ -134,13 +134,14 @@ if (menuBtn && navList) {
 document.querySelectorAll('.sub-toggle').forEach(function(b){
   b.addEventListener('click', function(){ var li = b.parentNode, o = li.classList.toggle('open'); b.setAttribute('aria-expanded', o); });
 });
-// mark the page you are on in the menu
+// mark the page you are on in the menu (works with and without .html in the address)
 (function(){
-  var here = window.location.pathname.split('/').pop() || 'index.html';
-  var inServices = ['barbershops.html','trades.html','repair.html','landscaping.html'].indexOf(here) !== -1;
+  function norm(p){ p = String(p || '').split('?')[0].split('#')[0].replace(/\/+$/, ''); p = p.split('/').pop().replace(/\.html$/, ''); return p || 'index'; }
+  var here = norm(window.location.pathname);
+  var inServices = ['barbershops','trades','repair','landscaping'].indexOf(here) !== -1;
   document.querySelectorAll('#navList > li > a').forEach(function(a){
-    var h = a.getAttribute('href');
-    if (h === here || (inServices && h === 'services.html')) a.setAttribute('aria-current', 'page');
+    var h = norm(a.getAttribute('href'));
+    if (h === here || (inServices && h === 'services')) a.setAttribute('aria-current', 'page');
   });
 })();
 
@@ -167,11 +168,6 @@ if (query.get('topic') && $('cTopic')) {
   function clear(){ try { localStorage.removeItem('ab_email'); localStorage.removeItem('ab_name'); } catch (e) {} }
   function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
   var cta = document.querySelector('.nav-cta');
-  var loginBtn = cta && cta.querySelector('a[href="login.html"]');
-  var signupBtn = cta && cta.querySelector('a[href="login.html?mode=signup"]');
-  var mobileSignup = document.querySelector('#navList li.only-mobile a[href="login.html?mode=signup"]');
-  var mobileLogin = document.querySelector('#navList li.only-mobile a[href="login.html"]');
-  var footLogins = document.querySelectorAll('.foot-links a[href="login.html"]');
   var menu = null, fbPromise = null;
 
   // load Firebase once (used by the login page and by this menu)
@@ -188,16 +184,16 @@ if (query.get('topic') && $('cTopic')) {
   }
 
   function headerAuthLinks(){
-    return Array.prototype.filter.call(document.querySelectorAll('header.site a[href^="login.html"]'), function(a){ return !a.closest('.acct-menu') && !a.closest('#navList'); });
+    return Array.prototype.filter.call(document.querySelectorAll('header.site .nav-cta > a[data-auth]'), function(a){ return !a.closest('.acct-menu'); });
   }
   function setHidden(list, hide){ list.forEach(function(el){ if (hide) el.style.setProperty('display', 'none', 'important'); else el.style.removeProperty('display'); }); }
 
   function render(email, name){
     try { if (menu) { menu.remove(); menu = null; } } catch (e) {}
     var links = headerAuthLinks();
-    var mobSign = document.querySelectorAll('#navList li.only-mobile a[href="login.html?mode=signup"]');
-    var mobLogin = document.querySelectorAll('#navList li.only-mobile a[href="login.html"]');
-    var foots = document.querySelectorAll('.foot-links a[href="login.html"]');
+    var mobSign = document.querySelectorAll('#navList li.only-mobile a[data-auth="signup"]');
+    var mobLogin = document.querySelectorAll('#navList li.only-mobile a[data-auth="login"]');
+    var foots = document.querySelectorAll('.foot-links a[data-auth="login-foot"]');
     if (!email) {
       document.documentElement.removeAttribute('data-signed-in');
       setHidden(links, false);
@@ -230,7 +226,7 @@ if (query.get('topic') && $('cTopic')) {
   function signOut(){
     clear(); render('', '');
     loadFirebase().then(function(auth){ return auth.signOut(); }).catch(function(){});
-    if (/login\.html$/.test(window.location.pathname) && window.abLoginRefresh) window.abLoginRefresh(null);
+    if (/\/login(\.html)?\/?$/.test(window.location.pathname) && window.abLoginRefresh) window.abLoginRefresh(null);
   }
   function remember(u){ try { localStorage.setItem('ab_email', u.email || ''); localStorage.setItem('ab_name', u.displayName || ''); } catch (e) {} }
 
@@ -301,7 +297,7 @@ if (query.get('topic') && $('cTopic')) {
 (function(){
   if (!/[?&]debug=1/.test(window.location.search)) return;
   function lines(){
-    var login = document.querySelector('header.site .nav-cta > a[href="login.html"]');
+    var login = document.querySelector('header.site .nav-cta > a[data-auth="login"]');
     var out = [];
     out.push('site.js version : ' + window.AB_JS_VERSION);
     var f = document.querySelector('.site-ver'); out.push('footer version  : ' + (f ? f.textContent : '(none)'));
@@ -312,6 +308,7 @@ if (query.get('topic') && $('cTopic')) {
     out.push('saved email     : ' + ls);
     out.push('signed-in flag  : ' + (document.documentElement.getAttribute('data-signed-in') || '(not set)'));
     out.push('Log in button   : ' + (login ? 'display=' + getComputedStyle(login).display : 'not found'));
+    out.push('header links    : ' + Array.prototype.map.call(document.querySelectorAll('header.site .nav-cta a'), function(a){ return a.textContent.trim() + ' -> ' + a.getAttribute('href'); }).join(' | '));
     out.push('name button     : ' + (document.querySelector('.acct-btn') ? 'present' : 'missing'));
     try { var u = window.firebase && firebase.apps.length ? firebase.auth().currentUser : null; out.push('firebase user   : ' + (u ? u.email : 'none')); } catch (e) { out.push('firebase user   : error ' + e.message); }
     out.push('window width    : ' + window.innerWidth);
