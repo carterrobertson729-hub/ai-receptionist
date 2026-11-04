@@ -1,0 +1,137 @@
+{
+  "name": "Website - Payment Welcome",
+  "nodes": [
+    {
+      "id": "p1000000-0000-4000-8000-000000000001",
+      "name": "Stripe Payment",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "website-stripe-payment",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "website/stripe-payment",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "p1000000-0000-4000-8000-000000000002",
+      "name": "Build Welcome Emails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Stripe payment welcome: when a customer's checkout is paid, build (1) an email to the customer with their\n// setup-form link and what happens next, and (2) an email to the owner saying who paid.\n// Self-contained; unit-tested by tools/test-payment.mjs.\n\nfunction payMoney(n) { return '$' + (Math.round(n * 100) % 100 === 0 ? Math.round(n).toLocaleString('en-US') : n.toFixed(2)); }\n\n// Which plan does this amount look like? Matches plan price alone or plus the setup fee, monthly or yearly.\nfunction payGuessPlan(amount, plans, setupFee, discount) {\n  if (typeof amount !== 'number' || !isFinite(amount)) return null;\n  for (var i = 0; i < plans.length; i++) {\n    var p = plans[i];\n    var yearly = Math.floor(p.monthly * 12 * (1 - discount));\n    var tries = [[p.monthly, 'monthly'], [p.monthly + setupFee, 'monthly'], [yearly, 'yearly'], [yearly + setupFee, 'yearly']];\n    for (var j = 0; j < tries.length; j++) {\n      if (Math.abs(tries[j][0] - amount) < 0.005) return { id: p.id, name: p.name, cycle: tries[j][1], includesSetup: j % 2 === 1 };\n    }\n  }\n  return null;\n}\n\n// input: the webhook item ({ body, query }) holding a Stripe event. opts: { secret, siteUrl, ownerEmail, plans, setupFee, discount }.\nfunction paymentWelcome(input, opts) {\n  var query = (input && input.query) || {};\n  var ev = (input && input.body) || input || {};\n  if (opts.secret && query.key !== opts.secret) return { ok: false, reason: 'bad_key' };\n  if (ev.type !== 'checkout.session.completed') return { ok: false, reason: 'ignored_event', type: ev.type || '' };\n  var s = (ev.data && ev.data.object) || {};\n  if (s.payment_status && s.payment_status !== 'paid' && s.payment_status !== 'no_payment_required') return { ok: false, reason: 'not_paid' };\n\n  var cd = s.customer_details || {};\n  var email = String(cd.email || s.customer_email || '').trim();\n  var name = String(cd.name || '').trim();\n  var first = name.split(/\\s+/)[0] || '';\n  var amount = typeof s.amount_total === 'number' ? s.amount_total / 100 : null;\n  var guess = payGuessPlan(amount, opts.plans, opts.setupFee, opts.discount);\n  var test = ev.livemode === false;\n\n  var q = [];\n  if (guess) { q.push('plan=' + encodeURIComponent(guess.id)); q.push('cycle=' + guess.cycle); }\n  if (email) q.push('email=' + encodeURIComponent(email));\n  if (name) q.push('name=' + encodeURIComponent(name));\n  var link = String(opts.siteUrl || '').replace(/\\/+$/, '') + '/setup.html' + (q.length ? '?' + q.join('&') : '');\n\n  var out = [];\n  if (email) {\n    out.push({ to: email, subject: 'Thank you! Your next step: tell us about your business',\n      body: 'Hi ' + (first || 'there') + ',\\n\\n' +\n        'Thank you for your order. Your payment went through, and Stripe is sending your receipt separately.\\n\\n' +\n        'Your next step takes about 15 to 20 minutes. Fill in your setup form so we know how your business works:\\n' + link + '\\n\\n' +\n        'What happens next:\\n' +\n        '1. You send the setup form. Your answers reach us right away.\\n' +\n        '2. We build and test your receptionist. Most are live within about 4 business days after we get your form.\\n' +\n        '3. We email you your receptionist\\'s phone number and the steps to forward your calls, and we run a test call together.\\n\\n' +\n        'Handy to have ready: your hours, your services and prices, who has the login for your phone account, and the Google account your calendar uses (we will ask you to share the calendar with us).\\n\\n' +\n        'If you are not sure about an answer, write \"not sure\" and we will suggest a sensible default. Questions? Just reply to this email.\\n\\nThe AnswerBay team' });\n  }\n  var lines = [\n    (test ? 'TEST MODE payment (no real money).\\n' : '') + 'A customer paid.',\n    'Name: ' + (name || 'not given'),\n    'Email: ' + (email || 'NOT GIVEN (Stripe did not send one, contact them yourself)'),\n    'Amount: ' + (amount == null ? 'unknown' : payMoney(amount)),\n    'Looks like: ' + (guess ? guess.name + ' (' + guess.cycle + (guess.includesSetup ? ', setup fee included' : '') + ')' : 'cannot tell (add-ons or tax can change the amount). Check the payment in Stripe.'),\n    'Stripe payment id: ' + (s.id || 'unknown'),\n    '',\n    email ? 'I emailed them this setup link:\\n' + link : 'Send them this setup link yourself:\\n' + link,\n    '',\n    'Next: wait for their setup form (you get a \"NEW SETUP FORM\" email). If it has not arrived in a day, email them. Add any add-ons they bought in Stripe.'\n  ];\n  out.push({ to: opts.ownerEmail, subject: (test ? '[TEST] ' : '') + 'PAID: ' + (name || email || 'a customer') + (amount == null ? '' : ' - ' + payMoney(amount)) + (guess ? ' (' + guess.name + ')' : ''), body: lines.join('\\n') });\n  return { ok: true, messages: out };\n}\n\n\n// Keep this list in step with PLANS in website/site.js (id, name, monthly price).\nvar SETTINGS = {\n  secret: 'PUT-YOUR-PAYMENT-KEY-HERE',\n  siteUrl: 'https://endearing-macaron-e2b7a6.netlify.app',\n  ownerEmail: 'carter.robertson729@gmail.com',\n  setupFee: 99, discount: 0.10,\n  plans: [\n    { id: 'backup-lite', name: 'Backup Lite', monthly: 59 }, { id: 'backup-standard', name: 'Backup Standard', monthly: 89 }, { id: 'backup-plus', name: 'Backup Plus', monthly: 139 },\n    { id: 'always-starter', name: '24/7 Starter', monthly: 119 }, { id: 'always-standard', name: '24/7 Standard', monthly: 179 }, { id: 'always-plus', name: '24/7 Plus', monthly: 239 }, { id: 'always-high', name: '24/7 High volume', monthly: 349 }\n  ]\n};\nvar r = paymentWelcome($input.first().json, SETTINGS);\nif (!r.ok) return [{ json: r }];\nreturn r.messages.map(function (m) { return { json: { ok: true, to: m.to, subject: m.subject, body: m.body } }; });"
+      }
+    },
+    {
+      "id": "p1000000-0000-4000-8000-000000000003",
+      "name": "Paid Order?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p1000000-0000-4000-8000-000000000004",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        -60
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Stripe Payment": {
+      "main": [
+        [
+          {
+            "node": "Build Welcome Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Welcome Emails": {
+      "main": [
+        [
+          {
+            "node": "Paid Order?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Paid Order?": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

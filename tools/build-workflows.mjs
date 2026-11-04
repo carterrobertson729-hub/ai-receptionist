@@ -14,6 +14,7 @@ const usageLib = stripExports(read('n8n/code/usage.js'));
 const reportLib = stripExports(read('n8n/code/report.js'));
 const demoLib = stripExports(read('n8n/code/demo.js'));
 const formAlertLib = stripExports(read('n8n/code/formalert.js'));
+const paymentLib = stripExports(read('n8n/code/payment.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -903,6 +904,57 @@ const formAlerts = wf('Website - Form Alerts', [
 });
 writeFileSync(new URL('n8n/website-form-alerts.json', root), JSON.stringify(formAlerts, null, 2) + '\n');
 
+// ---------- 14. stripe payment welcome (paid checkout -> setup link to the customer + a note to the owner) ----------
+const PAY_SECRET = 'PUT-YOUR-PAYMENT-KEY-HERE';   // goes on the end of the Stripe webhook URL as ?key=...  (placeholder in the repo; the file sent to Carter has a real one)
+const paymentCode = `${paymentLib}
+// Keep this list in step with PLANS in website/site.js (id, name, monthly price).
+var SETTINGS = {
+  secret: '${PAY_SECRET}',
+  siteUrl: 'https://endearing-macaron-e2b7a6.netlify.app',
+  ownerEmail: 'carter.robertson729@gmail.com',
+  setupFee: 99, discount: 0.10,
+  plans: [
+    { id: 'backup-lite', name: 'Backup Lite', monthly: 59 }, { id: 'backup-standard', name: 'Backup Standard', monthly: 89 }, { id: 'backup-plus', name: 'Backup Plus', monthly: 139 },
+    { id: 'always-starter', name: '24/7 Starter', monthly: 119 }, { id: 'always-standard', name: '24/7 Standard', monthly: 179 }, { id: 'always-plus', name: '24/7 Plus', monthly: 239 }, { id: 'always-high', name: '24/7 High volume', monthly: 349 }
+  ]
+};
+var r = paymentWelcome($input.first().json, SETTINGS);
+if (!r.ok) return [{ json: r }];
+return r.messages.map(function (m) { return { json: { ok: true, to: m.to, subject: m.subject, body: m.body } }; });`;
+const payWelcome = wf('Website - Payment Welcome', [
+  {
+    id: 'p1000000-0000-4000-8000-000000000001', name: 'Stripe Payment', type: 'n8n-nodes-base.webhook', typeVersion: 2, position: [0, 0],
+    webhookId: 'website-stripe-payment',
+    parameters: { httpMethod: 'POST', path: 'website/stripe-payment', responseMode: 'onReceived', options: {} }
+  },
+  code('p1000000-0000-4000-8000-000000000002', 'Build Welcome Emails', [240, 0], paymentCode),
+  {
+    id: 'p1000000-0000-4000-8000-000000000003', name: 'Paid Order?', type: 'n8n-nodes-base.if', typeVersion: 2.2, position: [480, 0],
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+        conditions: [{ id: 'c1', leftValue: '={{ $json.ok }}', rightValue: true, operator: { type: 'boolean', operation: 'true', singleValue: true } }],
+        combinator: 'and'
+      },
+      options: {}
+    }
+  },
+  {
+    id: 'p1000000-0000-4000-8000-000000000004', name: 'Send Email', type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position: [720, -60],
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  }
+], {
+  'Stripe Payment': { main: [[{ node: 'Build Welcome Emails', type: 'main', index: 0 }]] },
+  'Build Welcome Emails': { main: [[{ node: 'Paid Order?', type: 'main', index: 0 }]] },
+  'Paid Order?': { main: [[{ node: 'Send Email', type: 'main', index: 0 }], []] }
+});
+writeFileSync(new URL('n8n/website-payment-welcome.json', root), JSON.stringify(payWelcome, null, 2) + '\n');
+
+
 
 writeFileSync(new URL('n8n/business-config.json', root), JSON.stringify(bizConfig, null, 2) + '\n');
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
@@ -921,7 +973,7 @@ const nodeCodeDir = new URL('n8n/node-code/', root);
 rmSync(nodeCodeDir, { recursive: true, force: true });
 mkdirSync(nodeCodeDir, { recursive: true });
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly, demo, manage, formAlerts]) {
+for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly, demo, manage, formAlerts, payWelcome]) {
   for (const n of w.nodes.filter((n) => n.type === 'n8n-nodes-base.code')) {
     const header = `// PASTE INTO n8n: workflow "${w.name}" > node "${n.name}" > Code tab (select all, replace, Save).\n`;
     writeFileSync(new URL(`${slug(w.name.replace('Receptionist - ', ''))}__${slug(n.name)}.js`, nodeCodeDir), header + n.parameters.jsCode + '\n');
