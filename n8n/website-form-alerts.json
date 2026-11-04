@@ -1,0 +1,138 @@
+{
+  "name": "Website - Form Alerts",
+  "nodes": [
+    {
+      "id": "f1000000-0000-4000-8000-000000000001",
+      "name": "Netlify Form",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "website-form-alert",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "website/form-alert",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000000002",
+      "name": "Build Form Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Website form alerts: turns any Netlify form submission into one plain email to the owner.\n// Self-contained; unit-tested by tools/test-formalert.mjs.\n\nfunction faClean(v) { return String(v == null ? '' : v).replace(/\\r/g, '').trim(); }\n\nfunction faLabel(key) {\n  var s = String(key || '').replace(/[_-]+/g, ' ').trim();\n  return s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Field';\n}\n\n// input: the webhook item ({ body, query }). opts: { secret, skip: ['demo'], ownerEmail }.\nfunction formAlert(input, opts) {\n  var query = (input && input.query) || {};\n  var body = (input && input.body) || input || {};\n  var sub = body.payload || body;                 // Netlify wraps the submission differently by notification type\n  var d = sub.data || {};\n  if (opts.secret && query.key !== opts.secret) return { ok: false, reason: 'bad_key' };\n  var formName = faClean(sub.form_name || body.form_name || d['form-name']);\n  if (!formName) return { ok: false, reason: 'no_form_name' };\n  if ((opts.skip || []).indexOf(formName) !== -1) return { ok: false, reason: 'skipped_form', formName: formName };\n\n  var hidden = { 'form-name': 1, 'bot-field': 1, ip: 1, user_agent: 1, referrer: 1 };\n  var rows = [];\n  var ordered = sub.ordered_human_fields;\n  if (ordered && ordered.length) {\n    ordered.forEach(function (f) {\n      if (!f || hidden[f.name]) return;\n      var v = faClean(f.value);\n      if (v) rows.push([faClean(f.title) || faLabel(f.name), v]);\n    });\n  } else {\n    Object.keys(d).forEach(function (k) {\n      if (hidden[k]) return;\n      var v = faClean(d[k]);\n      if (v) rows.push([faLabel(k), v]);\n    });\n  }\n  function pick(names) {\n    for (var i = 0; i < names.length; i++) { var v = faClean(d[names[i]]); if (v) return v; }\n    return '';\n  }\n  var name = pick(['name', 'your_name', 'full_name']);\n  var email = pick(['email', 'your_email']);\n  var business = pick(['business_name', 'business', 'shop']);\n  var plan = pick(['plan', 'plan_name']);\n\n  var subject, next = '';\n  if (formName === 'setup') {\n    subject = 'NEW SETUP FORM: ' + (business || name || 'a customer') + (plan ? ' (' + plan + ')' : '');\n    next = '\\n\\nNext: paste these answers to Claude to build their receptionist. Check Stripe to confirm they paid before you build.';\n  } else if (formName === 'order') {\n    subject = 'Plan reserved: ' + (name || email || 'a visitor') + (plan ? ' - ' + plan : '');\n    next = '\\n\\nNext: send them a Stripe invoice or payment link (plan plus $99 setup), then the setup form link.';\n  } else if (formName === 'contact') {\n    subject = 'Website message from ' + (name || email || 'a visitor');\n  } else if (formName === 'waitlist') {\n    subject = 'Waitlist sign-up: ' + (business || name || email || 'a visitor');\n  } else if (formName === 'signup') {\n    subject = 'New website sign-up: ' + (name || email || 'a visitor');\n  } else {\n    subject = 'Website form \"' + formName + '\": ' + (name || email || business || 'new submission');\n  }\n\n  var text = 'A form was sent on your website.\\nForm: ' + formName + (email ? '\\nReply to: ' + email : '') + '\\n\\n' +\n    rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('\\n') + next;\n  return { ok: true, formName: formName, to: opts.ownerEmail, replyTo: email, subject: subject, body: text };\n}\n\n\nvar SETTINGS = { secret: 'PUT-YOUR-FORM-KEY-HERE', skip: ['demo'], ownerEmail: 'carter.robertson729@gmail.com' };\nvar r = formAlert($input.first().json, SETTINGS);\nreturn [{ json: r }];"
+      }
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000000003",
+      "name": "Worth Sending?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000000004",
+      "name": "Email Me",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        -60
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $json.replyTo }}"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Netlify Form": {
+      "main": [
+        [
+          {
+            "node": "Build Form Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Form Email": {
+      "main": [
+        [
+          {
+            "node": "Worth Sending?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Worth Sending?": {
+      "main": [
+        [
+          {
+            "node": "Email Me",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

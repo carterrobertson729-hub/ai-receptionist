@@ -13,6 +13,7 @@ const apptLib = stripExports(read('n8n/code/appointments.js'));
 const usageLib = stripExports(read('n8n/code/usage.js'));
 const reportLib = stripExports(read('n8n/code/report.js'));
 const demoLib = stripExports(read('n8n/code/demo.js'));
+const formAlertLib = stripExports(read('n8n/code/formalert.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -863,6 +864,46 @@ const manage = wf('Website - Demo Manage', [
 });
 writeFileSync(new URL('n8n/website-demo-manage.json', root), JSON.stringify(manage, null, 2) + '\n');
 
+// ---------- 13. website form alerts (any Netlify form except demo -> one email to the owner) ----------
+const FORM_SECRET = 'PUT-YOUR-FORM-KEY-HERE';   // goes on the end of each Netlify webhook URL as ?key=...
+const formAlertCode = `${formAlertLib}
+var SETTINGS = { secret: '${FORM_SECRET}', skip: ['demo'], ownerEmail: 'carter.robertson729@gmail.com' };
+var r = formAlert($input.first().json, SETTINGS);
+return [{ json: r }];`;
+const formAlerts = wf('Website - Form Alerts', [
+  {
+    id: 'f1000000-0000-4000-8000-000000000001', name: 'Netlify Form', type: 'n8n-nodes-base.webhook', typeVersion: 2, position: [0, 0],
+    webhookId: 'website-form-alert',
+    parameters: { httpMethod: 'POST', path: 'website/form-alert', responseMode: 'onReceived', options: {} }
+  },
+  code('f1000000-0000-4000-8000-000000000002', 'Build Form Email', [240, 0], formAlertCode),
+  {
+    id: 'f1000000-0000-4000-8000-000000000003', name: 'Worth Sending?', type: 'n8n-nodes-base.if', typeVersion: 2.2, position: [480, 0],
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+        conditions: [{ id: 'c1', leftValue: '={{ $json.ok }}', rightValue: true, operator: { type: 'boolean', operation: 'true', singleValue: true } }],
+        combinator: 'and'
+      },
+      options: {}
+    }
+  },
+  {
+    id: 'f1000000-0000-4000-8000-000000000004', name: 'Email Me', type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position: [720, -60],
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false, replyTo: '={{ $json.replyTo }}' }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  }
+], {
+  'Netlify Form': { main: [[{ node: 'Build Form Email', type: 'main', index: 0 }]] },
+  'Build Form Email': { main: [[{ node: 'Worth Sending?', type: 'main', index: 0 }]] },
+  'Worth Sending?': { main: [[{ node: 'Email Me', type: 'main', index: 0 }], []] }
+});
+writeFileSync(new URL('n8n/website-form-alerts.json', root), JSON.stringify(formAlerts, null, 2) + '\n');
+
+
 writeFileSync(new URL('n8n/business-config.json', root), JSON.stringify(bizConfig, null, 2) + '\n');
 writeFileSync(new URL('n8n/check-availability.json', root), JSON.stringify(check, null, 2) + '\n');
 writeFileSync(new URL('n8n/book-appointment.json', root), JSON.stringify(book, null, 2) + '\n');
@@ -880,7 +921,7 @@ const nodeCodeDir = new URL('n8n/node-code/', root);
 rmSync(nodeCodeDir, { recursive: true, force: true });
 mkdirSync(nodeCodeDir, { recursive: true });
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly, demo, manage]) {
+for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly, demo, manage, formAlerts]) {
   for (const n of w.nodes.filter((n) => n.type === 'n8n-nodes-base.code')) {
     const header = `// PASTE INTO n8n: workflow "${w.name}" > node "${n.name}" > Code tab (select all, replace, Save).\n`;
     writeFileSync(new URL(`${slug(w.name.replace('Receptionist - ', ''))}__${slug(n.name)}.js`, nodeCodeDir), header + n.parameters.jsCode + '\n');
