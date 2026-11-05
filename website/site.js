@@ -1,4 +1,4 @@
-window.AB_JS_VERSION = '2026-11-03c';
+window.AB_JS_VERSION = '2026-11-05a';
 /* ===== Settings you edit ===== */
 var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
@@ -25,6 +25,10 @@ var FIREBASE_CONFIG = {
 };
 // Where the website talks to your n8n workflows (hides booked demo times, lets people cancel or change a demo). Must end with a slash.
 var N8N_BASE = 'https://icrob.app.n8n.cloud/webhook/website/';
+/* Form copies to n8n (so you get an email for every form without Netlify's paid notifications).
+   Paste your n8n form-alert Production URL and key here. Both empty = switched off. */
+var FORM_ALERT_URL = '';
+var FORM_ALERT_KEY = '';
 // Two ways it can answer. "backup" = after-hours and missed calls. "always" = 24/7 receptionist (answers every call, can pass calls to staff).
 var MODES = {
   backup: { label: 'After-hours & missed calls', title: 'After-hours and missed calls',
@@ -331,8 +335,24 @@ if (query.get('topic') && $('cTopic')) {
 document.querySelectorAll('.track[data-dup]').forEach(function(t){ t.innerHTML += t.innerHTML; });
 
 // Forms are collected by Netlify Forms (data-netlify). Nothing opens an email app.
+/* Sends a plain copy of a form's answers to n8n, which emails Carter. Never blocks or breaks the real form. */
+function forwardToN8n(formName, data){
+  try {
+    if (!FORM_ALERT_URL || !FORM_ALERT_KEY || !formName || formName === 'demo' || data['bot-field']) return;
+    fetch(FORM_ALERT_URL + '?key=' + encodeURIComponent(FORM_ALERT_KEY), {
+      method: 'POST', mode: 'no-cors', keepalive: true,
+      body: new URLSearchParams({ payload: JSON.stringify({ form_name: formName, data: data }) })
+    }).catch(function(){});
+  } catch (e) {}
+}
+function formToObject(form){
+  var o = {};
+  new FormData(form).forEach(function(v, k){ if (typeof v === 'string') o[k] = o[k] ? o[k] + ', ' + v : v; });
+  return o;
+}
 function sendForm(form, onDone){
   var note = form.querySelector('[data-note]');
+  var copy = formToObject(form); forwardToN8n(copy['form-name'], copy);
   function fail(){ if (note) note.innerHTML = 'Sorry, that did not send. Please email us at <a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a> and we will help right away.'; }
   var body = new URLSearchParams(new FormData(form)).toString();
   var btn = form.querySelector('button[type="submit"]'); if (btn) btn.disabled = true;

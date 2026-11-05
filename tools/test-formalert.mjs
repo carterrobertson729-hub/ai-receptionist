@@ -32,4 +32,9 @@ test('accepts a body without the payload wrapper', () => {
   const r = formAlert({ query: { key: 'k' }, body: { form_name: 'contact', data: { name: 'W', email: 'w@x.com' } } }, opts);
   assert.equal(r.ok, true); assert.match(r.body, /Reply to: w@x.com/);
 });
+test('accepts the copy our website sends itself (payload as a JSON string, urlencoded body)', () => {
+  const r = formAlert({ query: { key: 'k' }, body: { payload: JSON.stringify({ form_name: 'setup', data: { name: 'Zed', business_name: 'Zed Cuts', plan: 'backup-lite' } }) } }, opts);
+  assert.equal(r.ok, true); assert.equal(r.subject, 'NEW SETUP FORM: Zed Cuts (backup-lite)');
+  assert.equal(formAlert({ query: { key: 'k' }, body: { payload: '{oops' } }, opts).reason, 'bad_payload');
+});
 console.log(n + ' tests passed');

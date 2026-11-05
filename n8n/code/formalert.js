@@ -13,6 +13,7 @@ function formAlert(input, opts) {
   var query = (input && input.query) || {};
   var body = (input && input.body) || input || {};
   var sub = body.payload || body;                 // Netlify wraps the submission differently by notification type
+  if (typeof sub === 'string') { try { sub = JSON.parse(sub); } catch (e) { return { ok: false, reason: 'bad_payload' }; } }   // our own website sends the copy as a JSON string
   var d = sub.data || {};
   if (opts.secret && query.key !== opts.secret) return { ok: false, reason: 'bad_key' };
   var formName = faClean(sub.form_name || body.form_name || d['form-name']);
