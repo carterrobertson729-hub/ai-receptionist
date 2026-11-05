@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css?v=2026-11-05b">
+<link rel="stylesheet" href="style.css?v=2026-11-05c">
 <script>window.__abErrors=[];window.addEventListener('error',function(e){window.__abErrors.push((e.message||'error')+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')')});window.addEventListener('unhandledrejection',function(e){window.__abErrors.push('promise: '+((e.reason&&e.reason.message)||e.reason))});try{if(localStorage.getItem('ab_email'))document.documentElement.setAttribute('data-signed-in','1')}catch(e){}</script>
 </head>
 <body>
@@ -104,7 +104,8 @@
         <div class="row"><label for="sCalEmail">The Google account email that owns your calendar (we will ask you to share it with us)</label><input id="sCalEmail" name="calendar_email" type="email"></div>
         <div class="row"><label for="sAtOnce">How many appointments can run at the same time?</label><input id="sAtOnce" name="appointments_at_once" type="number" min="1" value="1"></div>
         <div class="row"><label for="sStaff">Staff who take appointments (and what each does, if it matters)</label><textarea id="sStaff" name="staff"></textarea></div>
-        <div class="row"><label for="sNotice">How soon can a customer be booked? (for example, at least 2 hours from now)</label><input id="sNotice" name="booking_notice"></div>
+        <div class="row"><label for="sNotice">How soon can a customer be booked? (for example, at least 2 hours from now, or right away)</label><input id="sNotice" name="booking_notice"></div>
+        <div class="row"><label for="sGap">Do you need a break between appointments?</label><select id="sGap" name="gap_between_appointments"><option value="none">No break, book back to back</option><option>5 minutes</option><option>10 minutes</option><option>15 minutes</option><option>30 minutes</option><option>45 minutes</option><option>1 hour</option><option>Not sure</option></select><p class="fine" style="margin-top:6px">Barbershops and salons usually pick no break. Plumbing and home services usually allow travel time, for example 30 minutes.</p></div>
       </fieldset>
 
       <fieldset class="card fs" data-for="barbershop" hidden><legend>6. Barbershop and salon questions (optional)</legend>
@@ -119,7 +120,6 @@
         <div class="row"><label for="tFee">Service call or trip fee (if any)</label><input id="tFee" name="service_call_fee"></div>
         <div class="row"><label for="tAfter">Extra charge for nights, weekends or holidays (if any)</label><input id="tAfter" name="after_hours_fee"></div>
         <div class="row"><label for="tBig">Your biggest jobs: for each, the starting price, the typical range, and whether the estimate visit is free or paid</label><textarea id="tBig" name="big_jobs"></textarea></div>
-        <div class="row"><label for="tGap">Time your techs need between jobs</label><select id="tGap" name="gap_between_jobs"><option>30 minutes</option><option>15 minutes</option><option>45 minutes</option><option>1 hour</option><option>Not sure</option></select></div>
       </fieldset>
 
       <fieldset class="card fs"><legend>7. Policies</legend>
@@ -168,11 +168,11 @@
     <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
     <details><summary>Emails and notifications</summary><p>When you sign up you can tick an optional box to allow us to email you about your account, product updates and offers. If you tick it, we may send you those emails. If you do not, that is fine: we will still send the messages needed to run your service, such as receipts, setup questions, usage and billing notices, and summaries you ask for. You can stop the optional emails at any time by replying "unsubscribe" or emailing us.</p></details>
     <details><summary>Accounts and sign-in</summary><p>You can create an account by signing in with Google. We receive your name and email address from Google, and never your Google password. We use them to set up your account, contact you about your service and, if you tick the optional box, send you updates and offers. We keep a record that you agreed to these terms. You can ask us to delete your account by emailing us.</p></details>
-    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span><span class="site-ver" style="opacity:.55;font-size:.8rem">Site version 2026-11-05b</span></div>
+    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span><span class="site-ver" style="opacity:.55;font-size:.8rem">Site version 2026-11-05c</span></div>
   </div>
 </footer>
 
-<script src="site.js?v=2026-11-05b"></script>
-<script src="setup.js?v=2026-11-05b"></script>
+<script src="site.js?v=2026-11-05c"></script>
+<script src="setup.js?v=2026-11-05c"></script>
 </body>
 </html>

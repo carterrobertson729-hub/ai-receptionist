@@ -106,3 +106,17 @@
     sel.addEventListener('change', update); update();
   });
 })();
+
+
+/* Break between appointments: start with a sensible choice for the type of business, unless they already picked one. */
+(function(){
+  var type = $('cType'), gap = $('sGap'); if (!type || !gap) return;
+  var touched = false;
+  gap.addEventListener('change', function(){ touched = true; });
+  function suggest(){
+    if (touched) return;
+    var t = type.value;
+    gap.value = t.indexOf('Barber') === 0 ? 'none' : (t.indexOf('Plumbing') === 0 ? '30 minutes' : 'Not sure');
+  }
+  type.addEventListener('change', suggest); suggest();
+})();
