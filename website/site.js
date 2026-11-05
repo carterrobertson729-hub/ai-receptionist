@@ -1,4 +1,4 @@
-window.AB_JS_VERSION = '2026-11-05c';
+window.AB_JS_VERSION = '2026-11-05d';
 /* ===== Settings you edit ===== */
 var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the

@@ -120,3 +120,12 @@
   }
   type.addEventListener('change', suggest); suggest();
 })();
+
+
+/* Payment reference: the emailed setup link carries ?ref=... so the answers can be matched to the payment. */
+(function(){
+  var form = $('setupForm'); if (!form) return;
+  var ref = (query.get('ref') || '').slice(0, 120);
+  if ($('sRef')) $('sRef').value = ref;
+  if (!ref && $('refBanner')) $('refBanner').hidden = false;
+})();

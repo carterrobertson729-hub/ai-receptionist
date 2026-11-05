@@ -18,7 +18,7 @@ test('paid checkout: customer gets the setup link with plan, email and name fill
   assert.equal(r.ok, true); assert.equal(r.messages.length, 2);
   const [c, o] = r.messages;
   assert.equal(c.to, 'sam@x.com'); assert.match(c.body, /^Hi Sam,/);
-  assert.match(c.body, /https:\/\/site\.example\/setup\.html\?plan=backup-standard&cycle=monthly&email=sam%40x\.com&name=Sam%20Lee/);
+  assert.match(c.body, /https:\/\/site\.example\/setup\.html\?plan=backup-standard&cycle=monthly&email=sam%40x\.com&name=Sam%20Lee&ref=cs_1/);
   assert.match(c.body, /4 business days/);
   assert.equal(o.to, 'me@x.com'); assert.equal(o.subject, 'PAID: Sam Lee - $188 (Backup Standard)'); assert.match(o.body, /setup fee included/);
 });

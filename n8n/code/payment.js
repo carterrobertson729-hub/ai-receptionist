@@ -39,6 +39,7 @@ function paymentWelcome(input, opts) {
   if (guess) { q.push('plan=' + encodeURIComponent(guess.id)); q.push('cycle=' + guess.cycle); }
   if (email) q.push('email=' + encodeURIComponent(email));
   if (name) q.push('name=' + encodeURIComponent(name));
+  if (s.id) q.push('ref=' + encodeURIComponent(s.id));          // Stripe checkout id: shows on the setup form email so Carter can match it to the payment
   var link = String(opts.siteUrl || '').replace(/\/+$/, '') + '/setup.html' + (q.length ? '?' + q.join('&') : '');
 
   var out = [];

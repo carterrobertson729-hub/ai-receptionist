@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css?v=2026-11-05c">
+<link rel="stylesheet" href="style.css?v=2026-11-05d">
 <script>window.__abErrors=[];window.addEventListener('error',function(e){window.__abErrors.push((e.message||'error')+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')')});window.addEventListener('unhandledrejection',function(e){window.__abErrors.push('promise: '+((e.reason&&e.reason.message)||e.reason))});try{if(localStorage.getItem('ab_email'))document.documentElement.setAttribute('data-signed-in','1')}catch(e){}</script>
 </head>
 <body>
@@ -51,6 +51,7 @@
     <h1 style="margin-top:6px">Tell us about <span class="grad-text">your business</span></h1>
     <p class="lead">This is how we build your receptionist. It takes about 15 to 20 minutes. If you are not sure about an answer, write "not sure" and we will suggest a sensible default.</p>
     <div class="note-box" id="planBanner" hidden></div>
+    <div class="note-box" id="refBanner" hidden>Ordered already? Use the setup link in the email we sent you, so we can match your answers to your order. If you came here right after paying, you are in the right place.</div>
   </div>
 </section>
 <section style="padding-top:10px;padding-bottom:70px">
@@ -58,7 +59,7 @@
     <form id="setupForm" name="setup" method="POST" data-thanks="setup-thanks.html" data-netlify="true" netlify-honeypot="bot-field" novalidate>
       <input type="hidden" name="form-name" value="setup">
       <p class="hp"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
-      <input type="hidden" name="plan" id="sPlan"><input type="hidden" name="billing" id="sCycle"><input type="hidden" name="addons" id="sAddons">
+      <input type="hidden" name="payment_ref" id="sRef"><input type="hidden" name="plan" id="sPlan"><input type="hidden" name="billing" id="sCycle"><input type="hidden" name="addons" id="sAddons">
 
       <fieldset class="card fs"><legend>1. Your business</legend>
         <div class="row"><label for="cName">Your name</label><input id="cName" name="name" autocomplete="name" required></div>
@@ -143,7 +144,7 @@
         <label class="agree"><input type="checkbox" name="agreed" value="yes" required><span>I understand calls are answered by an automated assistant and may be recorded and transcribed, and I agree to the <a href="#terms">terms and policies</a>.</span></label>
         <label class="agree"><input type="checkbox" name="notifications" value="yes"><span>Optional: I would like to receive emails from AnswerBay about my account, updates and offers. I can unsubscribe at any time.</span></label>
         <button class="btn btn-primary btn-block" type="submit">Send my setup form</button>
-        <p class="fine" data-note style="margin-top:10px">You can come back and send us updates any time.</p>
+        <p class="fine" data-note style="margin-top:10px">If anything needs to be changed after you send this, email <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a>.</p>
       </fieldset>
     </form>
     <div class="success" data-success hidden>
@@ -168,11 +169,11 @@
     <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
     <details><summary>Emails and notifications</summary><p>When you sign up you can tick an optional box to allow us to email you about your account, product updates and offers. If you tick it, we may send you those emails. If you do not, that is fine: we will still send the messages needed to run your service, such as receipts, setup questions, usage and billing notices, and summaries you ask for. You can stop the optional emails at any time by replying "unsubscribe" or emailing us.</p></details>
     <details><summary>Accounts and sign-in</summary><p>You can create an account by signing in with Google. We receive your name and email address from Google, and never your Google password. We use them to set up your account, contact you about your service and, if you tick the optional box, send you updates and offers. We keep a record that you agreed to these terms. You can ask us to delete your account by emailing us.</p></details>
-    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span><span class="site-ver" style="opacity:.55;font-size:.8rem">Site version 2026-11-05c</span></div>
+    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span><span class="site-ver" style="opacity:.55;font-size:.8rem">Site version 2026-11-05d</span></div>
   </div>
 </footer>
 
-<script src="site.js?v=2026-11-05c"></script>
-<script src="setup.js?v=2026-11-05c"></script>
+<script src="site.js?v=2026-11-05d"></script>
+<script src="setup.js?v=2026-11-05d"></script>
 </body>
 </html>

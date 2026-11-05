@@ -20,7 +20,7 @@ What it does: when Stripe records a paid checkout, n8n (1) emails the CUSTOMER a
 3. Open the link: the setup form should open with name and email filled in.
 
 ## Also still do (instant, works even if n8n is down)
-In each Stripe payment link: After payment > Don't show confirmation page > redirect to `https://endearing-macaron-e2b7a6.netlify.app/setup.html`. And add the $99 setup fee as a second item on each link.
+In each Stripe payment link: After payment > Don't show confirmation page > redirect to `https://endearing-macaron-e2b7a6.netlify.app/payment-thanks.html` (it says payment received, has a Fill out my setup form button and a home button, and counts 5 4 3 2 1 before opening the setup form). And add the $99 setup fee as a second item on each link (see `docs/stripe-setup-fee.md`).
 
 ## Notes
 - The plan guess comes from the amount paid. Add-ons, tax or coupons can change the amount, so it may say "cannot tell". The link still works.
