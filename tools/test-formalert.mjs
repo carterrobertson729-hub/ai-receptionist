@@ -37,4 +37,8 @@ test('accepts the copy our website sends itself (payload as a JSON string, urlen
   assert.equal(r.ok, true); assert.equal(r.subject, 'NEW SETUP FORM: Zed Cuts (backup-lite)');
   assert.equal(formAlert({ query: { key: 'k' }, body: { payload: '{oops' } }, opts).reason, 'bad_payload');
 });
+test('returns the website the customer typed, so the workflow can read it', () => {
+  const r = formAlert(mk('setup', { name: 'Q', business_name: 'Q Cuts', website: 'https://qcuts.com' }), opts);
+  assert.equal(r.website, 'https://qcuts.com');
+});
 console.log(n + ' tests passed');

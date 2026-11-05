@@ -129,3 +129,13 @@
   if ($('sRef')) $('sRef').value = ref;
   if (!ref && $('refBanner')) $('refBanner').hidden = false;
 })();
+
+
+/* "Start with your website" on the home page sends ?website=... */
+(function(){
+  var form = $('setupForm'); if (!form || !$('cSite')) return;
+  var w = (query.get('website') || '').trim();
+  if (!w) return;
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(w)) w = 'https://' + w;
+  $('cSite').value = w;
+})();

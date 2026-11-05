@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css?v=2026-11-05d">
+<link rel="stylesheet" href="style.css?v=2026-11-06a">
 <script>window.__abErrors=[];window.addEventListener('error',function(e){window.__abErrors.push((e.message||'error')+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')')});window.addEventListener('unhandledrejection',function(e){window.__abErrors.push('promise: '+((e.reason&&e.reason.message)||e.reason))});try{if(localStorage.getItem('ab_email'))document.documentElement.setAttribute('data-signed-in','1')}catch(e){}</script>
 </head>
 <body>
@@ -93,10 +93,49 @@
       <div class="card step"><div class="num">3</div><h3>Forward your calls</h3><p>You turn on call forwarding to your new number. We walk you through it for your phone carrier.</p></div>
       <div class="card step"><div class="num">4</div><h3>Get summaries and bookings</h3><p>Appointments land in your calendar, and you get an email after calls that matter plus a weekly report.</p></div>
     </div>
+    <div class="card start-site" id="startSite" style="margin-top:26px">
+      <h3>Start with your website</h3>
+      <p>Paste your website or booking page. When you send your setup form, we read that page for your services, prices and hours, so you have less to type.</p>
+      <form id="siteStart" class="site-start" novalidate>
+        <input type="text" id="siteStartUrl" inputmode="url" autocomplete="url" placeholder="yourbusiness.com" aria-label="Your website address">
+        <button class="btn btn-primary" type="submit">Start my setup</button>
+      </form>
+      <p class="fine" style="margin-top:10px">We only look at public pages, and only the first page. No website? <a href="setup.html">Go straight to the setup form</a>.</p>
+    </div>
     <div class="cta-band" id="setupBand" style="margin-top:26px">
       <div><h3>Already signed up? Fill out your setup form.</h3><p>Tell us your hours, services and prices so we can build your receptionist. It takes about 15 to 20 minutes, and you can come back to it any time.</p></div>
       <div class="cta-row"><a class="btn btn-primary" href="setup.html">Fill out my setup form</a></div>
     </div>
+  </div>
+</section>
+
+<!-- HEAR IT -->
+<section id="listen">
+  <div class="wrap">
+    <div class="section-head"><span class="eyebrow">Hear it for yourself</span><h2 style="margin-top:14px">Listen to real test calls</h2><p>Press play to hear how the receptionist handles a call. These are recordings of test calls with our demo receptionist, not customer calls.</p></div>
+    <div class="audio-grid">
+      <div class="card audio-card" data-audio="audio/barbershop-booking.mp3">
+        <h3>Booking a haircut</h3><span class="audio-tag">Barbershop</span>
+        <p>A caller asks for a haircut and the receptionist finds a time and books it.</p>
+        <audio controls preload="none" aria-label="Recording: booking a haircut"></audio><p class="audio-missing" hidden>Recording coming soon.</p>
+      </div>
+      <div class="card audio-card" data-audio="audio/barbershop-cancel.mp3">
+        <h3>Changing or cancelling a booking</h3><span class="audio-tag">Barbershop</span>
+        <p>A customer cancels, and the time opens up for someone else.</p>
+        <audio controls preload="none" aria-label="Recording: cancelling a booking"></audio><p class="audio-missing" hidden>Recording coming soon.</p>
+      </div>
+      <div class="card audio-card" data-audio="audio/plumbing-urgent.mp3">
+        <h3>A leak after hours</h3><span class="audio-tag">Plumbing and home services</span>
+        <p>The receptionist checks for danger first, then takes the details and alerts the on-call person.</p>
+        <audio controls preload="none" aria-label="Recording: an urgent plumbing call"></audio><p class="audio-missing" hidden>Recording coming soon.</p>
+      </div>
+      <div class="card audio-card" data-audio="audio/spanish-booking.mp3">
+        <h3>Booking in Spanish</h3><span class="audio-tag">Spanish add-on</span>
+        <p>A caller speaks Spanish and the receptionist switches over and helps them.</p>
+        <audio controls preload="none" aria-label="Recording: booking in Spanish"></audio><p class="audio-missing" hidden>Recording coming soon.</p>
+      </div>
+    </div>
+    <p class="fine" style="margin-top:18px">Prefer to try it yourself? Call the demo line: <a href="tel:+12195877319">(219) 587-7319</a>.</p>
   </div>
 </section>
 
@@ -269,10 +308,10 @@
     <details><summary>Privacy and call recording</summary><p>Calls are answered by an automated assistant. Calls may be recorded and transcribed so that we can book appointments, send you summaries and keep a call log. We use call information only to provide the service to you and we do not sell it. Businesses are responsible for following the recording and disclosure laws that apply to their customers. You can ask us to delete your data when you cancel.</p></details>
     <details><summary>Emails and notifications</summary><p>When you sign up you can tick an optional box to allow us to email you about your account, product updates and offers. If you tick it, we may send you those emails. If you do not, that is fine: we will still send the messages needed to run your service, such as receipts, setup questions, usage and billing notices, and summaries you ask for. You can stop the optional emails at any time by replying "unsubscribe" or emailing us.</p></details>
     <details><summary>Accounts and sign-in</summary><p>You can create an account by signing in with Google. We receive your name and email address from Google, and never your Google password. We use them to set up your account, contact you about your service and, if you tick the optional box, send you updates and offers. We keep a record that you agreed to these terms. You can ask us to delete your account by emailing us.</p></details>
-    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span><span class="site-ver" style="opacity:.55;font-size:.8rem">Site version 2026-11-05d</span></div>
+    <div class="foot-bottom"><span>&copy; <span id="yr">2026</span> AnswerBay. All rights reserved.</span><span>Questions: <a href="mailto:carter.robertson729@gmail.com">carter.robertson729@gmail.com</a></span><span class="site-ver" style="opacity:.55;font-size:.8rem">Site version 2026-11-06a</span></div>
   </div>
 </footer>
 
-<script src="site.js?v=2026-11-05d"></script>
+<script src="site.js?v=2026-11-06a"></script>
 </body>
 </html>

@@ -64,7 +64,7 @@ function formAlert(input, opts) {
 
   var text = 'A form was sent on your website.\nForm: ' + formName + (email ? '\nReply to: ' + email : '') + '\n\n' +
     rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('\n') + next;
-  return { ok: true, formName: formName, to: opts.ownerEmail, replyTo: email, subject: subject, body: text };
+  return { ok: true, formName: formName, to: opts.ownerEmail, replyTo: email, subject: subject, body: text, website: pick(['website']) };
 }
 
 if (typeof module !== 'undefined') module.exports = { formAlert: formAlert };

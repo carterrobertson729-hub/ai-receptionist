@@ -15,6 +15,7 @@ const reportLib = stripExports(read('n8n/code/report.js'));
 const demoLib = stripExports(read('n8n/code/demo.js'));
 const formAlertLib = stripExports(read('n8n/code/formalert.js'));
 const paymentLib = stripExports(read('n8n/code/payment.js'));
+const siteScanLib = stripExports(read('n8n/code/sitescan.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -868,9 +869,21 @@ writeFileSync(new URL('n8n/website-demo-manage.json', root), JSON.stringify(mana
 // ---------- 13. website form alerts (any Netlify form except demo -> one email to the owner) ----------
 const FORM_SECRET = 'PUT-YOUR-FORM-KEY-HERE';   // goes on the end of each Netlify webhook URL as ?key=...
 const formAlertCode = `${formAlertLib}
+${siteScanLib}
 var SETTINGS = { secret: '${FORM_SECRET}', skip: ['demo'], ownerEmail: 'carter.robertson729@gmail.com' };
 var r = formAlert($input.first().json, SETTINGS);
+// setup forms: if they typed a website, plan to read that page (public http/https addresses only)
+r.scanUrl = (r.ok && r.formName === 'setup') ? siteScanTarget(r.website) : '';
 return [{ json: r }];`;
+const addSiteNotesCode = `${siteScanLib}
+// Joins the page we fetched onto the email. If the fetch failed, the email still goes out with a short note.
+var mail = $('Build Form Email').first().json;
+var got = $input.first().json || {};
+var html = typeof got.data === 'string' ? got.data : (typeof got.body === 'string' ? got.body : '');
+var note;
+if (got.error || !html) note = 'WEBSITE SCAN of ' + mail.scanUrl + '\\nCould not read the page (' + String((got.error && (got.error.message || got.error)) || 'no content') .slice(0, 120) + '). Open it yourself.';
+else note = siteScan(html, mail.scanUrl);
+return [{ json: Object.assign({}, mail, { body: mail.body + '\\n\\n----------------------------------------\\n' + note }) }];`;
 const formAlerts = wf('Website - Form Alerts', [
   {
     id: 'f1000000-0000-4000-8000-000000000001', name: 'Netlify Form', type: 'n8n-nodes-base.webhook', typeVersion: 2, position: [0, 0],
@@ -890,7 +903,28 @@ const formAlerts = wf('Website - Form Alerts', [
     }
   },
   {
-    id: 'f1000000-0000-4000-8000-000000000004', name: 'Email Me', type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position: [720, -60],
+    id: 'f1000000-0000-4000-8000-000000000005', name: 'Has Website?', type: 'n8n-nodes-base.if', typeVersion: 2.2, position: [720, -60],
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+        conditions: [{ id: 'c1', leftValue: '={{ $json.scanUrl }}', rightValue: '', operator: { type: 'string', operation: 'notEmpty', singleValue: true } }],
+        combinator: 'and'
+      },
+      options: {}
+    }
+  },
+  {
+    id: 'f1000000-0000-4000-8000-000000000006', name: 'Read Website', type: 'n8n-nodes-base.httpRequest', typeVersion: 4.2, position: [960, -160],
+    onError: 'continueRegularOutput',
+    parameters: {
+      method: 'GET', url: '={{ $json.scanUrl }}',
+      sendHeaders: true, headerParameters: { parameters: [{ name: 'User-Agent', value: 'Mozilla/5.0 (compatible; AnswerBaySetup/1.0)' }] },
+      options: { timeout: 8000, redirect: { redirect: { maxRedirects: 3 } }, response: { response: { responseFormat: 'text' } } }
+    }
+  },
+  code('f1000000-0000-4000-8000-000000000007', 'Add Website Notes', [1200, -160], addSiteNotesCode),
+  {
+    id: 'f1000000-0000-4000-8000-000000000004', name: 'Email Me', type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position: [1440, -60],
     parameters: {
       resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
       emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false, replyTo: '={{ $json.replyTo }}' }
@@ -900,7 +934,10 @@ const formAlerts = wf('Website - Form Alerts', [
 ], {
   'Netlify Form': { main: [[{ node: 'Build Form Email', type: 'main', index: 0 }]] },
   'Build Form Email': { main: [[{ node: 'Worth Sending?', type: 'main', index: 0 }]] },
-  'Worth Sending?': { main: [[{ node: 'Email Me', type: 'main', index: 0 }], []] }
+  'Worth Sending?': { main: [[{ node: 'Has Website?', type: 'main', index: 0 }], []] },
+  'Has Website?': { main: [[{ node: 'Read Website', type: 'main', index: 0 }], [{ node: 'Email Me', type: 'main', index: 0 }]] },
+  'Read Website': { main: [[{ node: 'Add Website Notes', type: 'main', index: 0 }]] },
+  'Add Website Notes': { main: [[{ node: 'Email Me', type: 'main', index: 0 }]] }
 });
 writeFileSync(new URL('n8n/website-form-alerts.json', root), JSON.stringify(formAlerts, null, 2) + '\n');
 
