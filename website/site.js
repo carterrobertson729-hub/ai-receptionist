@@ -1,4 +1,4 @@
-window.AB_JS_VERSION = '2026-11-05a';
+window.AB_JS_VERSION = '2026-11-05b';
 /* ===== Settings you edit ===== */
 var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
@@ -366,6 +366,8 @@ document.querySelectorAll('form[data-netlify]').forEach(function(form){
     if (form.hasAttribute('data-custom')) return;   // the page script (demo, checkout) handles these
     if (!form.checkValidity()) { form.reportValidity(); return; }
     sendForm(form, function(){
+      var thanks = form.getAttribute('data-thanks');
+      if (thanks) { window.location.href = thanks; return; }   // e.g. the setup form goes to its confirmation page, which sends them home after 3 seconds
       form.hidden = true;
       var ok = document.querySelector('[data-success]'); if (ok) { ok.hidden = false; ok.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     });
