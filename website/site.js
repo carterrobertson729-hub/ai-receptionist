@@ -1,4 +1,4 @@
-window.AB_JS_VERSION = '2026-11-06a';
+window.AB_JS_VERSION = '2026-11-06b';
 /* ===== Settings you edit ===== */
 var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
@@ -376,7 +376,7 @@ document.querySelectorAll('form[data-netlify]').forEach(function(form){
 if ($('yr')) $('yr').textContent = new Date().getFullYear();
 
 
-/* Home page: hide an audio player until its recording file really exists, and send the "start with your website" box to the setup form. */
+/* Home page: hide an audio player until its recording file really exists. */
 (function(){
   document.querySelectorAll('.audio-card[data-audio]').forEach(function(card){
     var src = card.getAttribute('data-audio'), player = card.querySelector('audio'), miss = card.querySelector('.audio-missing');
@@ -386,11 +386,5 @@ if ($('yr')) $('yr').textContent = new Date().getFullYear();
       if (!r.ok || /text\/html/i.test(type)) { showMissing(); return; }
       player.src = src;
     }).catch(showMissing);
-  });
-  var f = document.getElementById('siteStart');
-  if (f) f.addEventListener('submit', function(e){
-    e.preventDefault();
-    var v = (document.getElementById('siteStartUrl').value || '').trim();
-    window.location.href = 'setup.html' + (v ? '?website=' + encodeURIComponent(v) : '');
   });
 })();

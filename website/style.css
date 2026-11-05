@@ -386,12 +386,9 @@ html[data-signed-in] #navList li.only-mobile:has(> a[href="login.html?mode=signu
 .hrow input.bad{border-color:#d33;box-shadow:0 0 0 2px rgba(221,51,51,.15)}
 .err-text{color:#c62828}
 
-/* home page: audio demos and "start with your website" */
+/* home page: audio demos */
 .audio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
 .audio-card h3{margin:0 0 6px}
 .audio-card audio{width:100%;margin-top:14px}
 .audio-tag{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.02em;color:#3a3fb0;background:rgba(80,90,255,.1);border-radius:99px;padding:3px 10px;margin-bottom:10px}
 .audio-missing{margin-top:14px !important;font-weight:600;color:var(--muted)}
-.site-start{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.site-start input{flex:1 1 260px;min-width:0;padding:13px 16px;border-radius:12px;border:1px solid var(--line);font:inherit;background:#fff}
-@media(max-width:560px){.site-start .btn{width:100%}}
