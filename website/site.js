@@ -1,4 +1,4 @@
-window.AB_JS_VERSION = '2026-11-06b';
+window.AB_JS_VERSION = '2026-11-07a';
 /* ===== Settings you edit ===== */
 var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
@@ -376,15 +376,16 @@ document.querySelectorAll('form[data-netlify]').forEach(function(form){
 if ($('yr')) $('yr').textContent = new Date().getFullYear();
 
 
-/* Home page: hide an audio player until its recording file really exists. */
+/* Home page: show only the audio players whose recording file really exists; hide the whole section if there are none. */
 (function(){
-  document.querySelectorAll('.audio-card[data-audio]').forEach(function(card){
-    var src = card.getAttribute('data-audio'), player = card.querySelector('audio'), miss = card.querySelector('.audio-missing');
-    function showMissing(){ if (player) player.hidden = true; if (miss) miss.hidden = false; }
-    fetch(src, { method: 'HEAD' }).then(function(r){
+  var section = document.getElementById('listen'); if (!section) return;
+  var cards = Array.prototype.slice.call(section.querySelectorAll('.audio-card[data-audio]'));
+  Promise.all(cards.map(function(card){
+    var src = card.getAttribute('data-audio'), player = card.querySelector('audio');
+    return fetch(src, { method: 'HEAD' }).then(function(r){
       var type = r.headers.get('content-type') || '';
-      if (!r.ok || /text\/html/i.test(type)) { showMissing(); return; }
-      player.src = src;
-    }).catch(showMissing);
-  });
+      if (!r.ok || /text\/html/i.test(type)) return false;
+      player.src = src; return true;
+    }).catch(function(){ return false; }).then(function(ok){ card.hidden = !ok; return ok; });
+  })).then(function(res){ section.hidden = !res.some(Boolean); });
 })();
