@@ -1,0 +1,86 @@
+{
+  "name": "Receptionist - Error Alerts",
+  "nodes": [
+    {
+      "id": "e1000000-0000-4000-8000-000000000001",
+      "name": "Any Workflow Fails",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "e1000000-0000-4000-8000-000000000002",
+      "name": "Build Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Failure alert: turns n8n's Error Trigger data into one plain email to the owner. Unit-tested by tools/test-errormail.mjs.\nfunction errorEmail(item, opts) {\n  var e = (item && item.execution) || {}, w = (item && item.workflow) || {};\n  var wname = String(w.name || 'Unknown workflow');\n  if (opts && opts.ignoreName && wname.indexOf(opts.ignoreName) !== -1) return { ok: false, reason: 'self' };   // never alert about the alert workflow itself\n  var err = e.error || {};\n  var msg = String(err.message || err.description || 'No message').slice(0, 500);\n  var node = e.lastNodeExecuted || err.node && err.node.name || 'unknown step';\n  return { ok: true, to: opts.ownerEmail, subject: 'n8n FAILED: ' + wname + ' (' + node + ')',\n    body: 'A workflow stopped with an error.\\n\\nWorkflow: ' + wname + '\\nStep that failed: ' + node + '\\nWhat it said: ' + msg +\n      (e.id ? '\\nExecution: ' + (e.url || ('id ' + e.id)) : '') +\n      '\\n\\nWhat to do: open the link, look at the red step, and paste the message to Claude if you are not sure. If this is a customer-facing workflow (booking, cancel, summary), check that customers are not affected.' };\n}\n\nvar SETTINGS = { ownerEmail: 'carter.robertson729@gmail.com', ignoreName: 'Error Alerts' };\nvar r = errorEmail($input.first().json, SETTINGS);\nreturn r.ok ? [{ json: r }] : [];"
+      }
+    },
+    {
+      "id": "e1000000-0000-4000-8000-000000000003",
+      "name": "Email Me",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Any Workflow Fails": {
+      "main": [
+        [
+          {
+            "node": "Build Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Alert": {
+      "main": [
+        [
+          {
+            "node": "Email Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

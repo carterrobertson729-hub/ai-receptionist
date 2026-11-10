@@ -41,4 +41,14 @@ test('returns the website the customer typed, so the workflow can read it', () =
   const r = formAlert(mk('setup', { name: 'Q', business_name: 'Q Cuts', website: 'https://qcuts.com' }), opts);
   assert.equal(r.website, 'https://qcuts.com');
 });
+test('change requests get their own subject; setup forms with an email also get a customer receipt', () => {
+  const c = formAlert(mk('change', { business_name: 'Q Cuts', name: 'Q', email: 'q@x.com', change_type: 'Prices or services', details: 'Fade is now $32' }), opts);
+  assert.equal(c.subject, 'CHANGE REQUEST: Q Cuts - Prices or services'); assert.match(c.body, /Fade is now \$32/); assert.equal(c.customer, null);
+  const o2 = Object.assign({}, opts, { shareEmail: 'cal@x.com', siteUrl: 'https://s.example' });
+  const r = formAlert(mk('setup', { name: 'Sam Lee', email: 's@x.com', business_name: 'Sam Cuts' }), o2);
+  assert.equal(r.customer.to, 's@x.com'); assert.match(r.customer.body, /^Hi Sam,/); assert.match(r.customer.body, /cal@x\.com/); assert.match(r.customer.body, /s\.example\/change-request\.html/);
+  assert.equal(formAlert(mk('setup', { name: 'No Mail', business_name: 'B' }), o2).customer, null);
+  assert.equal(formAlert(mk('setup', { name: 'Bad', email: 'not an email' }), o2).customer, null);
+  assert.equal(formAlert(mk('contact', { name: 'C', email: 'c@x.com' }), o2).customer, null);
+});
 console.log(n + ' tests passed');

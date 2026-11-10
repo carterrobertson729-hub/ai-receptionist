@@ -1,0 +1,139 @@
+{
+  "name": "Website - Onboarding Emails",
+  "nodes": [
+    {
+      "id": "o1000000-0000-4000-8000-000000000001",
+      "name": "Every Morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "o1000000-0000-4000-8000-000000000002",
+      "name": "Get Customers",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "PUT-YOUR-CUSTOMERS-SHEET-ID-HERE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Customers"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "o1000000-0000-4000-8000-000000000003",
+      "name": "Find Due Emails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Onboarding emails: reads the \"Customers\" sheet once a day and sends the customer emails that are due\n// (day 0 = \"you're live\", day 7 = check-in, day 30 = first month). Stateless: an email is due only on that exact day,\n// so nothing needs to be written back to the sheet. Unit-tested by tools/test-onboarding.mjs.\n\nfunction obKey(k) { return String(k || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }\n\nfunction obRow(raw) {\n  var o = {};\n  Object.keys(raw || {}).forEach(function (k) { o[obKey(k)] = String(raw[k] == null ? '' : raw[k]).trim(); });\n  return { name: o.name || o.customername || '', email: o.email || o.customeremail || '', business: o.business || o.businessname || '',\n    plan: o.plan || '', liveDate: o.livedate || o.golive || o.live || '', number: o.receptionistnumber || o.number || o.retellnumber || '', mode: o.mode || o.answermode || '' };\n}\n\n// \"2026-11-10\" in the given time zone for a moment in time.\nfunction obToday(nowMs, tz) {\n  return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(nowMs));\n}\n\nfunction obDays(liveDate, today) {\n  var a = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(liveDate), b = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(today);\n  if (!a || !b) return null;\n  return Math.round((Date.UTC(+b[1], +b[2] - 1, +b[3]) - Date.UTC(+a[1], +a[2] - 1, +a[3])) / 86400000);\n}\n\nfunction obBody(kind, c, cfg) {\n  var first = (c.name || '').split(/\\s+/)[0] || 'there';\n  var biz = c.business || 'your business';\n  var changeUrl = cfg.siteUrl + '/change-request.html', supportUrl = cfg.siteUrl + '/support.html';\n  var sign = '\\n\\nThe AnswerBay team';\n  if (kind === 'live') return { subject: 'Your receptionist is live', body: 'Hi ' + first + ',\\n\\nGood news: the receptionist for ' + biz + ' is switched on.' +\n    (c.number ? '\\n\\nIts number is ' + c.number + '. Your customers keep calling your normal number. Calls are sent to it by your phone company.' : '') +\n    '\\n\\nWhat to expect:\\n- You get an email after calls that matter (bookings, messages, urgent calls).\\n- Every Monday morning you get a short weekly report.\\n- If a caller asks something it does not know, it takes a message instead of guessing.\\n\\n' +\n    'A good first test: call your business number from a different phone while nobody answers, and see what happens. A short checklist is here: ' + supportUrl + '\\n\\n' +\n    'Need to change prices, hours or a holiday closure? Use this form and we will update it: ' + changeUrl + '\\nOr just reply to this email.' + sign };\n  if (kind === 'week') return { subject: 'How is your first week going?', body: 'Hi ' + first + ',\\n\\nIt has been a week since the receptionist for ' + biz + ' went live. Quick check-in:\\n\\n' +\n    '1. Are calls reaching it the way you expected?\\n2. Did it say anything wrong or miss anything?\\n3. Is there something you wish it did?\\n\\nJust reply with whatever comes to mind, even one line. If something needs fixing, tell us and we will fix it. You can also send changes here: ' + changeUrl + sign };\n  return { subject: 'Your first month with AnswerBay', body: 'Hi ' + first + ',\\n\\nYour first month with the receptionist for ' + biz + ' is done. Your weekly reports have been showing how many calls it handled and how many bookings it made.\\n\\n' +\n    'Two small favors, both optional:\\n- If it has been useful, could you reply with one or two sentences about your experience? With your permission we may share it on our website.\\n- Do you know another owner who misses calls? If you introduce us and they sign up, we will thank you.\\n\\nAnd if something is not working the way you hoped, tell us now. We would rather fix it.' + sign };\n}\n\n// rows: items from the Customers sheet. cfg: { ownerEmail, siteUrl, tz, nowMs }\nfunction onboardingDue(rows, cfg) {\n  var today = obToday(cfg.nowMs, cfg.tz);\n  var out = [], seen = {};\n  (rows || []).forEach(function (raw) {\n    var c = obRow(raw);\n    var days = obDays(c.liveDate, today);\n    var kind = days === 0 ? 'live' : days === 7 ? 'week' : days === 30 ? 'month' : '';\n    if (!kind || !/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(c.email)) return;\n    var key = c.email.toLowerCase() + '|' + kind;\n    if (seen[key]) return; seen[key] = 1;\n    var m = obBody(kind, c, cfg);\n    out.push({ to: c.email, subject: m.subject, body: m.body });\n    out.push({ to: cfg.ownerEmail, subject: 'Sent to ' + (c.business || c.email) + ': ' + m.subject, body: 'This email was sent automatically to ' + c.email + ' (day ' + days + ').\\n\\n----\\n' + m.body });\n  });\n  return out;\n}\n\n\nvar SETTINGS = { ownerEmail: 'carter.robertson729@gmail.com', siteUrl: 'https://endearing-macaron-e2b7a6.netlify.app', tz: 'America/Chicago' };\nvar rows = $input.all().map(function (i) { return i.json; });\nvar out = onboardingDue(rows, { ownerEmail: SETTINGS.ownerEmail, siteUrl: SETTINGS.siteUrl, tz: SETTINGS.tz, nowMs: Date.now() });\nreturn out.map(function (m) { return { json: m }; });"
+      }
+    },
+    {
+      "id": "o1000000-0000-4000-8000-000000000004",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Morning": {
+      "main": [
+        [
+          {
+            "node": "Get Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Customers": {
+      "main": [
+        [
+          {
+            "node": "Find Due Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Due Emails": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Chicago"
+  },
+  "pinData": {},
+  "tags": []
+}

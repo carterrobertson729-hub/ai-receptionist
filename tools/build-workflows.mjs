@@ -16,6 +16,8 @@ const demoLib = stripExports(read('n8n/code/demo.js'));
 const formAlertLib = stripExports(read('n8n/code/formalert.js'));
 const paymentLib = stripExports(read('n8n/code/payment.js'));
 const siteScanLib = stripExports(read('n8n/code/sitescan.js'));
+const onboardingLib = stripExports(read('n8n/code/onboarding.js'));
+const errorMailLib = stripExports(read('n8n/code/errormail.js'));
 
 // INTERIM config store: every config/*.json is inlined into the Load Config node.
 // Replace with an n8n Data Table lookup once more than a couple of businesses exist.
@@ -870,7 +872,9 @@ writeFileSync(new URL('n8n/website-demo-manage.json', root), JSON.stringify(mana
 const FORM_SECRET = 'PUT-YOUR-FORM-KEY-HERE';   // goes on the end of each Netlify webhook URL as ?key=...
 const formAlertCode = `${formAlertLib}
 ${siteScanLib}
-var SETTINGS = { secret: '${FORM_SECRET}', skip: ['demo'], ownerEmail: 'carter.robertson729@gmail.com' };
+var SETTINGS = { secret: '${FORM_SECRET}', skip: ['demo'], ownerEmail: 'carter.robertson729@gmail.com',
+  shareEmail: 'carter.robertson729@gmail.com',   // the Google account customers should share their calendar with
+  siteUrl: 'https://endearing-macaron-e2b7a6.netlify.app' };
 var r = formAlert($input.first().json, SETTINGS);
 // setup forms: if they typed a website, plan to read that page (public http/https addresses only)
 r.scanUrl = (r.ok && r.formName === 'setup') ? siteScanTarget(r.website) : '';
@@ -884,6 +888,9 @@ var note;
 if (got.error || !html) note = 'WEBSITE SCAN of ' + mail.scanUrl + '\\nCould not read the page (' + String((got.error && (got.error.message || got.error)) || 'no content') .slice(0, 120) + '). Open it yourself.';
 else note = siteScan(html, mail.scanUrl);
 return [{ json: Object.assign({}, mail, { body: mail.body + '\\n\\n----------------------------------------\\n' + note }) }];`;
+const customerReceiptCode = `// Sends the customer a short "we got your setup form" email (built by the Build Form Email step).
+var mail = $('Build Form Email').first().json.customer;
+return [{ json: { to: mail.to, subject: mail.subject, body: mail.body } }];`;
 const formAlerts = wf('Website - Form Alerts', [
   {
     id: 'f1000000-0000-4000-8000-000000000001', name: 'Netlify Form', type: 'n8n-nodes-base.webhook', typeVersion: 2, position: [0, 0],
@@ -924,6 +931,27 @@ const formAlerts = wf('Website - Form Alerts', [
   },
   code('f1000000-0000-4000-8000-000000000007', 'Add Website Notes', [1200, -160], addSiteNotesCode),
   {
+    id: 'f1000000-0000-4000-8000-000000000008', name: 'Has Customer Email?', type: 'n8n-nodes-base.if', typeVersion: 2.2, position: [720, 160],
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+        conditions: [{ id: 'c1', leftValue: '={{ $json.customer ? $json.customer.to : "" }}', rightValue: '', operator: { type: 'string', operation: 'notEmpty', singleValue: true } }],
+        combinator: 'and'
+      },
+      options: {}
+    }
+  },
+  code('f1000000-0000-4000-8000-000000000009', 'Customer Receipt', [960, 120], customerReceiptCode),
+  {
+    id: 'f1000000-0000-4000-8000-000000000010', name: 'Email Customer', type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position: [1200, 120],
+    onError: 'continueRegularOutput',
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  },
+  {
     id: 'f1000000-0000-4000-8000-000000000004', name: 'Email Me', type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position: [1440, -60],
     parameters: {
       resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
@@ -934,12 +962,74 @@ const formAlerts = wf('Website - Form Alerts', [
 ], {
   'Netlify Form': { main: [[{ node: 'Build Form Email', type: 'main', index: 0 }]] },
   'Build Form Email': { main: [[{ node: 'Worth Sending?', type: 'main', index: 0 }]] },
-  'Worth Sending?': { main: [[{ node: 'Has Website?', type: 'main', index: 0 }], []] },
+  'Worth Sending?': { main: [[{ node: 'Has Website?', type: 'main', index: 0 }, { node: 'Has Customer Email?', type: 'main', index: 0 }], []] },
+  'Has Customer Email?': { main: [[{ node: 'Customer Receipt', type: 'main', index: 0 }], []] },
+  'Customer Receipt': { main: [[{ node: 'Email Customer', type: 'main', index: 0 }]] },
   'Has Website?': { main: [[{ node: 'Read Website', type: 'main', index: 0 }], [{ node: 'Email Me', type: 'main', index: 0 }]] },
   'Read Website': { main: [[{ node: 'Add Website Notes', type: 'main', index: 0 }]] },
   'Add Website Notes': { main: [[{ node: 'Email Me', type: 'main', index: 0 }]] }
 });
 writeFileSync(new URL('n8n/website-form-alerts.json', root), JSON.stringify(formAlerts, null, 2) + '\n');
+
+// ---------- 15. onboarding emails (daily: sends the day 0 / day 7 / day 30 emails for rows in the Customers sheet) ----------
+const onboardingCode = `${onboardingLib}
+var SETTINGS = { ownerEmail: 'carter.robertson729@gmail.com', siteUrl: 'https://endearing-macaron-e2b7a6.netlify.app', tz: 'America/Chicago' };
+var rows = $input.all().map(function (i) { return i.json; });
+var out = onboardingDue(rows, { ownerEmail: SETTINGS.ownerEmail, siteUrl: SETTINGS.siteUrl, tz: SETTINGS.tz, nowMs: Date.now() });
+return out.map(function (m) { return { json: m }; });`;
+const onboarding = wf('Website - Onboarding Emails', [
+  {
+    id: 'o1000000-0000-4000-8000-000000000001', name: 'Every Morning', type: 'n8n-nodes-base.scheduleTrigger', typeVersion: 1.2, position: [0, 0],
+    parameters: { rule: { interval: [{ field: 'cronExpression', expression: '0 9 * * *' }] } }
+  },
+  {
+    id: 'o1000000-0000-4000-8000-000000000002', name: 'Get Customers', type: 'n8n-nodes-base.googleSheets', typeVersion: 4.5, position: [240, 0],
+    parameters: {
+      resource: 'sheet', operation: 'read',
+      documentId: { __rl: true, mode: 'id', value: 'PUT-YOUR-CUSTOMERS-SHEET-ID-HERE' },
+      sheetName: { __rl: true, mode: 'name', value: 'Customers' }, options: {}
+    },
+    credentials: { googleSheetsOAuth2Api: { id: 'REPLACE', name: 'Google Sheets account' } }
+  },
+  code('o1000000-0000-4000-8000-000000000003', 'Find Due Emails', [480, 0], onboardingCode),
+  {
+    id: 'o1000000-0000-4000-8000-000000000004', name: 'Send Email', type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position: [720, 0],
+    onError: 'continueRegularOutput',
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  }
+], {
+  'Every Morning': { main: [[{ node: 'Get Customers', type: 'main', index: 0 }]] },
+  'Get Customers': { main: [[{ node: 'Find Due Emails', type: 'main', index: 0 }]] },
+  'Find Due Emails': { main: [[{ node: 'Send Email', type: 'main', index: 0 }]] }
+});
+onboarding.settings = { executionOrder: 'v1', timezone: 'America/Chicago' };
+writeFileSync(new URL('n8n/website-onboarding-emails.json', root), JSON.stringify(onboarding, null, 2) + '\n');
+
+// ---------- 16. failure alerts (any workflow that errors emails the owner) ----------
+const errorAlertCode = `${errorMailLib}
+var SETTINGS = { ownerEmail: 'carter.robertson729@gmail.com', ignoreName: 'Error Alerts' };
+var r = errorEmail($input.first().json, SETTINGS);
+return r.ok ? [{ json: r }] : [];`;
+const errorAlerts = wf('Receptionist - Error Alerts', [
+  { id: 'e1000000-0000-4000-8000-000000000001', name: 'Any Workflow Fails', type: 'n8n-nodes-base.errorTrigger', typeVersion: 1, position: [0, 0], parameters: {} },
+  code('e1000000-0000-4000-8000-000000000002', 'Build Alert', [240, 0], errorAlertCode),
+  {
+    id: 'e1000000-0000-4000-8000-000000000003', name: 'Email Me', type: 'n8n-nodes-base.gmail', typeVersion: 2.1, position: [480, 0],
+    parameters: {
+      resource: 'message', operation: 'send', sendTo: '={{ $json.to }}', subject: '={{ $json.subject }}',
+      emailType: 'text', message: '={{ $json.body }}', options: { appendAttribution: false }
+    },
+    credentials: { gmailOAuth2: { id: 'REPLACE', name: 'Gmail account' } }
+  }
+], {
+  'Any Workflow Fails': { main: [[{ node: 'Build Alert', type: 'main', index: 0 }]] },
+  'Build Alert': { main: [[{ node: 'Email Me', type: 'main', index: 0 }]] }
+});
+writeFileSync(new URL('n8n/receptionist-error-alerts.json', root), JSON.stringify(errorAlerts, null, 2) + '\n');
 
 // ---------- 14. stripe payment welcome (paid checkout -> setup link to the customer + a note to the owner) ----------
 const PAY_SECRET = 'PUT-YOUR-PAYMENT-KEY-HERE';   // goes on the end of the Stripe webhook URL as ?key=...  (placeholder in the repo; the file sent to Carter has a real one)
@@ -1010,7 +1100,7 @@ const nodeCodeDir = new URL('n8n/node-code/', root);
 rmSync(nodeCodeDir, { recursive: true, force: true });
 mkdirSync(nodeCodeDir, { recursive: true });
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly, demo, manage, formAlerts, payWelcome]) {
+for (const w of [bizConfig, check, book, summary, urgent, callback, lookup, cancel, resched, weekly, demo, manage, formAlerts, payWelcome, onboarding, errorAlerts]) {
   for (const n of w.nodes.filter((n) => n.type === 'n8n-nodes-base.code')) {
     const header = `// PASTE INTO n8n: workflow "${w.name}" > node "${n.name}" > Code tab (select all, replace, Save).\n`;
     writeFileSync(new URL(`${slug(w.name.replace('Receptionist - ', ''))}__${slug(n.name)}.js`, nodeCodeDir), header + n.parameters.jsCode + '\n');

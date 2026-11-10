@@ -1,4 +1,4 @@
-window.AB_JS_VERSION = '2026-11-07a';
+window.AB_JS_VERSION = '2026-11-10a';
 /* ===== Settings you edit ===== */
 var CONTACT_EMAIL = 'carter.robertson729@gmail.com';
 // Paste your Stripe Payment Link for each plan and billing period. While a link is empty, the checkout page lets the
@@ -217,7 +217,7 @@ if (query.get('topic') && $('cTopic')) {
     if (host) {
       menu = document.createElement('div'); menu.className = 'acct';
       menu.innerHTML = '<button type="button" class="acct-btn" aria-haspopup="true" aria-expanded="false"><span class="acct-ini">' + esc(shown.charAt(0).toUpperCase()) + '</span><span class="acct-name">' + esc(shown.split(' ')[0]) + '</span><span class="acct-caret">&#9662;</span></button>' +
-        '<div class="acct-menu" hidden><div class="acct-email">' + esc(email) + '</div><a href="setup.html">My setup form</a><a href="login.html">My account</a><button type="button" class="acct-out">Sign out</button></div>';
+        '<div class="acct-menu" hidden><div class="acct-email">' + esc(email) + '</div><a href="setup.html">My setup form</a><a href="support.html">Support</a><a href="login.html">My account</a><button type="button" class="acct-out">Sign out</button></div>';
       host.insertBefore(menu, host.firstChild);
       var btn = menu.querySelector('.acct-btn'), panel = menu.querySelector('.acct-menu');
       btn.onclick = function(e){ e.stopPropagation(); var open = panel.hidden; panel.hidden = !open; btn.setAttribute('aria-expanded', open); };

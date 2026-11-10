@@ -400,3 +400,8 @@ html[data-signed-in] #navList li.only-mobile:has(> a[href="login.html?mode=signu
 #pricing .modes{margin-left:0}
 #pricing .billing{margin-left:0}
 #pricing .mode-desc{text-align:left}
+
+/* support page */
+.test-steps{margin:10px 0 14px;padding-left:22px}.test-steps li{margin:8px 0}
+.faqd{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px}
+.faqd summary{cursor:pointer;font-weight:600}.faqd p{margin:10px 0 0;color:var(--muted)}

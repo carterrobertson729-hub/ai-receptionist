@@ -55,6 +55,9 @@ function formAlert(input, opts) {
     next = '\n\nNext: send them a Stripe invoice or payment link (plan plus $99 setup), then the setup form link.';
   } else if (formName === 'contact') {
     subject = 'Website message from ' + (name || email || 'a visitor');
+  } else if (formName === 'change') {
+    subject = 'CHANGE REQUEST: ' + (business || name || email || 'a customer') + (pick(['change_type']) ? ' - ' + pick(['change_type']) : '');
+    next = '\n\nNext: make the change in their settings (paste this to Claude), then reply to them to confirm.';
   } else if (formName === 'waitlist') {
     subject = 'Waitlist sign-up: ' + (business || name || email || 'a visitor');
   } else if (formName === 'signup') {
@@ -65,7 +68,17 @@ function formAlert(input, opts) {
 
   var text = 'A form was sent on your website.\nForm: ' + formName + (email ? '\nReply to: ' + email : '') + '\n\n' +
     rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('\n') + next;
-  return { ok: true, formName: formName, to: opts.ownerEmail, replyTo: email, subject: subject, body: text, website: pick(['website']) };
+  var customer = null;
+  if (formName === 'setup' && email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    var first = (name || '').split(/\s+/)[0] || 'there';
+    customer = { to: email, subject: 'We received your setup form' + (business ? ' for ' + business : ''),
+      body: 'Hi ' + first + ',\n\nThank you. We received your setup form' + (business ? ' for ' + business : '') + ' and we are starting on your receptionist now. Most receptionists are live within about 4 business days after we get the form. If we have a question, we will email you.\n\n' +
+        'To keep things moving, please do these two things if you have not yet:\n' +
+        '1. Share your Google Calendar with ' + (opts.shareEmail || opts.ownerEmail) + ' and give it the permission "Make changes to events" (Google Calendar > Settings > your calendar > Share with specific people). Then reply with the name of that calendar.\n' +
+        '2. Find out who has the login for your business phone account. We will need them for a few minutes to switch on call forwarding.\n\n' +
+        'Something wrong in what you sent? Just reply to this email, or use the change form: ' + (opts.siteUrl || '') + '/change-request.html\n\nThe AnswerBay team' };
+  }
+  return { ok: true, formName: formName, to: opts.ownerEmail, replyTo: email, subject: subject, body: text, website: pick(['website']), customer: customer };
 }
 
 
@@ -149,7 +162,9 @@ function siteScan(html, url) {
 }
 
 
-var SETTINGS = { secret: 'PUT-YOUR-FORM-KEY-HERE', skip: ['demo'], ownerEmail: 'carter.robertson729@gmail.com' };
+var SETTINGS = { secret: 'PUT-YOUR-FORM-KEY-HERE', skip: ['demo'], ownerEmail: 'carter.robertson729@gmail.com',
+  shareEmail: 'carter.robertson729@gmail.com',   // the Google account customers should share their calendar with
+  siteUrl: 'https://endearing-macaron-e2b7a6.netlify.app' };
 var r = formAlert($input.first().json, SETTINGS);
 // setup forms: if they typed a website, plan to read that page (public http/https addresses only)
 r.scanUrl = (r.ok && r.formName === 'setup') ? siteScanTarget(r.website) : '';
